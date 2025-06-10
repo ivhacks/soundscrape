@@ -1,5 +1,5 @@
 import unittest
-from music_purchase_research import search_bandcamp
+from bandcamp_search import search_bandcamp
 
 
 class TestBandcampSearch(unittest.TestCase):

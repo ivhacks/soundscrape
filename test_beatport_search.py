@@ -1,5 +1,5 @@
 import unittest
-from music_purchase_research import search_beatport
+from beatport_search import search_beatport
 
 
 class TestBeatportSearch(unittest.TestCase):

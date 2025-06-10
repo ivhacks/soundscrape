@@ -72,6 +72,7 @@ The system follows the "grizzled senior developer" principle:
 - `music_purchase_research.py` - Core search and research logic
 - `requirements.txt` - Python dependencies
 - `test_bandcamp_search.py` - Unit tests for Bandcamp search
+- `test_beatport_search.py` - Unit tests for Beatport search
 - `test.sh` - Test runner script
 - `format.sh` - Code formatter script
 
@@ -90,6 +91,7 @@ python music_purchase_finder.py
 Run individual test files:
 ```bash
 python test_bandcamp_search.py
+python test_beatport_search.py
 ```
 
 ## Code Formatting

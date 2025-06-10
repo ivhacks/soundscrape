@@ -1,14 +1,11 @@
 import unittest
-from music_purchase_research import MusicSiteSearcher
+from music_purchase_research import search_bandcamp
 
 
 class TestBandcampSearch(unittest.TestCase):
 
-    def setUp(self):
-        self.searcher = MusicSiteSearcher()
-
     def _assert_url_in_results(self, search_term: str, expected_url: str):
-        results = self.searcher.search_bandcamp(search_term)
+        results = search_bandcamp(search_term)
 
         # Check that we got some results
         self.assertGreater(len(results), 0, f"No results found for '{search_term}'")

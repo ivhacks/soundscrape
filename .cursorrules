@@ -23,3 +23,4 @@ Never allow an AI to return structured data (such as links) in an open-ended res
 You are forbidden from trying to parse links out of an open-ended response using e.g. regex or string processing.
 Always validate your code works by running it frequently.
 You are strongly encouraged to make many tool calls e.g. to curl the contents of websites, make bash scripts, do data processing, etc.
+Don't provide summaries of your work after you're done, just make the edits and end.

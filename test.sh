@@ -1,5 +1,5 @@
 #!/bin/bash
-python -m unittest test_bandcamp_search.py -v
+python -m unittest test_bandcamp_search.py test_beatport_search.py -v
 
 # Check exit code
 if [ $? -eq 0 ]; then

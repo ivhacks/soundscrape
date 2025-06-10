@@ -6,7 +6,7 @@ client = genai.Client(api_key=gemini_api_key_variable)
 
 response = client.models.generate_content(
     model="gemini-2.0-flash",
-    contents="Explain how AI works in a few words",
+    contents="Give me a link to a knock2 music video. Fetch the link to validate it before you respond",
 )
 
 print(response.text)

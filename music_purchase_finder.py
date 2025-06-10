@@ -6,7 +6,7 @@ This system searches music purchase sites and returns the best option,
 prioritizing sites that support artists and offer high-quality downloads.
 """
 
-from music_purchase_research import GeminiMusicResearcher
+from music_purchase_research import find_best_purchase_option
 
 
 def find_best_music_purchase_site(search_term: str) -> str:
@@ -29,16 +29,7 @@ def find_best_music_purchase_site(search_term: str) -> str:
     All links are validated before returning.
     """
 
-    try:
-        # Load API key
-        with open(".env", "r") as f:
-            api_key = f.read().strip()
-    except:
-        return "Error: Could not read API key from .env file"
-
-    # Create researcher and find best option
-    researcher = GeminiMusicResearcher(api_key)
-    result = researcher.find_best_purchase_option(search_term)
+    result = find_best_purchase_option(search_term)
 
     if "error" in result:
         return f"Error: {result['error']}"

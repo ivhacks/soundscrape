@@ -188,7 +188,7 @@ def search_7digital(artist: str, title: str) -> List[Dict]:
 
 
 def search_artist_albums_for_track(driver, artist: str, title: str) -> List[Dict]:
-    """Fallback search: search for artist only and check their albums for the track"""
+    """Fallback search: search for artist only and check their albums and singles for the track"""
     try:
         # Search for just the artist name
         search_url = f"https://us.7digital.com/search?q={quote_plus(artist)}"
@@ -199,9 +199,10 @@ def search_artist_albums_for_track(driver, artist: str, title: str) -> List[Dict
 
         soup = BeautifulSoup(driver.page_source, "html.parser")
 
-        # Find all album links
+        # Find all release links and categorize them
         links = soup.find_all("a", href=True)
-        artist_albums = []
+        albums = []
+        singles = []
 
         for link in links:
             href = link.get("href", "")
@@ -217,55 +218,109 @@ def search_artist_albums_for_track(driver, artist: str, title: str) -> List[Dict
 
                 link_title = link.get_text(strip=True)
                 if link_title and len(link_title) > 0:
-                    artist_albums.append(
-                        {"title": link_title, "url": full_url, "source": "7digital"}
+                    release = {
+                        "title": link_title,
+                        "url": full_url,
+                        "source": "7digital",
+                    }
+
+                    # Categorize as single or album based on title patterns
+                    title_lower = link_title.lower()
+                    is_single = any(
+                        keyword in title_lower
+                        for keyword in [
+                            "single",
+                            "- single",
+                            "ep",
+                            "- ep",
+                            "remix",
+                            "- remix",
+                            "feat.",
+                            "feat ",
+                            "vs.",
+                            "vs ",
+                            "ft.",
+                            "ft ",
+                        ]
                     )
 
-        # Remove duplicates
-        seen_urls = set()
-        unique_artist_albums = []
-        for album in artist_albums:
-            if album["url"] not in seen_urls:
-                seen_urls.add(album["url"])
-                unique_artist_albums.append(album)
+                    if is_single:
+                        singles.append(release)
+                    else:
+                        albums.append(release)
 
-        # Check each album to see if it's actually by this artist and contains the track
-        for album in unique_artist_albums:
-            try:
-                driver.get(album["url"])
-                time.sleep(2)
+        # Remove duplicates from both lists
+        albums = remove_duplicates(albums)
+        singles = remove_duplicates(singles)
 
-                album_soup = BeautifulSoup(driver.page_source, "html.parser")
+        # Alternate between albums and singles: album1, single1, album2, single2, etc.
+        max_items = max(len(albums), len(singles))
 
-                # Check if this album is actually by the artist we're looking for
-                # Look for artist name in the page
-                page_text = album_soup.get_text().lower()
-                artist_found = False
+        for i in range(max_items):
+            # Check album at index i
+            if i < len(albums):
+                if check_release_for_track(driver, albums[i], artist, title):
+                    return [albums[i]]
 
-                # Look for artist links or mentions
-                artist_links = album_soup.find_all("a", href=True)
-                for artist_link in artist_links:
-                    if "/artist/" in artist_link.get("href", ""):
-                        artist_text = artist_link.get_text(strip=True)
-                        if string_match(artist_text, artist):
-                            artist_found = True
-                            break
+            # Check single at index i
+            if i < len(singles):
+                if check_release_for_track(driver, singles[i], artist, title):
+                    return [singles[i]]
 
-                # If we can't find artist links, check page text
-                if not artist_found and artist.lower() in page_text:
-                    artist_found = True
-
-                # If this is the right artist, search for the track
-                if artist_found:
-                    if search_album_for_track(driver, album["url"], title):
-                        return [album]
-
-            except Exception:
-                # Continue to next album if this one fails
-                continue
-
-        # No albums contained the track
+        # No releases contained the track
         return []
 
     except Exception:
         return []
+
+
+def remove_duplicates(releases: List[Dict]) -> List[Dict]:
+    """Remove duplicate releases based on URL"""
+    seen_urls = set()
+    unique_releases = []
+    for release in releases:
+        if release["url"] not in seen_urls:
+            seen_urls.add(release["url"])
+            unique_releases.append(release)
+    return unique_releases
+
+
+def check_release_for_track(driver, release: Dict, artist: str, title: str) -> bool:
+    """Check if a release (album or single) is by the artist and contains the track"""
+    try:
+        driver.get(release["url"])
+        time.sleep(2)
+
+        soup = BeautifulSoup(driver.page_source, "html.parser")
+
+        # Check if this release is actually by the artist we're looking for
+        artist_found = False
+
+        # Look for artist links or mentions
+        artist_links = soup.find_all("a", href=True)
+        for artist_link in artist_links:
+            if "/artist/" in artist_link.get("href", ""):
+                artist_text = artist_link.get_text(strip=True)
+                if string_match(artist_text, artist):
+                    artist_found = True
+                    break
+
+        # If we can't find artist links, check page text
+        if not artist_found:
+            page_text = soup.get_text().lower()
+            if artist.lower() in page_text:
+                artist_found = True
+
+        # If this is the right artist, check for the track
+        if artist_found:
+            # For singles, check if the release title matches the track title
+            if string_match(release["title"], title):
+                return True
+
+            # For albums (or if title doesn't match), search within the release for the track
+            return search_album_for_track(driver, release["url"], title)
+
+    except Exception:
+        return False
+
+    return False

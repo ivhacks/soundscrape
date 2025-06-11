@@ -62,6 +62,14 @@ class TestSevendigitalSearch(unittest.TestCase):
             "https://us.7digital.com/artist/one-direction-1/release/midnight-memories-deluxe-3081541",
         )
 
+    def test_martin_garrix_dont_look_down(self):
+        """Test fallback search for a single track that doesn't appear in initial search"""
+        self._assert_url_in_results(
+            "Martin Garrix",
+            "Don't Look Down",
+            "https://us.7digital.com/artist/martin-garrix-feat-usher/release/dont-look-down-4265082",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

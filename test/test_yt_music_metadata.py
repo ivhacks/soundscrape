@@ -1,9 +1,11 @@
 import os
 import shutil
+import pytest
 from unittest import TestCase
 from youtube_downloader import get_yt_music_metadata, TrackMetadata
 
 class YTMusicMetadataTests(TestCase):
+    @pytest.mark.timeout(10)
     def test_mameyudoufu_i_dont_know_what_im_doing(self):
         link = "https://music.youtube.com/watch?v=meR1lgaP4ew"
         expected_metadata = TrackMetadata(
@@ -29,6 +31,7 @@ class YTMusicMetadataTests(TestCase):
         os.chdir("..")
         shutil.rmtree(dest_dir)
 
+    @pytest.mark.timeout(10)
     def test_atmozfears_release(self):
         link = "https://music.youtube.com/watch?v=B-7m0EfW7LM"
         expected_metadata = TrackMetadata(
@@ -50,3 +53,6 @@ class YTMusicMetadataTests(TestCase):
         self.assertEqual(result.featured_artists, expected_metadata.featured_artists)
         self.assertEqual(result.album, expected_metadata.album)
         self.assertEqual(result.year, expected_metadata.year)
+        
+        os.chdir("..")
+        shutil.rmtree(dest_dir)

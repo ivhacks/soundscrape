@@ -4,9 +4,13 @@ import sys
 from dataclasses import dataclass
 from typing import List, Optional
 from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions
+
+# Headless mode toggle - set to False to see the browser window
+HEADLESS = True
 
 # import .stagger
 sys.path.insert(0, os.path.join(os.getcwd(), "stagger"))
@@ -28,15 +32,25 @@ def get_yt_music_metadata(link: str) -> TrackMetadata:
     ALBUM_XPATH = "/html/body/ytmusic-app/ytmusic-app-layout/ytmusic-player-bar/div[2]/div[2]/span/span[2]/yt-formatted-string/a[2]"
     YEAR_XPATH = "/html/body/ytmusic-app/ytmusic-app-layout/ytmusic-player-bar/div[2]/div[2]/span/span[2]/yt-formatted-string/span[3]"
 
-    # driver = webdriver.Firefox()
-    driver = webdriver.Chrome()
+    # Configure Chrome options
+    chrome_options = Options()
+    if HEADLESS:
+        chrome_options.add_argument('--headless')
+        chrome_options.add_argument('--no-sandbox')
+        chrome_options.add_argument('--disable-dev-shm-usage')
+        chrome_options.add_argument('--disable-gpu')
+        chrome_options.add_argument('--window-size=1920,1080')
+        chrome_options.add_argument('--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
+    
+    driver = webdriver.Chrome(options=chrome_options)
     
     # ublock_origin_path = "../ublock_origin-1.43.0.xpi"
     # driver.install_addon(ublock_origin_path)
     
     driver.get(link)
 
-    wait_for_section = WebDriverWait(driver, 180)
+    # Reduced timeout to fit within test timeout
+    wait_for_section = WebDriverWait(driver, 8)
     wait_for_section.until(expected_conditions.presence_of_element_located((By.XPATH, ARTIST_XPATH)))
     
     title_tag = driver.find_element(By.XPATH, TITLE_XPATH)

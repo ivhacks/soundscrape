@@ -1,9 +1,5 @@
-import sys
-import os
-
-sys.path.insert(0, os.path.join(os.getcwd(), "stagger"))
-import stagger
-from stagger.id3 import *
+from stagger.stagger import *
+from stagger.stagger.id3 import *
 
 
 def get_title_and_artist_from_filename(filename):

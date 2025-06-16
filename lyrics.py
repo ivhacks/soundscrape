@@ -11,9 +11,8 @@ from fuzzywuzzy import fuzz  # Fuzzy string matching library
 
 from soup_url import soup_url
 
-sys.path.insert(0, os.path.join(os.getcwd(), "stagger"))
-import stagger
-from stagger.id3 import *
+from stagger.stagger import *
+from stagger.stagger.id3 import *
 
 LYRICS_CONTAINER_CLASS = "Lyrics__Container-sc-1ynbvzw-6"
 

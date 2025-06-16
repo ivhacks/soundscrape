@@ -9,12 +9,8 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions
 import requests
 from io import BytesIO
-import sys
-import os
-
-sys.path.insert(0, os.path.join(os.getcwd(), "stagger"))
-import stagger
-from stagger.id3 import *
+from stagger.stagger import *
+from stagger.stagger.id3 import *
 
 THUMBNAIL_SIZE = 200
 ZOOM_BOX_HEIGHT = 600

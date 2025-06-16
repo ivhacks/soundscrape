@@ -12,10 +12,8 @@ from selenium.webdriver.support import expected_conditions
 # Headless mode toggle - set to False to see the browser window
 HEADLESS = True
 
-# import .stagger
-sys.path.insert(0, os.path.join(os.getcwd(), "stagger"))
-import stagger
-from stagger.id3 import *
+from stagger.stagger import *
+from stagger.stagger.id3 import *
 
 
 @dataclass

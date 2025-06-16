@@ -9,7 +9,7 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions
 import requests
 from io import BytesIO
-from stagger.stagger import *
+import stagger.stagger as stagger
 from stagger.stagger.id3 import *
 
 THUMBNAIL_SIZE = 200

@@ -12,7 +12,7 @@ from selenium.webdriver.support import expected_conditions
 # Headless mode toggle - set to False to see the browser window
 HEADLESS = True
 
-from stagger.stagger import *
+import stagger.stagger as stagger
 from stagger.stagger.id3 import *
 
 

@@ -6,7 +6,7 @@ from youtube_downloader import get_yt_music_metadata, TrackMetadata
 
 
 class YTMusicMetadataTests(TestCase):
-    @pytest.mark.timeout(20)
+    @pytest.mark.timeout(30)
     def test_mameyudoufu_i_dont_know_what_im_doing(self):
         link = "https://music.youtube.com/watch?v=meR1lgaP4ew"
         expected_metadata = TrackMetadata(
@@ -32,7 +32,7 @@ class YTMusicMetadataTests(TestCase):
         os.chdir("..")
         shutil.rmtree(dest_dir)
 
-    @pytest.mark.timeout(20)
+    @pytest.mark.timeout(30)
     def test_atmozfears_release(self):
         link = "https://music.youtube.com/watch?v=B-7m0EfW7LM"
         expected_metadata = TrackMetadata(

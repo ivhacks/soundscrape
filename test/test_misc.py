@@ -10,9 +10,8 @@ from lyrics import (
     generate_lyrics_filename,
 )
 
-sys.path.insert(0, os.path.join(os.getcwd(), "stagger"))
-import stagger
-from stagger.id3 import *
+import stagger.stagger as stagger
+from stagger.stagger.id3 import *
 
 
 class MiscTests(TestCase):

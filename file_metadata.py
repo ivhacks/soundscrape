@@ -12,6 +12,27 @@ def get_title_and_artist_from_filename(filename):
     return (title, artist)
 
 
+def _read_or_create_tag(filename: str):
+    try:
+        # Open tag on song file
+        tag = stagger.read_tag(filename)
+    except:
+        # File had no tag, make a new one
+        tag = stagger.default_tag()
+    return tag
+
+
+def set_year(filename: str, year: int):
+    tag = _read_or_create_tag(filename)
+    tag["TYER"] = str(year)
+    tag.write(filename)
+
+
+def get_year(filename: str) -> int:
+    tag = stagger.read_tag(filename)
+    return int(tag.date)
+
+
 if __name__ == "__main__":
     if len(sys.argv) < 1:
         print("Please specify a file.")

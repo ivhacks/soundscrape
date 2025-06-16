@@ -1,6 +1,6 @@
 from lyrics import *
 from artwork import *
-from util import *
+from file_metadata import *
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:

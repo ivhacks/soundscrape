@@ -11,6 +11,7 @@ import requests
 from io import BytesIO
 import stagger.stagger as stagger
 from stagger.stagger.id3 import *
+import os
 
 THUMBNAIL_SIZE = 200
 ZOOM_BOX_HEIGHT = 600

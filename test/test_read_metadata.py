@@ -1,10 +1,19 @@
 from unittest import TestCase
+from file_metadata import *
 
 
 class TestReadMetadata(TestCase):
-    def test_read_year(self):
-        # test/test_files_read_metadata/2025.mp3
-        self.assertEqual(2025, 2025)
+    def test_get_year(self):
+        year = get_year("test/yeet.mp3")
+        self.assertEqual(year, 2025)
+
+    def test_set_year(self):
+        set_year("test/yeet.mp3", 2024)
+        year = get_year("test/yeet.mp3")
+        self.assertEqual(year, 2024)
+        set_year("test/yeet.mp3", 2025)
+        year = get_year("test/yeet.mp3")
+        self.assertEqual(year, 2025)
 
     def test_read_artist(self):
         # test/test_files_read_metadata/2025.mp3

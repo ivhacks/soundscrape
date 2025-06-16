@@ -1,11 +1,20 @@
-import os
-import shutil
 import pytest
 from unittest import TestCase
 from youtube_downloader import get_yt_music_metadata, TrackMetadata
 
 
 class YTMusicMetadataTests(TestCase):
+
+    def _assert_metadata_matches(self, link: str, expected_metadata: TrackMetadata):
+        result = get_yt_music_metadata(link)
+
+        # Test individual fields to be more flexible with YouTube changes
+        self.assertEqual(result.title, expected_metadata.title)
+        self.assertEqual(result.artists, expected_metadata.artists)
+        self.assertEqual(result.featured_artists, expected_metadata.featured_artists)
+        self.assertEqual(result.album, expected_metadata.album)
+        self.assertEqual(result.year, expected_metadata.year)
+
     @pytest.mark.timeout(30)
     def test_mameyudoufu_i_dont_know_what_im_doing(self):
         link = "https://music.youtube.com/watch?v=meR1lgaP4ew"
@@ -16,21 +25,7 @@ class YTMusicMetadataTests(TestCase):
             album="I don't know what I'm doing",
             year="2021",
         )
-        dest_dir = os.path.join(os.getcwd(), "temp")
-        if not os.path.isdir(dest_dir):
-            os.makedirs(dest_dir)
-        os.chdir("./temp")
-        result = get_yt_music_metadata(link)
-
-        # Test individual fields to be more flexible with YouTube changes
-        self.assertEqual(result.title, expected_metadata.title)
-        self.assertEqual(result.artists, expected_metadata.artists)
-        self.assertEqual(result.featured_artists, expected_metadata.featured_artists)
-        self.assertEqual(result.album, expected_metadata.album)
-        self.assertEqual(result.year, expected_metadata.year)
-
-        os.chdir("..")
-        shutil.rmtree(dest_dir)
+        self._assert_metadata_matches(link, expected_metadata)
 
     @pytest.mark.timeout(30)
     def test_atmozfears_release(self):
@@ -42,18 +37,4 @@ class YTMusicMetadataTests(TestCase):
             album="Release",
             year=None,
         )
-        dest_dir = os.path.join(os.getcwd(), "temp")
-        if not os.path.isdir(dest_dir):
-            os.makedirs(dest_dir)
-        os.chdir("./temp")
-        result = get_yt_music_metadata(link)
-
-        # Test individual fields to be more flexible with YouTube changes
-        self.assertEqual(result.title, expected_metadata.title)
-        self.assertEqual(result.artists, expected_metadata.artists)
-        self.assertEqual(result.featured_artists, expected_metadata.featured_artists)
-        self.assertEqual(result.album, expected_metadata.album)
-        self.assertEqual(result.year, expected_metadata.year)
-
-        os.chdir("..")
-        shutil.rmtree(dest_dir)
+        self._assert_metadata_matches(link, expected_metadata)

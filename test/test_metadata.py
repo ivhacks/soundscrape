@@ -1,5 +1,6 @@
 from unittest import TestCase
 from file_metadata import *
+import stagger.stagger as stagger
 
 
 class TestReadMetadata(TestCase):
@@ -14,6 +15,14 @@ class TestReadMetadata(TestCase):
         set_year("test/yeet.mp3", 2025)
         year = get_year("test/yeet.mp3")
         self.assertEqual(year, 2025)
+
+    def test_clear_year(self):
+        clear_year("test/yeet.mp3")
+
+        with self.assertRaises(stagger.NoTagError):
+            get_year("test/yeet.mp3")
+
+        set_year("test/yeet.mp3", 2025)
 
     def test_read_artist(self):
         # test/test_files_read_metadata/2025.mp3

@@ -12,7 +12,7 @@ def get_title_and_artist_from_filename(filename):
     return (title, artist)
 
 
-def _read_or_create_tag(filename: str):
+def _read_or_create_tag(filename: str) -> stagger.tags.Tag:
     try:
         # Open tag on song file
         tag = stagger.read_tag(filename)
@@ -24,13 +24,19 @@ def _read_or_create_tag(filename: str):
 
 def set_year(filename: str, year: int):
     tag = _read_or_create_tag(filename)
-    tag["TYER"] = str(year)
+    tag.date = str(year)
     tag.write(filename)
 
 
 def get_year(filename: str) -> int:
     tag = stagger.read_tag(filename)
     return int(tag.date)
+
+
+def clear_year(filename: str):
+    tag = stagger.read_tag(filename)
+    tag.date = ""
+    tag.write(filename)
 
 
 if __name__ == "__main__":

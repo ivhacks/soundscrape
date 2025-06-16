@@ -2,6 +2,7 @@ import stagger.stagger as stagger
 from stagger.stagger.id3 import *
 from PIL import Image
 from io import BytesIO
+import os
 
 
 def get_title_and_artist_from_filename(filename):
@@ -138,6 +139,25 @@ def get_cover_art(filename: str) -> Image.Image:
         return image
     except KeyError:
         raise stagger.NoTagError("APIC frame not found")
+
+
+def set_cover_art(filename: str, raw_image: bytes):
+    tag = _read_or_create_tag(filename)
+    image_path = filename + ".image"
+    with open(image_path, "wb") as f:
+        f.write(raw_image)
+    tag[APIC] = APIC(image_path)
+    tag.write(filename)
+    os.remove(image_path)
+
+
+def clear_cover_art(filename: str):
+    tag = stagger.read_tag(filename)
+    try:
+        del tag[APIC]
+    except KeyError:
+        pass
+    tag.write(filename)
 
 
 if __name__ == "__main__":

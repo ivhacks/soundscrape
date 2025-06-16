@@ -339,21 +339,6 @@ def search_cover_artwork_by_image(image: Image.Image):
     return (full_size_images_pillow, full_size_images_raw)
 
 
-def put_image_in_song_file(raw_image: bytes, filename: str):
-    tag = stagger.read_tag(filename)
-
-    image_path = filename + ".image"
-
-    # Write image to a file becuase the stagger APIC constructor only takes a file path
-    with open(image_path, "wb") as f:
-        f.write(raw_image)
-
-    tag[APIC] = APIC(image_path)
-    tag.write()
-
-    os.remove(image_path)
-
-
 if __name__ == "__main__":
     # # extracted_artwork = get_image_from_song_file("temp_artwork\\rick.mp3")
     # # searched_images_pillow, searched_images_raw = search_cover_artwork_by_image(extracted_artwork)

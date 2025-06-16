@@ -43,4 +43,4 @@ if __name__ == "__main__":
         )
         selector = CoverArtSelector(searched_images_pillow)
         chosen_image_index = selector.show_selection_window()
-        put_image_in_song_file(searched_images_raw[chosen_image_index], filename)
+        set_cover_art(filename, searched_images_raw[chosen_image_index])

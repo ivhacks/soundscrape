@@ -117,3 +117,25 @@ class TestReadMetadata(TestCase):
         expected_bytes = expected_image.tobytes()
 
         self.assertEqual(extracted_bytes, expected_bytes)
+
+    def test_set_cover_art(self):
+        with open("test/image.jpg", "rb") as f:
+            image_data = f.read()
+
+        set_cover_art("test/yeet.mp3", image_data)
+        extracted_image = get_cover_art("test/yeet.mp3")
+        expected_image = Image.open("test/image.jpg")
+
+        extracted_bytes = extracted_image.tobytes()
+        expected_bytes = expected_image.tobytes()
+
+        self.assertEqual(extracted_bytes, expected_bytes)
+
+    def test_clear_cover_art(self):
+        clear_cover_art("test/yeet.mp3")
+        with self.assertRaises(stagger.NoTagError):
+            get_cover_art("test/yeet.mp3")
+
+        with open("test/image.jpg", "rb") as f:
+            image_data = f.read()
+        set_cover_art("test/yeet.mp3", image_data)

@@ -12,8 +12,7 @@ from selenium.webdriver.support import expected_conditions
 # Headless mode toggle - set to False to see the browser window
 HEADLESS = True
 
-import stagger.stagger as stagger
-from stagger.stagger.id3 import *
+from file_metadata import set_song_title, set_artist, set_album_artist, set_album_title
 
 
 @dataclass
@@ -182,16 +181,12 @@ def process_link(link: str, cover_artwork: bool = False, music: bool = False):
     if music:
         metadata = get_yt_music_metadata(link)
 
-        # Open tag on song file
-        tag = stagger.default_tag()
-
-        tag["TIT2"] = metadata.title
-        tag["TPE1"] = metadata.artists[0]  # Artist
-        tag["TPE2"] = metadata.artists[0]  # Album artist
-        tag["TALB"] = metadata.album
-        # tag['TYER'] = metadata.year # TODO: It's complaining about this one
-
-        tag.write(newly_downloaded_file)
+        # Set metadata using our API
+        set_song_title(newly_downloaded_file, metadata.title)
+        set_artist(newly_downloaded_file, metadata.artists[0])
+        set_album_artist(newly_downloaded_file, metadata.artists[0])
+        set_album_title(newly_downloaded_file, metadata.album)
+        # TODO: Add year support when metadata.year is available
 
         # Search from back to front for "." indicating file extension
         # Front to back doesn't work if the title cotains e.g. "producer ft. vocalist"

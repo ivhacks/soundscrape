@@ -1,5 +1,10 @@
 import os
-from mutagen.easyid3 import *
+from file_metadata import (
+    get_song_title,
+    set_song_title,
+    get_album_title,
+    set_album_title,
+)
 
 
 # TODO: This whole script needs work
@@ -24,12 +29,13 @@ if __name__ == "__main__":
     for file in dir_list:
         if ".mp3" in file:
             print("doing " + file)
-            audio = EasyID3(os.path.join(os.getcwd(), "temp", file))  # open file
+            file_path = os.path.join(os.getcwd(), "temp", file)
 
-            audio["title"] = "" + clean(audio["title"][0])
-            audio["album"] = "" + clean(audio["album"][0])
+            title = get_song_title(file_path)
+            album = get_album_title(file_path)
 
-            audio.save()
+            set_song_title(file_path, clean(title))
+            set_album_title(file_path, clean(album))
             os.rename(
                 os.path.join(os.getcwd(), "temp", file),
                 os.path.join(os.getcwd(), "temp", clean(file) + ".mp3"),

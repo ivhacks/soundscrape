@@ -8,10 +8,7 @@ from lyrics import (
     search_term_preprocessing,
     generate_lyrics_filename,
 )
-from file_metadata import set_lyrics
-
-import stagger.stagger as stagger
-from stagger.stagger.id3 import *
+from file_metadata import set_lyrics, get_lyrics
 
 
 class MiscTests(TestCase):
@@ -73,8 +70,7 @@ class MiscTests(TestCase):
 
         set_lyrics(dest, lyrics)
 
-        tag = stagger.read_tag(dest)
-        tag_lyrics = tag["USLT"].text[0][4:]
+        tag_lyrics = get_lyrics(dest)
         self.assertEqual(tag_lyrics, lyrics)
         os.remove(dest)
         shutil.rmtree(dest_dir)

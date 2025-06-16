@@ -1,6 +1,5 @@
 from unittest import TestCase
 from file_metadata import *
-import stagger.stagger as stagger
 from PIL import Image
 
 
@@ -20,7 +19,7 @@ class TestReadMetadata(TestCase):
     def test_clear_year(self):
         clear_year("test/yeet.mp3")
 
-        with self.assertRaises(stagger.NoTagError):
+        with self.assertRaises(NoTagError):
             get_year("test/yeet.mp3")
 
         set_year("test/yeet.mp3", 2025)
@@ -48,7 +47,7 @@ class TestReadMetadata(TestCase):
 
     def test_clear_album_title(self):
         clear_album_title("test/yeet.mp3")
-        with self.assertRaises(stagger.NoTagError):
+        with self.assertRaises(NoTagError):
             get_album_title("test/yeet.mp3")
         set_album_title("test/yeet.mp3", "Test Album")
 
@@ -67,9 +66,28 @@ class TestReadMetadata(TestCase):
 
     def test_clear_artist(self):
         clear_artist("test/yeet.mp3")
-        with self.assertRaises(stagger.NoTagError):
+        with self.assertRaises(NoTagError):
             get_artist("test/yeet.mp3")
         set_artist("test/yeet.mp3", "Test Artist")
+
+    def test_get_album_artist(self):
+        set_album_artist("test/yeet.mp3", "Test Album Artist")
+        album_artist = get_album_artist("test/yeet.mp3")
+        self.assertEqual(album_artist, "Test Album Artist")
+
+    def test_set_album_artist(self):
+        set_album_artist("test/yeet.mp3", "Album Artist One")
+        album_artist = get_album_artist("test/yeet.mp3")
+        self.assertEqual(album_artist, "Album Artist One")
+        set_album_artist("test/yeet.mp3", "Album Artist Two")
+        album_artist = get_album_artist("test/yeet.mp3")
+        self.assertEqual(album_artist, "Album Artist Two")
+
+    def test_clear_album_artist(self):
+        clear_album_artist("test/yeet.mp3")
+        with self.assertRaises(NoTagError):
+            get_album_artist("test/yeet.mp3")
+        set_album_artist("test/yeet.mp3", "Test Album Artist")
 
     def test_get_song_title(self):
         set_song_title("test/yeet.mp3", "Test Song")
@@ -86,7 +104,7 @@ class TestReadMetadata(TestCase):
 
     def test_clear_song_title(self):
         clear_song_title("test/yeet.mp3")
-        with self.assertRaises(stagger.NoTagError):
+        with self.assertRaises(NoTagError):
             get_song_title("test/yeet.mp3")
         set_song_title("test/yeet.mp3", "Test Song")
 
@@ -105,7 +123,7 @@ class TestReadMetadata(TestCase):
 
     def test_clear_lyrics(self):
         clear_lyrics("test/yeet.mp3")
-        with self.assertRaises(stagger.NoTagError):
+        with self.assertRaises(NoTagError):
             get_lyrics("test/yeet.mp3")
         set_lyrics("test/yeet.mp3", "Test lyrics")
 
@@ -133,7 +151,7 @@ class TestReadMetadata(TestCase):
 
     def test_clear_cover_art(self):
         clear_cover_art("test/yeet.mp3")
-        with self.assertRaises(stagger.NoTagError):
+        with self.assertRaises(NoTagError):
             get_cover_art("test/yeet.mp3")
 
         with open("test/image.jpg", "rb") as f:

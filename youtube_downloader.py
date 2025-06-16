@@ -28,11 +28,11 @@ class TrackMetadata:
 def get_yt_music_metadata(
     link: str, driver: Optional[webdriver.Chrome] = None
 ) -> TrackMetadata:
+    import re
 
+    # XPaths for reliable element location
     TITLE_XPATH = "/html/body/ytmusic-app/ytmusic-app-layout/ytmusic-player-bar/div[2]/div[2]/yt-formatted-string"
     ARTIST_XPATH = "/html/body/ytmusic-app/ytmusic-app-layout/ytmusic-player-bar/div[2]/div[2]/span/span[2]/yt-formatted-string/a[1]"
-    ALBUM_XPATH = "/html/body/ytmusic-app/ytmusic-app-layout/ytmusic-player-bar/div[2]/div[2]/span/span[2]/yt-formatted-string/a[4]"
-    YEAR_XPATH = "/html/body/ytmusic-app/ytmusic-app-layout/ytmusic-player-bar/div[2]/div[2]/span/span[2]/yt-formatted-string/span[3]"
 
     # Use provided driver or create a new one
     driver_created = driver is None
@@ -47,73 +47,62 @@ def get_yt_music_metadata(
             chrome_options.add_argument(
                 "--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
             )
-
         driver = webdriver.Chrome(options=chrome_options)
 
     driver.get(link)
 
-    wait_for_section = WebDriverWait(driver, 20)
-    wait_for_section.until(
+    # Wait for content to load
+    wait = WebDriverWait(driver, 20)
+    wait.until(
         expected_conditions.presence_of_element_located((By.XPATH, ARTIST_XPATH))
     )
 
-    title_tag = driver.find_element(By.XPATH, TITLE_XPATH)
-    artist_tag = driver.find_element(By.XPATH, ARTIST_XPATH)
-    raw_title = title_tag.get_attribute("innerHTML")
-    raw_artist = artist_tag.get_attribute("innerHTML")
+    # Get basic metadata
+    title_element = driver.find_element(By.XPATH, TITLE_XPATH)
+    artist_element = driver.find_element(By.XPATH, ARTIST_XPATH)
+    raw_title = title_element.get_attribute("innerHTML").strip()
+    raw_artist = artist_element.get_attribute("innerHTML").strip()
 
-    # Try to find album by examining all links in the player bar
-    # The album is typically the last link, after artist(s) and featured artist(s)
-    try:
-        all_links = driver.find_elements(
-            By.XPATH,
-            "/html/body/ytmusic-app/ytmusic-app-layout/ytmusic-player-bar/div[2]/div[2]/span/span[2]/yt-formatted-string/a",
-        )
-        if len(all_links) >= 2:
-            # The album is usually the last link
-            raw_album = all_links[-1].get_attribute("innerHTML")
-        else:
-            # Fallback to the old approach
-            album_tag = driver.find_element(By.XPATH, ALBUM_XPATH)
-            raw_album = album_tag.get_attribute("innerHTML")
-    except:
+    # Get album (last link in the player bar)
+    all_links = driver.find_elements(
+        By.XPATH,
+        "/html/body/ytmusic-app/ytmusic-app-layout/ytmusic-player-bar/div[2]/div[2]/span/span[2]/yt-formatted-string/a",
+    )
+    if len(all_links) >= 2:
+        raw_album = all_links[-1].get_attribute("innerHTML").strip()
+    else:
         raw_album = raw_title
 
-    # Try to get year separately since it might not always be available
-    try:
-        year_tag = driver.find_element(By.XPATH, YEAR_XPATH)
-        raw_year = year_tag.get_attribute("innerHTML").strip()
+    # Get year (search all spans for 4-digit year)
+    year = None
+    all_spans = driver.find_elements(
+        By.XPATH,
+        "/html/body/ytmusic-app/ytmusic-app-layout/ytmusic-player-bar/div[2]/div[2]/span/span[2]/yt-formatted-string/span",
+    )
+    for span in all_spans:
+        span_text = span.get_attribute("innerHTML").strip()
+        year_match = re.search(r"\b(\d{4})\b", span_text)
+        if year_match:
+            year = int(year_match.group(1))
+            break
 
-        # If the current span doesn't have the year, check other spans
-        import re
-
-        if raw_year == "•" or not re.search(r"\b(\d{4})\b", raw_year):
-            all_spans = driver.find_elements(
-                By.XPATH,
-                "/html/body/ytmusic-app/ytmusic-app-layout/ytmusic-player-bar/div[2]/div[2]/span/span[2]/yt-formatted-string/span",
-            )
-            for span in all_spans:
-                span_text = span.get_attribute("innerHTML").strip()
-                year_match = re.search(r"\b(\d{4})\b", span_text)
-                if year_match:
-                    year = int(year_match.group(1))
-                    break
-            else:
-                year = None
-        else:
-            # Try to extract year from the text (might contain other characters)
-            year_match = re.search(r"\b(\d{4})\b", raw_year)
-            year = int(year_match.group(1)) if year_match else None
-    except:
-        year = None
-
-    # Only close driver if we created it
     if driver_created:
         driver.close()
 
-    title, artists, featured_artists, album = _parse_youtube_metadata(
-        raw_title, raw_artist, raw_album, link
-    )
+    # Parse title and extract featured artists
+    title, featured_artists, main_artist = _parse_title_and_featured(raw_title)
+
+    # Use extracted artist from title if available, otherwise use scraped artist
+    if main_artist:
+        artists = [main_artist]
+    else:
+        artists = [raw_artist]
+
+    # Fix album if it matches the raw title - use cleaned title instead
+    if raw_album == raw_title:
+        album = title
+    else:
+        album = raw_album
 
     return TrackMetadata(
         title=title,
@@ -124,78 +113,60 @@ def get_yt_music_metadata(
     )
 
 
-def _parse_youtube_metadata(raw_title: str, raw_artist: str, raw_album: str, link: str):
-    """Parse and clean YouTube metadata into structured format"""
+def _parse_title_and_featured(raw_title: str):
+    """Clean title and extract featured artists with improved splitting"""
     import re
 
-    # Clean up common YouTube title patterns
     title = raw_title
+    featured_artists = []
+    main_artist = None
+
+    # Handle "Artist ft. Featured - Song Title" format first
+    if " - " in title and re.search(r"\bft\.?\s", title, re.IGNORECASE):
+        parts = title.split(" - ", 1)
+        if len(parts) == 2:
+            artist_part, title = parts[0].strip(), parts[1].strip()
+            # Extract main artist and featured artists from the artist part
+            feat_match = re.search(r"(.+?)\s+ft\.?\s+(.+)$", artist_part, re.IGNORECASE)
+            if feat_match:
+                main_artist = feat_match.group(1).strip()
+                feat_text = feat_match.group(2).strip()
+
+                # Split featured artists on commas, semicolons, and 'and'
+                raw_artists = re.split(
+                    r"[,;]|\s+and\s+", feat_text, flags=re.IGNORECASE
+                )
+                featured_artists = []
+                for artist in raw_artists:
+                    clean_artist = artist.strip()
+                    if clean_artist:
+                        featured_artists.append(clean_artist)
 
     # Remove common suffixes
     title = re.sub(r"\s*\(Official.*?\).*$", "", title, flags=re.IGNORECASE)
-    title = re.sub(r"\s*\(Music Video\).*$", "", title, flags=re.IGNORECASE)
-    title = re.sub(r"\s*\(Lyric Video\).*$", "", title, flags=re.IGNORECASE)
+    title = re.sub(
+        r"\s*\((?:Music|Lyric) Video.*?\).*$", "", title, flags=re.IGNORECASE
+    )
     title = re.sub(r"\s*\(Audio\).*$", "", title, flags=re.IGNORECASE)
 
-    # Initialize default values
-    artists = [raw_artist] if raw_artist else []
-    featured_artists = []
+    # Extract featured artists from parentheses format if not already found
+    if not featured_artists:
+        feat_match = re.search(r"\((?:feat|ft)\.?\s*([^)]+)\)", title, re.IGNORECASE)
+        if feat_match:
+            feat_text = feat_match.group(1)
 
-    # Handle specific patterns based on URL or title structure
-    if "B-7m0EfW7LM" in link:  # Atmozfears - Release track
-        # Parse "Atmozfears ft. David Spekter - Release" format
-        if " - " in title:
-            artist_part, song_part = title.split(" - ", 1)
-            title = song_part.strip()
+            # Split featured artists on commas, semicolons, and 'and'
+            raw_artists = re.split(r"[,;]|\s+and\s+", feat_text, flags=re.IGNORECASE)
+            featured_artists = []
+            for artist in raw_artists:
+                clean_artist = artist.strip()
+                if clean_artist:
+                    featured_artists.append(clean_artist)
 
-            # Extract main artist and featured artist from artist_part
-            if " ft. " in artist_part:
-                main_artist, feat_artist = artist_part.split(" ft. ", 1)
-                artists = [main_artist.strip()]
-                featured_artists = _split_featured_artists(feat_artist.strip())
-            elif " feat. " in artist_part:
-                main_artist, feat_artist = artist_part.split(" feat. ", 1)
-                artists = [main_artist.strip()]
-                featured_artists = _split_featured_artists(feat_artist.strip())
-    else:
-        # General parsing for other tracks
-        # Look for featuring patterns in title
-        feat_patterns = [
-            r"\b(?:ft\.?|feat\.?|featuring)\s+([^()\[\]]+?)(?:\s*[\(\[]|$)",
-            r"\((?:ft\.?|feat\.?|featuring)\s+([^)]+)\)",
-            r"\[(?:ft\.?|feat\.?|featuring)\s+([^\]]+)\]",
-        ]
+    # Remove featuring info from title
+    title = re.sub(r"\s*\((?:feat|ft)\.?[^)]+\)", "", title, flags=re.IGNORECASE)
 
-        for pattern in feat_patterns:
-            match = re.search(pattern, title, re.IGNORECASE)
-            if match:
-                feat_text = match.group(1).strip()
-                featured_artists = _split_featured_artists(feat_text)
-                # Remove the featuring part from title
-                title = re.sub(pattern, "", title, flags=re.IGNORECASE).strip()
-                break
-
-    # Clean up album name
-    album = raw_album
-    if album == raw_title:
-        album = title  # Use cleaned title as album if they were the same
-
-    # Final cleanup
-    title = title.strip()
-    album = album.strip()
-
-    return title, artists, featured_artists, album
-
-
-def _split_featured_artists(feat_text: str) -> List[str]:
-    """Split featured artists text on commas, semicolons, and 'and'"""
-    import re
-
-    # Split on commas, semicolons, and the word "and" (with word boundaries)
-    artists = re.split(r"[,;]|\s+and\s+", feat_text, flags=re.IGNORECASE)
-
-    # Clean up each artist name and filter out empty strings
-    return [artist.strip() for artist in artists if artist.strip()]
+    return title.strip(), featured_artists, main_artist
 
 
 def process_link(link: str, cover_artwork: bool = False, music: bool = False):
@@ -230,10 +201,10 @@ def process_link(link: str, cover_artwork: bool = False, music: bool = False):
         # TODO: Add year support when metadata.year is available
 
         # Search from back to front for "." indicating file extension
-        # Front to back doesn't work if the title cotains e.g. "producer ft. vocalist"
-        final_filename = (
-            metadata.title + newly_downloaded_file[newly_downloaded_file.rfind(".") :]
-        )
+        # Front to back doesn't work if the title contains e.g. "producer ft. vocalist"
+        dot_position = newly_downloaded_file.rfind(".")
+        file_extension = newly_downloaded_file[dot_position:]
+        final_filename = metadata.title + file_extension
 
         # If a file with the destination name already exists, delete it
         if os.path.exists(final_filename):
@@ -269,16 +240,20 @@ if __name__ == "__main__":
     # Download songs to the temp folder
     os.chdir("./temp")
 
-    if (
-        args.target[:7] == "http://"
-        or args.target[:8] == "https://"
-        or args.target[:4] == "www."
-    ):
+    # Check if the target is a URL or a file path
+    is_http_url = args.target.startswith("http://")
+    is_https_url = args.target.startswith("https://")
+    is_www_url = args.target.startswith("www.")
+    is_url = is_http_url or is_https_url or is_www_url
+
+    if is_url:
         # URL
         process_link(args.target, args.cover_artwork, args.music)
     else:
         # Path to file containing list of links
-        with open(os.path.join(os.getcwd(), args.target), "r") as f:
+        current_directory = os.getcwd()
+        file_path = os.path.join(current_directory, args.target)
+        with open(file_path, "r") as f:
             lines = f.readlines()
 
         for line in lines:

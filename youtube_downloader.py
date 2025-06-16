@@ -45,12 +45,8 @@ def get_yt_music_metadata(link: str) -> TrackMetadata:
 
     driver = webdriver.Chrome(options=chrome_options)
 
-    # ublock_origin_path = "../ublock_origin-1.43.0.xpi"
-    # driver.install_addon(ublock_origin_path)
-
     driver.get(link)
 
-    # Reduced timeout to fit within test timeout
     wait_for_section = WebDriverWait(driver, 8)
     wait_for_section.until(
         expected_conditions.presence_of_element_located((By.XPATH, ARTIST_XPATH))
@@ -67,16 +63,15 @@ def get_yt_music_metadata(link: str) -> TrackMetadata:
         album_tag = driver.find_element(By.XPATH, ALBUM_XPATH)
         year_tag = driver.find_element(By.XPATH, YEAR_XPATH)
         raw_album = album_tag.get_attribute("innerHTML")
-        raw_year = year_tag.get_attribute("innerHTML")
+        year = int(year_tag.get_attribute("innerHTML"))
     except:
         raw_album = raw_title
-        raw_year = None
+        year = None
 
     driver.close()
 
-    # Enhanced parsing logic to clean up YouTube's messy data
-    title, artists, featured_artists, album, year = _parse_youtube_metadata(
-        raw_title, raw_artist, raw_album, raw_year, link
+    title, artists, featured_artists, album = _parse_youtube_metadata(
+        raw_title, raw_artist, raw_album, link
     )
 
     return TrackMetadata(
@@ -88,9 +83,7 @@ def get_yt_music_metadata(link: str) -> TrackMetadata:
     )
 
 
-def _parse_youtube_metadata(
-    raw_title: str, raw_artist: str, raw_album: str, raw_year: str, link: str
-):
+def _parse_youtube_metadata(raw_title: str, raw_artist: str, raw_album: str, link: str):
     """Parse and clean YouTube metadata into structured format"""
     import re
 
@@ -145,16 +138,11 @@ def _parse_youtube_metadata(
     if album == raw_title:
         album = title  # Use cleaned title as album if they were the same
 
-    # Handle year
-    year = raw_year
-    if year == "idk cursor fill this in pls":
-        year = None  # Convert placeholder to None
-
     # Final cleanup
     title = title.strip()
     album = album.strip()
 
-    return title, artists, featured_artists, album, year
+    return title, artists, featured_artists, album
 
 
 def process_link(link: str, cover_artwork: bool = False, music: bool = False):

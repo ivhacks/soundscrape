@@ -23,7 +23,7 @@ class YTMusicMetadataTests(TestCase):
             artists=["Mameyudoufu"],
             featured_artists=[],
             album="I don't know what I'm doing",
-            year="2021",
+            year=2021,
         )
         self._assert_metadata_matches(link, expected_metadata)
 
@@ -36,5 +36,17 @@ class YTMusicMetadataTests(TestCase):
             featured_artists=["David Spekter"],
             album="Release",
             year=None,
+        )
+        self._assert_metadata_matches(link, expected_metadata)
+
+    @pytest.mark.timeout(30)
+    def test_ghosts_n_stuff(self):
+        link = "https://music.youtube.com/watch?v=MUBf64EQA5I"
+        expected_metadata = TrackMetadata(
+            title="Ghosts 'n' Stuff (Extended Mix)",
+            artists=["deadmau5"],
+            featured_artists=["Rob Swire"],
+            album="For Lack of A Better Name (The Extended Mixes)",
+            year=2009,
         )
         self._assert_metadata_matches(link, expected_metadata)

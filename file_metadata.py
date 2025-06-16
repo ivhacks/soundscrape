@@ -101,6 +101,33 @@ def clear_song_title(filename: str):
     tag.write(filename)
 
 
+def set_lyrics(filename: str, lyrics: str):
+    ascii_lyrics = lyrics.encode("ascii", "ignore")
+    tag = _read_or_create_tag(filename)
+    tag["USLT"] = "eng|" + ascii_lyrics.decode()
+    tag.write(filename)
+
+
+def get_lyrics(filename: str) -> str:
+    tag = stagger.read_tag(filename)
+    try:
+        lyrics_data = tag["USLT"].text[0]
+        if lyrics_data.startswith("eng|"):
+            return lyrics_data[4:]
+        return lyrics_data
+    except KeyError:
+        raise stagger.NoTagError("USLT frame not found")
+
+
+def clear_lyrics(filename: str):
+    tag = stagger.read_tag(filename)
+    try:
+        del tag["USLT"]
+    except KeyError:
+        pass
+    tag.write(filename)
+
+
 if __name__ == "__main__":
     if len(sys.argv) < 1:
         print("Please specify a file.")

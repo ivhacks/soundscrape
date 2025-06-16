@@ -32,7 +32,7 @@ if __name__ == "__main__":
 
             lyrics = get_lyrics_genius(cleaned_artist, cleaned_title)
             edited_lyrics = notepad(cleaned_artist, cleaned_title, lyrics)
-            add_lyrics_to_song_file(filename, edited_lyrics)
+            set_lyrics(filename, edited_lyrics)
         except:
             print(f"Failed to retrieve lyrics for {scanned_artist} - {scanned_title}.")
 

@@ -88,3 +88,22 @@ class TestReadMetadata(TestCase):
         with self.assertRaises(stagger.NoTagError):
             get_song_title("test/yeet.mp3")
         set_song_title("test/yeet.mp3", "Test Song")
+
+    def test_get_lyrics(self):
+        set_lyrics("test/yeet.mp3", "Test lyrics content")
+        lyrics = get_lyrics("test/yeet.mp3")
+        self.assertEqual(lyrics, "Test lyrics content")
+
+    def test_set_lyrics(self):
+        set_lyrics("test/yeet.mp3", "Lyrics One")
+        lyrics = get_lyrics("test/yeet.mp3")
+        self.assertEqual(lyrics, "Lyrics One")
+        set_lyrics("test/yeet.mp3", "Lyrics Two")
+        lyrics = get_lyrics("test/yeet.mp3")
+        self.assertEqual(lyrics, "Lyrics Two")
+
+    def test_clear_lyrics(self):
+        clear_lyrics("test/yeet.mp3")
+        with self.assertRaises(stagger.NoTagError):
+            get_lyrics("test/yeet.mp3")
+        set_lyrics("test/yeet.mp3", "Test lyrics")

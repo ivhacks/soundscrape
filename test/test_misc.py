@@ -3,12 +3,12 @@ import sys
 import shutil
 from unittest import TestCase
 from lyrics import (
-    add_lyrics_to_song_file,
     clean_artist,
     clean_title,
     search_term_preprocessing,
     generate_lyrics_filename,
 )
+from file_metadata import set_lyrics
 
 import stagger.stagger as stagger
 from stagger.stagger.id3 import *
@@ -71,7 +71,7 @@ class MiscTests(TestCase):
 
         lyrics = "yeet"
 
-        add_lyrics_to_song_file(dest, lyrics)
+        set_lyrics(dest, lyrics)
 
         tag = stagger.read_tag(dest)
         tag_lyrics = tag["USLT"].text[0][4:]

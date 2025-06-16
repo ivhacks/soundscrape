@@ -50,3 +50,15 @@ class YTMusicMetadataTests(TestCase):
             year=2009,
         )
         self._assert_metadata_matches(link, expected_metadata)
+
+    @pytest.mark.timeout(30)
+    def test_clarity(self):
+        link = "https://music.youtube.com/watch?v=Lur-rvf6A1c"
+        expected_metadata = TrackMetadata(
+            title="Clarity",
+            artists=["Zedd"],
+            featured_artists=["Foxes"],
+            album="Clarity",
+            year=2012,
+        )
+        self._assert_metadata_matches(link, expected_metadata)

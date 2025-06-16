@@ -10,6 +10,7 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions
 
 # Headless mode toggle - set to False to see the browser window
+# Note: This is not used in the test suite, there's another toggle in test_yt_music_metadata.py
 HEADLESS = True
 
 from file_metadata import set_song_title, set_artist, set_album_artist, set_album_title
@@ -24,26 +25,30 @@ class TrackMetadata:
     year: Optional[str] = None
 
 
-def get_yt_music_metadata(link: str) -> TrackMetadata:
+def get_yt_music_metadata(
+    link: str, driver: Optional[webdriver.Chrome] = None
+) -> TrackMetadata:
 
     TITLE_XPATH = "/html/body/ytmusic-app/ytmusic-app-layout/ytmusic-player-bar/div[2]/div[2]/yt-formatted-string"
     ARTIST_XPATH = "/html/body/ytmusic-app/ytmusic-app-layout/ytmusic-player-bar/div[2]/div[2]/span/span[2]/yt-formatted-string/a[1]"
     ALBUM_XPATH = "/html/body/ytmusic-app/ytmusic-app-layout/ytmusic-player-bar/div[2]/div[2]/span/span[2]/yt-formatted-string/a[2]"
     YEAR_XPATH = "/html/body/ytmusic-app/ytmusic-app-layout/ytmusic-player-bar/div[2]/div[2]/span/span[2]/yt-formatted-string/span[3]"
 
-    # Configure Chrome options
-    chrome_options = Options()
-    if HEADLESS:
-        chrome_options.add_argument("--headless")
-        chrome_options.add_argument("--no-sandbox")
-        chrome_options.add_argument("--disable-dev-shm-usage")
-        chrome_options.add_argument("--disable-gpu")
-        chrome_options.add_argument("--window-size=1920,1080")
-        chrome_options.add_argument(
-            "--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-        )
+    # Use provided driver or create a new one
+    driver_created = driver is None
+    if driver_created:
+        chrome_options = Options()
+        if HEADLESS:
+            chrome_options.add_argument("--headless")
+            chrome_options.add_argument("--no-sandbox")
+            chrome_options.add_argument("--disable-dev-shm-usage")
+            chrome_options.add_argument("--disable-gpu")
+            chrome_options.add_argument("--window-size=1920,1080")
+            chrome_options.add_argument(
+                "--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            )
 
-    driver = webdriver.Chrome(options=chrome_options)
+        driver = webdriver.Chrome(options=chrome_options)
 
     driver.get(link)
 
@@ -68,7 +73,9 @@ def get_yt_music_metadata(link: str) -> TrackMetadata:
         raw_album = raw_title
         year = None
 
-    driver.close()
+    # Only close driver if we created it
+    if driver_created:
+        driver.close()
 
     title, artists, featured_artists, album = _parse_youtube_metadata(
         raw_title, raw_artist, raw_album, link

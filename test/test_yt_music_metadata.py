@@ -1,12 +1,38 @@
 import pytest
 from unittest import TestCase
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 from youtube_downloader import get_yt_music_metadata, TrackMetadata
+
+HEADLESS = True
 
 
 class YTMusicMetadataTests(TestCase):
+    driver = None
+
+    @classmethod
+    def setUpClass(cls):
+        # Create a shared driver instance for all tests
+        chrome_options = Options()
+        if HEADLESS:
+            chrome_options.add_argument("--headless")
+            chrome_options.add_argument("--no-sandbox")
+            chrome_options.add_argument("--disable-dev-shm-usage")
+            chrome_options.add_argument("--disable-gpu")
+            chrome_options.add_argument("--window-size=1920,1080")
+            chrome_options.add_argument(
+                "--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            )
+        cls.driver = webdriver.Chrome(options=chrome_options)
+
+    @classmethod
+    def tearDownClass(cls):
+        # Clean up the shared driver
+        if cls.driver:
+            cls.driver.quit()
 
     def _assert_metadata_matches(self, link: str, expected_metadata: TrackMetadata):
-        result = get_yt_music_metadata(link)
+        result = get_yt_music_metadata(link, self.driver)
 
         # Test individual fields to be more flexible with YouTube changes
         self.assertEqual(result.title, expected_metadata.title)

@@ -88,3 +88,17 @@ class YTMusicMetadataTests(TestCase):
             year=2012,
         )
         self._assert_metadata_matches(link, expected_metadata)
+
+
+    @pytest.mark.timeout(30)
+    def test_dont_you_worry_child(self):
+        link = "https://music.youtube.com/watch?v=3mWbRB3Y4R8"
+        expected_metadata = TrackMetadata(
+            title="Don't You Worry Child (Radio Edit)",
+            artists=["Swedish House Mafia"],
+            featured_artists=["John Martin"],
+            album="Don't You Worry Child",
+            year=2012,
+        )
+        self._assert_metadata_matches(link, expected_metadata)
+

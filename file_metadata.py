@@ -341,9 +341,7 @@ def clear_cover_art(filename: str):
             del audiofile[key]
     else:
         # For FLAC and other formats
-        if hasattr(audiofile, "pictures"):
-            audiofile.pictures = []
-        elif hasattr(audiofile, "clear_pictures"):
+        if hasattr(audiofile, "clear_pictures"):
             audiofile.clear_pictures()
     audiofile.save()
 

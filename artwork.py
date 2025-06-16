@@ -339,18 +339,6 @@ def search_cover_artwork_by_image(image: Image.Image):
     return (full_size_images_pillow, full_size_images_raw)
 
 
-def get_image_from_song_file(filename: str) -> Image.Image:
-    tag = stagger.read_tag(filename)
-
-    # Extract raw image bytes from metadata
-    image_bytes = tag[APIC][0].data
-
-    # Create pillow image
-    image = Image.open(BytesIO(image_bytes))
-
-    return image
-
-
 def put_image_in_song_file(raw_image: bytes, filename: str):
     tag = stagger.read_tag(filename)
 

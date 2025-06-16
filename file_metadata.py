@@ -1,5 +1,7 @@
 import stagger.stagger as stagger
 from stagger.stagger.id3 import *
+from PIL import Image
+from io import BytesIO
 
 
 def get_title_and_artist_from_filename(filename):
@@ -126,6 +128,16 @@ def clear_lyrics(filename: str):
     except KeyError:
         pass
     tag.write(filename)
+
+
+def get_cover_art(filename: str) -> Image.Image:
+    tag = stagger.read_tag(filename)
+    try:
+        image_bytes = tag[APIC][0].data
+        image = Image.open(BytesIO(image_bytes))
+        return image
+    except KeyError:
+        raise stagger.NoTagError("APIC frame not found")
 
 
 if __name__ == "__main__":

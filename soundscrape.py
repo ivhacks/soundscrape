@@ -37,7 +37,7 @@ if __name__ == "__main__":
             print(f"Failed to retrieve lyrics for {scanned_artist} - {scanned_title}.")
 
         # Do cover artwork
-        extracted_artwork = get_image_from_song_file(filename)
+        extracted_artwork = get_cover_art(filename)
         searched_images_pillow, searched_images_raw = search_cover_artwork_by_image(
             extracted_artwork
         )

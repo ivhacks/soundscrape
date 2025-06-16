@@ -1,6 +1,7 @@
 from unittest import TestCase
 from file_metadata import *
 import stagger.stagger as stagger
+from PIL import Image
 
 
 class TestReadMetadata(TestCase):
@@ -107,3 +108,12 @@ class TestReadMetadata(TestCase):
         with self.assertRaises(stagger.NoTagError):
             get_lyrics("test/yeet.mp3")
         set_lyrics("test/yeet.mp3", "Test lyrics")
+
+    def test_get_cover_art(self):
+        extracted_image = get_cover_art("test/nolimit.mp3")
+        expected_image = Image.open("test/image.jpg")
+
+        extracted_bytes = extracted_image.tobytes()
+        expected_bytes = expected_image.tobytes()
+
+        self.assertEqual(extracted_bytes, expected_bytes)

@@ -31,7 +31,7 @@ def get_yt_music_metadata(
 
     TITLE_XPATH = "/html/body/ytmusic-app/ytmusic-app-layout/ytmusic-player-bar/div[2]/div[2]/yt-formatted-string"
     ARTIST_XPATH = "/html/body/ytmusic-app/ytmusic-app-layout/ytmusic-player-bar/div[2]/div[2]/span/span[2]/yt-formatted-string/a[1]"
-    ALBUM_XPATH = "/html/body/ytmusic-app/ytmusic-app-layout/ytmusic-player-bar/div[2]/div[2]/span/span[2]/yt-formatted-string/a[2]"
+    ALBUM_XPATH = "/html/body/ytmusic-app/ytmusic-app-layout/ytmusic-player-bar/div[2]/div[2]/span/span[2]/yt-formatted-string/a[4]"
     YEAR_XPATH = "/html/body/ytmusic-app/ytmusic-app-layout/ytmusic-player-bar/div[2]/div[2]/span/span[2]/yt-formatted-string/span[3]"
 
     # Use provided driver or create a new one
@@ -52,7 +52,7 @@ def get_yt_music_metadata(
 
     driver.get(link)
 
-    wait_for_section = WebDriverWait(driver, 8)
+    wait_for_section = WebDriverWait(driver, 20)
     wait_for_section.until(
         expected_conditions.presence_of_element_located((By.XPATH, ARTIST_XPATH))
     )
@@ -62,15 +62,49 @@ def get_yt_music_metadata(
     raw_title = title_tag.get_attribute("innerHTML")
     raw_artist = artist_tag.get_attribute("innerHTML")
 
-    # For singles, finding album will fail.
-    # And also year for some reason, I guess it displays year for albums only
+    # Try to find album by examining all links in the player bar
+    # The album is typically the last link, after artist(s) and featured artist(s)
     try:
-        album_tag = driver.find_element(By.XPATH, ALBUM_XPATH)
-        year_tag = driver.find_element(By.XPATH, YEAR_XPATH)
-        raw_album = album_tag.get_attribute("innerHTML")
-        year = int(year_tag.get_attribute("innerHTML"))
+        all_links = driver.find_elements(
+            By.XPATH,
+            "/html/body/ytmusic-app/ytmusic-app-layout/ytmusic-player-bar/div[2]/div[2]/span/span[2]/yt-formatted-string/a",
+        )
+        if len(all_links) >= 2:
+            # The album is usually the last link
+            raw_album = all_links[-1].get_attribute("innerHTML")
+        else:
+            # Fallback to the old approach
+            album_tag = driver.find_element(By.XPATH, ALBUM_XPATH)
+            raw_album = album_tag.get_attribute("innerHTML")
     except:
         raw_album = raw_title
+
+    # Try to get year separately since it might not always be available
+    try:
+        year_tag = driver.find_element(By.XPATH, YEAR_XPATH)
+        raw_year = year_tag.get_attribute("innerHTML").strip()
+
+        # If the current span doesn't have the year, check other spans
+        import re
+
+        if raw_year == "•" or not re.search(r"\b(\d{4})\b", raw_year):
+            all_spans = driver.find_elements(
+                By.XPATH,
+                "/html/body/ytmusic-app/ytmusic-app-layout/ytmusic-player-bar/div[2]/div[2]/span/span[2]/yt-formatted-string/span",
+            )
+            for span in all_spans:
+                span_text = span.get_attribute("innerHTML").strip()
+                year_match = re.search(r"\b(\d{4})\b", span_text)
+                if year_match:
+                    year = int(year_match.group(1))
+                    break
+            else:
+                year = None
+        else:
+            # Try to extract year from the text (might contain other characters)
+            year_match = re.search(r"\b(\d{4})\b", raw_year)
+            year = int(year_match.group(1)) if year_match else None
+    except:
         year = None
 
     # Only close driver if we created it
@@ -118,11 +152,11 @@ def _parse_youtube_metadata(raw_title: str, raw_artist: str, raw_album: str, lin
             if " ft. " in artist_part:
                 main_artist, feat_artist = artist_part.split(" ft. ", 1)
                 artists = [main_artist.strip()]
-                featured_artists = [feat_artist.strip()]
+                featured_artists = _split_featured_artists(feat_artist.strip())
             elif " feat. " in artist_part:
                 main_artist, feat_artist = artist_part.split(" feat. ", 1)
                 artists = [main_artist.strip()]
-                featured_artists = [feat_artist.strip()]
+                featured_artists = _split_featured_artists(feat_artist.strip())
     else:
         # General parsing for other tracks
         # Look for featuring patterns in title
@@ -135,7 +169,8 @@ def _parse_youtube_metadata(raw_title: str, raw_artist: str, raw_album: str, lin
         for pattern in feat_patterns:
             match = re.search(pattern, title, re.IGNORECASE)
             if match:
-                featured_artists = [match.group(1).strip()]
+                feat_text = match.group(1).strip()
+                featured_artists = _split_featured_artists(feat_text)
                 # Remove the featuring part from title
                 title = re.sub(pattern, "", title, flags=re.IGNORECASE).strip()
                 break
@@ -150,6 +185,17 @@ def _parse_youtube_metadata(raw_title: str, raw_artist: str, raw_album: str, lin
     album = album.strip()
 
     return title, artists, featured_artists, album
+
+
+def _split_featured_artists(feat_text: str) -> List[str]:
+    """Split featured artists text on commas, semicolons, and 'and'"""
+    import re
+
+    # Split on commas, semicolons, and the word "and" (with word boundaries)
+    artists = re.split(r"[,;]|\s+and\s+", feat_text, flags=re.IGNORECASE)
+
+    # Clean up each artist name and filter out empty strings
+    return [artist.strip() for artist in artists if artist.strip()]
 
 
 def process_link(link: str, cover_artwork: bool = False, music: bool = False):

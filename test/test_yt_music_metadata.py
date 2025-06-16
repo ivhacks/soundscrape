@@ -4,7 +4,7 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from youtube_downloader import get_yt_music_metadata, TrackMetadata
 
-HEADLESS = True
+HEADLESS = False
 
 
 class YTMusicMetadataTests(TestCase):
@@ -89,7 +89,6 @@ class YTMusicMetadataTests(TestCase):
         )
         self._assert_metadata_matches(link, expected_metadata)
 
-
     @pytest.mark.timeout(30)
     def test_dont_you_worry_child(self):
         link = "https://music.youtube.com/watch?v=3mWbRB3Y4R8"
@@ -102,3 +101,14 @@ class YTMusicMetadataTests(TestCase):
         )
         self._assert_metadata_matches(link, expected_metadata)
 
+    @pytest.mark.timeout(30)
+    def test_get_lucky(self):
+        link = "https://music.youtube.com/watch?v=4D7u5KF7SP8"
+        expected_metadata = TrackMetadata(
+            title="Get Lucky",
+            artists=["Daft Punk"],
+            featured_artists=["Pharrell Williams", "Nile Rodgers"],
+            album="Random Access Memories",
+            year=2013,
+        )
+        self._assert_metadata_matches(link, expected_metadata)

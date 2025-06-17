@@ -112,3 +112,27 @@ class YTMusicMetadataTests(TestCase):
             year=2013,
         )
         self._assert_metadata_matches(link, expected_metadata)
+
+    @pytest.mark.timeout(30)
+    def test_i_remember(self):
+        link = "https://music.youtube.com/watch?v=9BND-QKR-7c"
+        expected_metadata = TrackMetadata(
+            title="I Remember (Vocal Mix)",
+            artists=["deadmau5", "Kaskade"],
+            featured_artists=[],
+            album="Random Album Title (Unmixed Extended Versions)",
+            year=2008,
+        )
+        self._assert_metadata_matches(link, expected_metadata)
+
+    @pytest.mark.timeout(30)
+    def test_heroes(self):
+        link = "https://music.youtube.com/watch?v=y0VAozNZN3Q"
+        expected_metadata = TrackMetadata(
+            title="Heroes (we could be)",
+            artists=["Alesso"],
+            featured_artists=["Tove Lo"],
+            album="Forever",
+            year=2015,
+        )
+        self._assert_metadata_matches(link, expected_metadata)

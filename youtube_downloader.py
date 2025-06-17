@@ -59,15 +59,21 @@ def get_yt_music_metadata(
 
     # Get basic metadata
     title_element = driver.find_element(By.XPATH, TITLE_XPATH)
-    artist_element = driver.find_element(By.XPATH, ARTIST_XPATH)
     raw_title = title_element.get_attribute("innerHTML").strip()
-    raw_artist = artist_element.get_attribute("innerHTML").strip()
 
-    # Get album (last link in the player bar)
+    # Get all artist links to handle multiple main artists (like "deadmau5 & Kaskade")
     all_links = driver.find_elements(
         By.XPATH,
         "/html/body/ytmusic-app/ytmusic-app-layout/ytmusic-player-bar/div[2]/div[2]/span/span[2]/yt-formatted-string/a",
     )
+
+    # Extract main artists - typically the first few links before the album
+    raw_artists = []
+    for link in all_links[:-1]:  # Exclude last link (likely album)
+        artist_name = link.get_attribute("innerHTML").strip()
+        raw_artists.append(artist_name)
+
+    # Get album (last link in the player bar)
     if len(all_links) >= 2:
         raw_album = all_links[-1].get_attribute("innerHTML").strip()
     else:
@@ -92,11 +98,20 @@ def get_yt_music_metadata(
     # Parse title and extract featured artists
     title, featured_artists, main_artist = _parse_title_and_featured(raw_title)
 
-    # Use extracted artist from title if available, otherwise use scraped artist
+    # Determine artists based on whether we found featured artists in title
     if main_artist:
+        # If we extracted artist from title (like "Artist ft. Featured - Song"), use that
         artists = [main_artist]
+    elif featured_artists:
+        # If we found featured artists in title, only use first link as main artist
+        artists = [raw_artists[0]] if raw_artists else []
     else:
-        artists = [raw_artist]
+        # No featured artists found, so all links (except last) are likely main artists
+        artists = raw_artists
+
+    # Remove any artists from the main artists list if they appear in featured_artists
+    if featured_artists:
+        artists = [artist for artist in artists if artist not in featured_artists]
 
     # Fix album if it matches the raw title - use cleaned title instead
     if raw_album == raw_title:

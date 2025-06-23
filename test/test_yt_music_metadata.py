@@ -4,7 +4,7 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from youtube_downloader import get_yt_music_metadata, TrackMetadata
 
-HEADLESS = False
+HEADLESS = True
 
 
 class YTMusicMetadataTests(TestCase):

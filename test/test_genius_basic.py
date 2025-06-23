@@ -2,12 +2,16 @@ from unittest import TestCase
 import os
 from lyrics import extract_lyrics_from_html_genius, remove_newlines
 
+
 def format_output_comparison(actual: str, expected: str):
     return f"\n----------------------\nExpected output:\n----------------------\n{expected}\n----------------------\nActual output:\n----------------------\n{actual}\n----------------------"
 
+
 def remove_newlines_test(tester: TestCase, name):
     input_filename = os.path.join("test/remove_newlines_input", name + ".txt")
-    expected_output_filename = os.path.join("test/remove_newlines_output", name + ".txt")
+    expected_output_filename = os.path.join(
+        "test/remove_newlines_output", name + ".txt"
+    )
 
     with open(input_filename, "r", encoding="utf-8") as f:
         input_html = f.read()
@@ -16,12 +20,19 @@ def remove_newlines_test(tester: TestCase, name):
         expected_output = f.read()
 
     actual_output = remove_newlines(input_html)
-    
-    tester.assertEqual(actual_output, expected_output, format_output_comparison(actual_output, expected_output))
+
+    tester.assertEqual(
+        actual_output,
+        expected_output,
+        format_output_comparison(actual_output, expected_output),
+    )
+
 
 def basic_test(tester: TestCase, name):
     input_html_filename = os.path.join("test/test_html_genius_basic", name + ".html")
-    expected_output_filename = os.path.join("test/test_output_genius_basic", name + ".txt")
+    expected_output_filename = os.path.join(
+        "test/test_output_genius_basic", name + ".txt"
+    )
 
     with open(input_html_filename, "r", encoding="utf-8") as f:
         input_html = f.read()
@@ -30,15 +41,21 @@ def basic_test(tester: TestCase, name):
         expected_output = f.read()
 
     actual_output = extract_lyrics_from_html_genius(input_html)
-    
-    tester.assertEqual(actual_output, expected_output, format_output_comparison(actual_output, expected_output))
+
+    tester.assertEqual(
+        actual_output,
+        expected_output,
+        format_output_comparison(actual_output, expected_output),
+    )
+
 
 class RemoveNewlineTests(TestCase):
     def test_remove_newlines_basic(self):
-        remove_newlines_test(self, "remove_newlines_basic")   
-    
+        remove_newlines_test(self, "remove_newlines_basic")
+
     def test_remove_newlines_advanced(self):
-        remove_newlines_test(self, "remove_newlines_basic")   
+        remove_newlines_test(self, "remove_newlines_basic")
+
 
 class BasicTests(TestCase):
     def test_text(self):
@@ -46,19 +63,19 @@ class BasicTests(TestCase):
 
     def test_start_newline(self):
         basic_test(self, "start_newline")
-    
+
     def test_start_break(self):
         basic_test(self, "start_break")
-    
+
     def test_mid_break(self):
         basic_test(self, "mid_break")
 
     def test_end_newline(self):
         basic_test(self, "end_newline")
-    
+
     def test_end_break(self):
         basic_test(self, "end_break")
-    
+
     def test_many_mid_breaks(self):
         basic_test(self, "many_mid_breaks")
 
@@ -106,7 +123,7 @@ class BasicTests(TestCase):
 
     def test_multiple_lines(self):
         basic_test(self, "multiple_lines")
-    
+
     def test_mid_breaks_with_square_brackets(self):
         basic_test(self, "mid_breaks_with_square_brackets")
 
@@ -115,7 +132,7 @@ class BasicTests(TestCase):
 
     def test_dumb_stupid_useless_div_between_lyric_divs(self):
         basic_test(self, "dumb_stupid_useless_div_between_lyric_divs")
-    
+
     def test_annotated_sqaure_brackets(self):
         basic_test(self, "annotated_square_brackets")
 
@@ -136,6 +153,6 @@ class BasicTests(TestCase):
 
     def test_replace_with_unicode_space(self):
         basic_test(self, "replace_with_unicode_space")
-    
+
     def test_bold_with_space(self):
         basic_test(self, "bold_with_space")

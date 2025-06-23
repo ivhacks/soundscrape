@@ -138,3 +138,12 @@ temp/
 .vscode/
 
 test/actual_output_genius
+
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db

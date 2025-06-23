@@ -2,6 +2,7 @@ from unittest import TestCase
 import os
 from lyrics import extract_lyrics_from_html_genius
 
+
 def write_actual_output_file(filename, actual_output):
     # Does cache dir exist?
 
@@ -10,9 +11,12 @@ def write_actual_output_file(filename, actual_output):
     # Create the actual output dir if it doesn't already exist
     if not os.path.isdir("test/actual_output_genius"):
         os.mkdir("test/actual_output_genius")
-        
-    with open(os.path.join(actual_output_dir, filename + ".txt"), "w", encoding="utf-8") as f:
+
+    with open(
+        os.path.join(actual_output_dir, filename + ".txt"), "w", encoding="utf-8"
+    ) as f:
         f.write(actual_output)
+
 
 def real_song_test(tester: TestCase, name):
     input_html_filename = os.path.join("test/test_html_genius", name + ".html")
@@ -27,6 +31,7 @@ def real_song_test(tester: TestCase, name):
     actual_output = extract_lyrics_from_html_genius(input_html)
     write_actual_output_file(name, actual_output)
     tester.assertEqual(actual_output, expected_output)
+
 
 class RealSongTests(TestCase):
     def test_chase_atlantic_beauty_in_death(self):

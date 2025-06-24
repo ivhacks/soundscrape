@@ -1,5 +1,6 @@
 import sys
 import os
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from unittest import TestCase
@@ -92,4 +93,4 @@ class DifferentImageTests(TestCase):
         image1 = Image.open("test/images/1.png")
         image2 = Image.open("test/images/2_very_lossy.png")
         result = same_images(image1, image2)
-        self.assertLessEqual(result, 0.55, f"Expected <= 0.55, got {result}") 
+        self.assertLessEqual(result, 0.55, f"Expected <= 0.55, got {result}")

@@ -338,6 +338,86 @@ def search_cover_artwork_by_image(image: Image.Image):
     return (full_size_images_pillow, full_size_images_raw)
 
 
+def search_cover_artwork_by_text(
+    artist: str, title: str, album: bool = False
+) -> List[Image.Image]:
+    # MusicBrainz requires a User-Agent header
+    headers = {"User-Agent": "soundscrape/1.0 (https://github.com/user/soundscrape)"}
+
+    # Build search query for MusicBrainz
+    if album:
+        # Search for album releases
+        query = f'artist:"{artist}" AND release:"{title}"'
+    else:
+        # Search for any release containing the track
+        query = f'artist:"{artist}" AND recording:"{title}"'
+
+    # Search MusicBrainz for releases
+    mb_url = "https://musicbrainz.org/ws/2/release"
+    params = {
+        "query": query,
+        "fmt": "json",
+        "limit": 25,  # Get more results to increase chances of finding cover art
+    }
+
+    try:
+        response = requests.get(mb_url, params=params, headers=headers)
+        response.raise_for_status()
+        releases = response.json().get("releases", [])
+    except:
+        return []
+
+    cover_images = []
+
+    # Try to get cover art for each release
+    for release in releases:
+        if len(cover_images) >= MAX_NUM_THUMBNAILS:
+            break
+
+        mbid = release.get("id")
+        if not mbid:
+            continue
+
+        # Try Cover Art Archive
+        caa_url = f"https://coverartarchive.org/release/{mbid}"
+
+        try:
+            caa_response = requests.get(caa_url, headers=headers)
+            caa_response.raise_for_status()
+            artwork_data = caa_response.json()
+
+            # Get the front cover image, or first image if no front cover
+            images = artwork_data.get("images", [])
+            if not images:
+                continue
+
+            # Prefer front cover
+            front_cover = None
+            for img in images:
+                if img.get("front", False):
+                    front_cover = img
+                    break
+
+            # Use front cover if found, otherwise use first image
+            selected_image = front_cover if front_cover else images[0]
+            image_url = selected_image.get("image")
+
+            if image_url:
+                # Download the image
+                img_response = requests.get(image_url, headers=headers)
+                img_response.raise_for_status()
+
+                # Convert to PIL Image
+                img = Image.open(BytesIO(img_response.content))
+                cover_images.append(img)
+
+        except:
+            # Cover art not available for this release, continue to next
+            continue
+
+    return cover_images
+
+
 if __name__ == "__main__":
     # # extracted_artwork = get_image_from_song_file("temp_artwork\\rick.mp3")
     # # searched_images_pillow, searched_images_raw = search_cover_artwork_by_image(extracted_artwork)

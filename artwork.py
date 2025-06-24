@@ -1,5 +1,4 @@
 from tkinter import *
-from tkinter import ttk
 from typing import List
 from PIL import Image, ImageDraw, ImageTk
 import math
@@ -90,6 +89,7 @@ class CoverArtSelector:
         self.images_pil = []
         for image in images:
             self.images_pil.append(image)
+        self.image_index = -1
 
     def generate_thumbnail(self, image: Image.Image) -> Image.Image:
 
@@ -141,17 +141,15 @@ class CoverArtSelector:
         self.anti_garbage_collection_list = []
         self.anti_garbage_collection_list.append(zoom_box_image_tk)
 
-        ttk.Label(self.root, name="zoom_box", image=zoom_box_image_tk).grid(
-            column=0, row=0, columnspan=num_thumbnails + 1
-        )
-        self.zoom_box_label = self.root.children["zoom_box"]
+        self.zoom_box_label = Button(self.root, image=zoom_box_image_tk)
+        self.zoom_box_label.grid(column=0, row=0, columnspan=num_thumbnails + 1)
 
         # Create thumbnail buttons
         self.images_tk = []
         for i in range(len(self.images_pil)):
             image_pil = self.generate_thumbnail(self.images_pil[i])
             self.images_tk.append(ImageTk.PhotoImage(image_pil))
-            ttk.Button(
+            Button(
                 self.root,
                 name=str(i),
                 image=self.images_tk[-1],

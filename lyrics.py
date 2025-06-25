@@ -8,11 +8,17 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions
 import re  # regex
 from fuzzywuzzy import fuzz  # Fuzzy string matching library
-
-from soup_url import soup_url
-
+import requests
+from bs4 import BeautifulSoup
 
 LYRICS_CONTAINER_CLASS = "Lyrics__Container-sc-1ynbvzw-6"
+
+
+# Take in a URL and return a beautifulSoup object of the page
+def soup_url(url):
+    response = requests.get(url)
+    html = response.text
+    return BeautifulSoup(str(html), "html.parser")
 
 
 def match_confidence(real_title, real_artist, test_title, test_artist):

@@ -2,7 +2,7 @@ import pytest
 from unittest import TestCase
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-from youtube_downloader import get_yt_music_metadata, TrackMetadata
+from youtube import get_yt_music_metadata, TrackMetadata
 
 HEADLESS = True
 

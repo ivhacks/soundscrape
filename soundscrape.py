@@ -1,5 +1,5 @@
 from lyrics import *
-from artwork import *
+from selenium_google_artwork import *
 from file_metadata import *
 
 if __name__ == "__main__":

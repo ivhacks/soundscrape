@@ -147,3 +147,5 @@ test/actual_output_genius
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+test/nolimit.flac

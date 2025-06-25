@@ -12,6 +12,53 @@ import re
 import time
 
 
+def create_driver(headless: bool = False) -> webdriver.Chrome:
+    # Set up Chrome options with stealth settings
+    chrome_options = Options()
+    if headless:
+        chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--window-size=1920,1080")
+    chrome_options.add_argument(
+        "--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    )
+
+    # Additional stealth options
+    chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+    chrome_options.add_argument("--disable-extensions")
+    chrome_options.add_argument("--disable-plugins")
+    chrome_options.add_argument("--disable-images")
+    chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    chrome_options.add_experimental_option("useAutomationExtension", False)
+
+    # Set Chrome binary location on macOS
+    chrome_options.binary_location = (
+        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+    )
+
+    # Create driver with webdriver-manager - fix path issue
+    chromedriver_path = ChromeDriverManager().install()
+
+    # Fix the path if webdriver-manager returns wrong file
+    if chromedriver_path.endswith("THIRD_PARTY_NOTICES.chromedriver"):
+        chromedriver_path = chromedriver_path.replace(
+            "THIRD_PARTY_NOTICES.chromedriver", "chromedriver"
+        )
+
+    service = Service(chromedriver_path)
+    driver = webdriver.Chrome(service=service, options=chrome_options)
+    driver.set_page_load_timeout(30)
+
+    # Hide webdriver property to avoid detection
+    driver.execute_script(
+        "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
+    )
+
+    return driver
+
+
 def string_match(a: str, b: str) -> bool:
     def process_string(s: str) -> str:
         s = s.lower()
@@ -49,142 +96,94 @@ def search_album_for_track(driver, album_url: str, track_title: str) -> bool:
         return False
 
 
-def search_7digital(artist: str, title: str) -> List[Dict]:
+def search_7digital(artist: str, title: str, driver=None) -> List[Dict]:
     """Search 7digital for tracks/albums, checking albums for specific tracks"""
-    driver = None
+    if driver is None:
+        driver = create_driver()
+
+    # Navigate to search page with combined query
+    query = f"{artist} {title}"
+    search_url = f"https://us.7digital.com/search?q={quote_plus(query)}"
+    driver.get(search_url)
+
+    # Wait for page to load and bot protection to complete with longer timeout
     try:
-        # Set up Chrome options with stealth settings
-        chrome_options = Options()
-        chrome_options.add_argument("--headless")
-        chrome_options.add_argument("--no-sandbox")
-        chrome_options.add_argument("--disable-dev-shm-usage")
-        chrome_options.add_argument("--disable-gpu")
-        chrome_options.add_argument("--window-size=1920,1080")
-        chrome_options.add_argument(
-            "--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        WebDriverWait(driver, 30).until(
+            lambda d: "Client Challenge" not in d.page_source
         )
-
-        # Additional stealth options
-        chrome_options.add_argument("--disable-blink-features=AutomationControlled")
-        chrome_options.add_argument("--disable-extensions")
-        chrome_options.add_argument("--disable-plugins")
-        chrome_options.add_argument("--disable-images")
-        chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
-        chrome_options.add_experimental_option("useAutomationExtension", False)
-
-        # Set Chrome binary location on macOS
-        chrome_options.binary_location = (
-            "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-        )
-
-        # Create driver with webdriver-manager - fix path issue
-        chromedriver_path = ChromeDriverManager().install()
-
-        # Fix the path if webdriver-manager returns wrong file
-        if chromedriver_path.endswith("THIRD_PARTY_NOTICES.chromedriver"):
-            chromedriver_path = chromedriver_path.replace(
-                "THIRD_PARTY_NOTICES.chromedriver", "chromedriver"
-            )
-
-        service = Service(chromedriver_path)
-        driver = webdriver.Chrome(service=service, options=chrome_options)
-        driver.set_page_load_timeout(30)
-
-        # Hide webdriver property to avoid detection
-        driver.execute_script(
-            "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
-        )
-
-        # Navigate to search page with combined query
-        query = f"{artist} {title}"
-        search_url = f"https://us.7digital.com/search?q={quote_plus(query)}"
-        driver.get(search_url)
-
-        # Wait for page to load and bot protection to complete with longer timeout
+    except Exception:
+        # If timeout, try clicking somewhere on the page to trigger challenge completion
         try:
-            WebDriverWait(driver, 30).until(
-                lambda d: "Client Challenge" not in d.page_source
-            )
-        except Exception:
-            # If timeout, try clicking somewhere on the page to trigger challenge completion
-            try:
-                driver.execute_script("document.body.click()")
-                time.sleep(5)
-                # Continue anyway - sometimes the page works even after timeout
-            except:
-                pass
+            driver.execute_script("document.body.click()")
+            time.sleep(5)
+            # Continue anyway - sometimes the page works even after timeout
+        except:
+            pass
 
-        # Give it a bit more time to fully load the search results
-        time.sleep(3)
+    # Give it a bit more time to fully load the search results
+    time.sleep(3)
 
-        # Parse the page content
-        soup = BeautifulSoup(driver.page_source, "html.parser")
+    # Parse the page content
+    soup = BeautifulSoup(driver.page_source, "html.parser")
 
-        # Separate albums and tracks from results
-        albums = []
-        tracks = []
+    # Separate albums and tracks from results
+    albums = []
+    tracks = []
 
-        links = soup.find_all("a", href=True)
+    links = soup.find_all("a", href=True)
 
-        for link in links:
-            href = link.get("href", "")
-            if any(path in href for path in ["/artist/", "/album/", "/track/"]):
-                if href.startswith("/"):
-                    full_url = f"https://us.7digital.com{href}"
+    for link in links:
+        href = link.get("href", "")
+        if any(path in href for path in ["/artist/", "/album/", "/track/"]):
+            if href.startswith("/"):
+                full_url = f"https://us.7digital.com{href}"
+            else:
+                full_url = href
+
+            # Remove query parameters
+            if "?" in full_url:
+                full_url = full_url.split("?")[0]
+
+            link_title = link.get_text(strip=True)
+            if link_title and len(link_title) > 0:
+                result = {
+                    "title": link_title,
+                    "url": full_url,
+                    "source": "7digital",
+                }
+
+                # Categorize as album or track based on URL pattern
+                if "/release/" in full_url:
+                    albums.append(result)
                 else:
-                    full_url = href
+                    tracks.append(result)
 
-                # Remove query parameters
-                if "?" in full_url:
-                    full_url = full_url.split("?")[0]
+    # Remove duplicates from albums
+    seen_album_urls = set()
+    unique_albums = []
+    for album in albums:
+        if album["url"] not in seen_album_urls:
+            seen_album_urls.add(album["url"])
+            unique_albums.append(album)
 
-                link_title = link.get_text(strip=True)
-                if link_title and len(link_title) > 0:
-                    result = {
-                        "title": link_title,
-                        "url": full_url,
-                        "source": "7digital",
-                    }
+    # Check if any album title matches the search title (user searching for album)
+    for album in unique_albums:
+        if string_match(album["title"], title):
+            return [album]
 
-                    # Categorize as album or track based on URL pattern
-                    if "/release/" in full_url:
-                        albums.append(result)
-                    else:
-                        tracks.append(result)
+    # Search top 3 albums for the track
+    for album in unique_albums[:3]:
+        if search_album_for_track(driver, album["url"], title):
+            return [album]
 
-        # Remove duplicates from albums
-        seen_album_urls = set()
-        unique_albums = []
-        for album in albums:
-            if album["url"] not in seen_album_urls:
-                seen_album_urls.add(album["url"])
-                unique_albums.append(album)
-
-        # Check if any album title matches the search title (user searching for album)
-        for album in unique_albums:
-            if string_match(album["title"], title):
-                return [album]
-
-        # Search top 3 albums for the track
-        for album in unique_albums[:3]:
-            if search_album_for_track(driver, album["url"], title):
-                return [album]
-
-        # If no album contains the track, return track results or any results
-        if tracks:
-            return tracks[:10]
-        elif unique_albums:
-            return unique_albums[:10]
-        else:
-            # Fallback: No results found, search for artist only
-            return search_artist_albums_for_track(driver, artist, title)
-
-    except Exception as e:
-        print(f"Error searching 7digital: {e}")
-        return []
-    finally:
-        if driver:
-            driver.quit()
+    # If no album contains the track, return track results or any results
+    if tracks:
+        return tracks[:10]
+    elif unique_albums:
+        return unique_albums[:10]
+    else:
+        # Fallback: No results found, search for artist only
+        return search_artist_albums_for_track(driver, artist, title)
 
 
 def search_artist_albums_for_track(driver, artist: str, title: str) -> List[Dict]:

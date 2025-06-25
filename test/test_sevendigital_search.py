@@ -1,11 +1,26 @@
 import unittest
-from sevendigital_search import search_7digital
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from sevendigital_search import search_7digital, create_driver
+
+HEADLESS = True
 
 
 class TestSevendigitalSearch(unittest.TestCase):
+    driver = None
+
+    @classmethod
+    def setUpClass(cls):
+        cls.driver = create_driver(HEADLESS)
+
+    @classmethod
+    def tearDownClass(cls):
+        # Clean up the shared driver
+        if cls.driver:
+            cls.driver.quit()
 
     def _assert_url_in_results(self, artist: str, title: str, expected_url: str):
-        results = search_7digital(artist, title)
+        results = search_7digital(artist, title, self.driver)
 
         # Check that we got some results
         self.assertGreater(

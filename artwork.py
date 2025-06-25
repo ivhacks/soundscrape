@@ -1,184 +1,17 @@
-from tkinter import *
 from typing import List
-from PIL import Image, ImageDraw, ImageTk
-import math
+import os
+from PIL import Image
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions
 import requests
 from io import BytesIO
+from artwork_selector import CoverArtSelector
 
-import os
-
-THUMBNAIL_SIZE = 200
-ZOOM_BOX_HEIGHT = 600
 MAX_NUM_THUMBNAILS = 5
 
 
-class CoverArtSelector:
-    def motion(self, event):
-        # Buttons have 5px padding, subtract to get exact coords relative to image
-        x, y = event.x - 5, event.y - 5
-        widget = event.widget
-
-        try:
-            self.image_index = int(widget._name)
-        except:
-            # We're not on an image
-            self.image_index = -1
-            pass
-
-        if self.image_index != -1:
-
-            # Even if the mouse is on a button, it may still be outside the image.
-            # If it's in the small padding area on the edge, we don't consider it to be on an image.
-            if x < 0 or y < 0:
-                self.image_index = -1
-
-            if x > THUMBNAIL_SIZE or y > THUMBNAIL_SIZE:
-                self.image_index = -1
-
-        if self.image_index != -1:
-            # TODO: Is there a way to do this mapping using pillow?
-            original_image = self.images_pil_resized[self.image_index]
-            original_image_size = original_image.width
-            coord_multiplier = original_image_size / THUMBNAIL_SIZE
-
-            mapped_x = x * coord_multiplier
-            mapped_y = y * coord_multiplier
-
-            # TODO: use this as an excuse to learn those weird question mark oneliners because the goal is to become a snobby code elitist
-            if mapped_x > self.zoom_box_width / 2:
-                # Calc x based on right edge
-                right = mapped_x + math.ceil(self.zoom_box_width / 2)
-                if right > original_image_size:
-                    right = original_image_size
-                left = right - self.zoom_box_width
-            else:
-                # Calc x based on left edge
-                left = mapped_x - math.floor(self.zoom_box_width / 2)
-                if left < 0:
-                    left = 0
-                right = left + self.zoom_box_width
-
-            if mapped_y > self.zoom_box_width / 2:
-                # Calc y based on bottom edge
-                bottom = mapped_y + math.ceil(ZOOM_BOX_HEIGHT / 2)
-                if bottom > original_image_size:
-                    bottom = original_image_size
-                top = bottom - ZOOM_BOX_HEIGHT
-            else:
-                # Calc y based on top edge
-                top = mapped_y - math.floor(ZOOM_BOX_HEIGHT / 2)
-                if top < 0:
-                    top = 0
-                bottom = top + ZOOM_BOX_HEIGHT
-
-            box_tuple = (left, top, right, bottom)
-            zoom_box_image = original_image.crop(box_tuple)
-
-            zoom_box_image_tk = ImageTk.PhotoImage(zoom_box_image)
-            self.zoom_box_label.configure(image=zoom_box_image_tk)
-
-            self.anti_garbage_collection_list[0] = zoom_box_image_tk
-
-    def __init__(self, images: List) -> None:
-        # Load all thumnbail images
-        # TODO: Ensure these are all square, do centered cropping if they aren't
-        self.images_pil = []
-        for image in images:
-            self.images_pil.append(image)
-        self.image_index = -1
-
-    def generate_thumbnail(self, image: Image.Image) -> Image.Image:
-
-        orig_width = image.width
-        orig_height = image.height
-        # e.g. "1200 x 1200"
-        res_label_string = str(orig_width) + " x " + str(orig_height)
-
-        resized_image = image.resize((THUMBNAIL_SIZE, THUMBNAIL_SIZE))
-
-        res_label_height = math.floor(THUMBNAIL_SIZE / 20)
-        # Base width of res label on length of resolution text string
-        res_label_width = math.floor(THUMBNAIL_SIZE / 30) * len(res_label_string) + 4
-
-        strip = Image.new(
-            "RGB", (res_label_width, res_label_height)
-        )  # creating the black strip
-        draw = ImageDraw.Draw(strip)
-
-        # TODO: Right now, it's just using the default font.
-        # If in the future, THUMBNAIL_SIZE actually has to get bigger, you might want to change the code below to something like this:
-        # font = ImageFont.truetype("/usr/share/fonts/truetype/freefont/FreeSansBold.ttf", 16)
-        # draw.text((0, 0), res_label_string, (255, 255, 255), font=font)
-
-        draw.text(
-            (2, 0), res_label_string, (255, 255, 255)
-        )  # drawing text on the black strip
-        offset = (0, THUMBNAIL_SIZE - res_label_height)
-        resized_image.paste(strip, offset)  # pasting black strip on the base image
-        return resized_image
-
-    def show_selection_window(self) -> int:
-        num_thumbnails = len(self.images_pil)
-
-        self.root = Tk()
-
-        self.zoom_box_width = (
-            num_thumbnails * THUMBNAIL_SIZE + (num_thumbnails - 1) * 10
-        )  # Calculate zoom area width
-        image_pil = Image.new(
-            mode="RGB", size=(self.zoom_box_width, ZOOM_BOX_HEIGHT)
-        )  # Create placeholder image for zoom area
-        zoom_box_image_tk = ImageTk.PhotoImage(
-            image_pil
-        )  # Make placeholder image into ImageTK
-
-        # Hack to prevent the zoomed image from getting garbage collected by TCL
-        # See https://stackoverflow.com/a/71502573
-        self.anti_garbage_collection_list = []
-        self.anti_garbage_collection_list.append(zoom_box_image_tk)
-
-        self.zoom_box_label = Button(self.root, image=zoom_box_image_tk)
-        self.zoom_box_label.grid(column=0, row=0, columnspan=num_thumbnails + 1)
-
-        # Create thumbnail buttons
-        self.images_tk = []
-        for i in range(len(self.images_pil)):
-            image_pil = self.generate_thumbnail(self.images_pil[i])
-            self.images_tk.append(ImageTk.PhotoImage(image_pil))
-            Button(
-                self.root,
-                name=str(i),
-                image=self.images_tk[-1],
-                command=self.root.destroy,
-            ).grid(column=i, row=1)
-
-        # If any of the original images are smaller than the width of the zoomed area, scale them up
-        self.images_pil_resized = []
-        for i in range(num_thumbnails):
-            width = self.images_pil[i].width
-            if width < self.zoom_box_width:
-                size_multiplier = math.floor(self.zoom_box_width / width) + 1
-            else:
-                # Double zoom of even high-res images just so we can get a better look at the details
-                size_multiplier = 2
-
-            self.images_pil_resized.append(
-                self.images_pil[i].resize(
-                    (width * size_multiplier, width * size_multiplier),
-                    resample=Image.Resampling.NEAREST,
-                )
-            )
-
-        self.root.bind("<Motion>", self.motion)
-        self.root.mainloop()
-        return self.image_index
-
-
-# List is a list of pillow images
 def choose_image(images: List):
     selector = CoverArtSelector(images)
     return selector.show_selection_window()
@@ -417,17 +250,13 @@ def search_cover_artwork_by_text(
 
 
 if __name__ == "__main__":
-    # # extracted_artwork = get_image_from_song_file("temp_artwork\\rick.mp3")
-    # # searched_images_pillow, searched_images_raw = search_cover_artwork_by_image(extracted_artwork)
-
+    # Test with some example images
     searched_images_pillow = []
-    for i in range(1, 6):
-        searched_images_pillow.append(
-            Image.open(f"D:\\soundscrape\\temp_artwork\\{i}.jpg")
-        )
+    for i in range(1, 3):
+        searched_images_pillow.append(Image.open(f"test/images/{i}.png"))
 
-    selector = choose_image(searched_images_pillow)
-    # # chosen_image_index = selector.show_selection_window()
-    # # put_image_in_song_file(searched_images_raw[chosen_image_index], "temp_artwork\\rick.mp3")
-
-    # generate_thumbnail(searched_images_pillow[0]).show()
+    selected_index = choose_image(searched_images_pillow)
+    if selected_index != -1:
+        print(f"Selected image index: {selected_index}")
+    else:
+        print("No image was selected")

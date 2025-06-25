@@ -37,6 +37,7 @@ Pygments==2.19.1
 PySocks==1.7.1
 pytest==8.4.0
 pytest-timeout==2.4.0
+python-dotenv==1.1.1
 python-Levenshtein==0.27.1
 RapidFuzz==3.13.0
 requests==2.32.4
@@ -52,10 +53,6 @@ trio-websocket==0.12.2
 typing_extensions==4.13.2
 urllib3==2.4.0
 wcwidth==0.2.13
+webdriver-manager==4.0.2
 websocket-client==1.8.0
 wsproto==1.2.0
-typing-extensions==4.14.0
-black==24.10.0 
-black==24.10.0
-selenium==4.16.0
-webdriver-manager==4.0.1 

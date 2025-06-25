@@ -1,9 +1,24 @@
 from unittest import TestCase
 from file_metadata import *
 from PIL import Image
+import shutil
+import os
 
 
 class TestReadMetadata(TestCase):
+    NOLIMIT_FLAC_BACKUP = "test/nolimit_backup.flac"
+
+    def setUp(self):
+        # Create backup of nolimit.flac before each test
+        if os.path.exists("test/nolimit.flac"):
+            shutil.copy2("test/nolimit.flac", self.NOLIMIT_FLAC_BACKUP)
+
+    def tearDown(self):
+        # Restore original nolimit.flac after each test
+        if os.path.exists(self.NOLIMIT_FLAC_BACKUP):
+            shutil.copy2(self.NOLIMIT_FLAC_BACKUP, "test/nolimit.flac")
+            os.remove(self.NOLIMIT_FLAC_BACKUP)
+
     # MP3 Tests
     def test_get_year_mp3(self):
         year = get_year("test/yeet.mp3")

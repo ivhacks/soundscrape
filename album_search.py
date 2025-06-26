@@ -17,6 +17,16 @@ def search_prompt(artist: str, song_title: str) -> str:
             'fast n slow is on knock2's 2025 album nolimit.'"""
 
 
+def structure_prompt(artist: str, song_title: str, first_response: str) -> str:
+    return f"""The following is a response to a query about what album the song {artist} - {song_title} is on.
+            Provide the album title, year, and whether it's a standalone single in the expected format.
+            In the title field, only give the base album title. Omit features, "(single)", etc.
+            If there's anything in the given text about upcoming or unreleased albums/tracks, IGNORE IT.
+            Only base your response on music that has already been officially released.
+            --------------------------------------------------------------------------------------
+            {first_response}"""
+
+
 class AlbumTemplate(BaseModel):
     title: str
     single: bool
@@ -46,31 +56,23 @@ def identify_album(artist: str, song_title: str) -> str | None:
 
     client = genai.Client(api_key=gemini_api_key)
     grounding_tool = types.Tool(google_search=types.GoogleSearch())
-    config = types.GenerateContentConfig(
-        tools=[grounding_tool], thinking_config=types.ThinkingConfig(thinking_budget=0)
-    )
+    config = types.GenerateContentConfig(tools=[grounding_tool])
 
     prompt = search_prompt(artist, song_title)
 
     response = client.models.generate_content(
-        model="gemini-2.5-flash",
+        model="gemini-2.0-flash",
         contents=prompt,
         config=config,
     )
     print(response.text)
-    prompt = f"""The following is a response to a query about what album the song {artist} - {song_title} is on.
-            Provide the album title, year, and whether it's a standalone single in the expected format.
-            In the title field, only give the base album title. Omit features, "(single)", etc.
-            --------------------------------------------------------------------------------------
-            {response.text}"""
+    prompt = structure_prompt(artist, song_title, response.text)
 
     response = client.models.generate_content(
-        model="gemini-2.5-flash",
+        model="gemini-2.0-flash",
         contents=prompt,
         config=types.GenerateContentConfig(
-            response_mime_type="application/json",
-            response_schema=AlbumTemplate,
-            thinking_config=types.ThinkingConfig(thinking_budget=0),
+            response_mime_type="application/json", response_schema=AlbumTemplate
         ),
     )
 

@@ -8,13 +8,19 @@ def search_prompt(artist: str, song_title: str) -> str:
             Note that the song may have been released as a standalone single and then later on an album.
             for these songs, please try to search out and respond with the album and year that it was released on the album.
             Some tracks may have already been released as singles, but are set to be re-released on upcoming albums.
-            Be careful to only respond with an album if it's already been released. 
+            Only respond with an album if it's already been released. 
             If the album is not yet released, but the track has been released as a single, say 'single' and do not mention the album.
             Respond as if you have no knowledge of the upcoming album, and are only aware of the already released single.
             Be concise and brief, give no other information or context. Respond with a single sentence.
-            Example responses: 
+            
+            Examples of good responses: 
             'Bittersweet was released as a single in 2025.'
-            'fast n slow is on knock2's 2025 album nolimit.'"""
+            'fast n slow is on knock2's 2025 album nolimit.'
+
+            examples of BAD, UNACCEPTABLE responses:
+            'Bittersweet was released as a single in 2025 and will be on Audien's upcoming album, Harmony.'
+            'fast n slow is on knock2's 2025 album nolimit and will be re-released in 2026 as a bonus track on 2HEARTS (Deluxe)'
+            """
 
 
 def structure_prompt(artist: str, song_title: str, first_response: str) -> str:

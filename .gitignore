@@ -147,3 +147,4 @@ test/actual_output_genius
 .Trashes
 ehthumbs.db
 Thumbs.db
+secrets.yaml

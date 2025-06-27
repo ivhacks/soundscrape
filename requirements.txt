@@ -39,6 +39,7 @@ pytest==8.4.0
 pytest-timeout==2.4.0
 python-dotenv==1.1.1
 python-Levenshtein==0.27.1
+PyYAML==6.0.1
 RapidFuzz==3.13.0
 requests==2.32.4
 selenium==4.33.0

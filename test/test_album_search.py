@@ -1,3 +1,5 @@
+import time
+import yaml
 from unittest import TestCase
 from album_search import search_prompt, structure_prompt
 from album_search import identify_album
@@ -34,8 +36,9 @@ class PromptTests(TestCase):
         """
         prompt = search_prompt("audien, shallou, rosie darling", "bittersweet")
 
-        with open(".env", "r") as f:
-            gemini_api_key = f.read()
+        with open("secrets.yaml", "r") as f:
+            config = yaml.safe_load(f)
+            gemini_api_key = config["gemini_api_key"]
 
         client = genai.Client(api_key=gemini_api_key)
         grounding_tool = types.Tool(google_search=types.GoogleSearch())
@@ -57,8 +60,9 @@ class PromptTests(TestCase):
             "Bittersweet was released as a single in 2025 and will be on Audien's upcoming album, Harmony.",
         )
 
-        with open(".env", "r") as f:
-            gemini_api_key = f.read()
+        with open("secrets.yaml", "r") as f:
+            config = yaml.safe_load(f)
+            gemini_api_key = config["gemini_api_key"]
 
         client = genai.Client(api_key=gemini_api_key)
 
@@ -74,3 +78,5 @@ class PromptTests(TestCase):
             self.assertEqual(response.parsed.title, "Bittersweet")
             self.assertEqual(response.parsed.single, True)
             self.assertEqual(response.parsed.year, 2025)
+
+            time.sleep(2)

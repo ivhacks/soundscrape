@@ -1,3 +1,4 @@
+import yaml
 from google import genai
 from google.genai import types
 from pydantic import BaseModel
@@ -57,8 +58,9 @@ class Album:
 
 
 def identify_album(artist: str, song_title: str) -> str | None:
-    with open(".env", "r") as f:
-        gemini_api_key = f.read()
+    with open("secrets.yaml", "r") as f:
+        config = yaml.safe_load(f)
+        gemini_api_key = config["gemini_api_key"]
 
     client = genai.Client(api_key=gemini_api_key)
     grounding_tool = types.Tool(google_search=types.GoogleSearch())

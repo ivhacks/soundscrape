@@ -53,6 +53,8 @@ class PromptTests(TestCase):
             self.assertNotIn("first love", response.text.lower())
             self.assertNotIn("harmony", response.text.lower())
 
+            time.sleep(2)  # too many requests too quickly will make gemini get tired
+
     def test_ignores_unreleased_albums_second_response(self):
         prompt = structure_prompt(
             "audien, shallou, rosie darling",
@@ -79,4 +81,4 @@ class PromptTests(TestCase):
             self.assertEqual(response.parsed.single, True)
             self.assertEqual(response.parsed.year, 2025)
 
-            time.sleep(2)
+            time.sleep(2)  # too many requests too quickly will make gemini get tired

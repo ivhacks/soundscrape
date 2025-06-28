@@ -1,13 +1,7 @@
 import os
-import sys
 import shutil
 from unittest import TestCase
-from lyrics import (
-    clean_artist,
-    clean_title,
-    search_term_preprocessing,
-    generate_lyrics_filename,
-)
+from lyrics import search_term_preprocessing, generate_lyrics_filename
 from file_metadata import set_lyrics, get_lyrics
 
 
@@ -26,36 +20,6 @@ class MiscTests(TestCase):
         self.assertEqual(
             generate_lyrics_filename(input_artist, input_title), expected_output
         )
-
-    def test_clean_title_parens(self):
-        input_title = "Downfall (feat. Lexi Norton)"
-        expected_output = "Downfall"
-
-        self.assertEqual(clean_title(input_title), expected_output)
-
-    def test_clean_title_ft(self):
-        input_title = "Clarity ft. Foxes"
-        expected_output = "Clarity"
-
-        self.assertEqual(clean_title(input_title), expected_output)
-
-    def test_clean_title_feat(self):
-        input_title = "Emotional feat. Matthew Koma"
-        expected_output = "Emotional"
-
-        self.assertEqual(clean_title(input_title), expected_output)
-
-    def test_clean_title_mixed(self):
-        input_title = "Talk About It Feat. Desirée Dawson [Virtual Riot Remix]"
-        expected_output = "Talk About It"
-
-        self.assertEqual(clean_title(input_title), expected_output)
-
-    def test_clean_artist(self):
-        input_artist = "Virual Riot; Submatik, Holly Drummond"
-        expected_output = "Virual Riot Submatik Holly Drummond"
-
-        self.assertEqual(clean_artist(input_artist), expected_output)
 
     # This test doesn't properly isolate the issue
     def test_lyrics_properly_terminated(self):

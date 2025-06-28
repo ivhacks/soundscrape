@@ -8,6 +8,7 @@ from selenium.webdriver.support import expected_conditions
 import requests
 from io import BytesIO
 from artwork_selector import CoverArtSelector
+from spoti import get_token, get_cover_artwork_url
 
 MAX_NUM_THUMBNAILS = 5
 
@@ -170,6 +171,29 @@ def search_cover_artwork_by_image(image: Image.Image):
 
 
 def search_cover_artwork_by_text(
+    artist: str, title: str, album: bool = False
+) -> Image.Image:
+    token = get_token()
+
+    if album:
+        # Search for album artwork
+        artwork_url = get_cover_artwork_url(
+            token, title, artist, single=False, is_album=False
+        )
+    else:
+        artwork_url = get_cover_artwork_url(
+            token, title, artist, single=True, is_album=False
+        )
+
+    # Download the image
+    response = requests.get(artwork_url)
+    response.raise_for_status()
+
+    # Convert to PIL Image
+    return Image.open(BytesIO(response.content))
+
+
+def search_cover_artwork_by_text_musicbrainz(
     artist: str, title: str, album: bool = False
 ) -> List[Image.Image]:
     # MusicBrainz requires a User-Agent header

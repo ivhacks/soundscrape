@@ -7,15 +7,9 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions
 import requests
 from io import BytesIO
-from artwork_selector import CoverArtSelector
 from spoti import get_token, get_cover_artwork_url
 
 MAX_NUM_THUMBNAILS = 5
-
-
-def choose_image(images: List):
-    selector = CoverArtSelector(images)
-    return selector.show_selection_window()
 
 
 # Returns tuple of (List[Image.Image], List[Bytes]) where both lists are the same length
@@ -267,16 +261,3 @@ def search_cover_artwork_by_text_musicbrainz(
             continue
 
     return cover_images
-
-
-if __name__ == "__main__":
-    # Test with some example images
-    searched_images_pillow = []
-    for i in range(1, 3):
-        searched_images_pillow.append(Image.open(f"test/images/{i}.png"))
-
-    selected_index = choose_image(searched_images_pillow)
-    if selected_index != -1:
-        print(f"Selected image index: {selected_index}")
-    else:
-        print("No image was selected")

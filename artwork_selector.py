@@ -2,6 +2,7 @@ from tkinter import *
 from tkinter import Event
 from typing import List
 from PIL import Image, ImageDraw, ImageTk
+from io import BytesIO
 import math
 
 THUMBNAIL_SIZE = 200
@@ -9,8 +10,13 @@ ZOOM_BOX_HEIGHT = 600
 
 
 class CoverArtSelector:
-    def __init__(self, images: List[Image.Image]) -> None:
-        self.images_pil = images
+    def __init__(self, images_bytes: List[bytes]) -> None:
+        # Convert bytes to PIL Images
+        self.images_pil = []
+        for image_bytes in images_bytes:
+            image = Image.open(BytesIO(image_bytes))
+            self.images_pil.append(image)
+
         self.image_index = -1
 
     def motion(self, event: Event) -> None:
@@ -148,16 +154,21 @@ class CoverArtSelector:
 
 
 if __name__ == "__main__":
-    # Load test images
-    test_images = []
-    test_images.append(Image.open("test/images/1.png"))
-    test_images.append(Image.open("test/images/2.png"))
-    test_images.append(Image.open("test/images/1.png"))
-    test_images.append(Image.open("test/images/2.png"))
-    test_images.append(Image.open("test/images/1.png"))
+    # Load test images as bytes
+    test_images_bytes = []
+    with open("test/images/1.png", "rb") as f:
+        test_images_bytes.append(f.read())
+    with open("test/images/2.png", "rb") as f:
+        test_images_bytes.append(f.read())
+    with open("test/images/1.png", "rb") as f:
+        test_images_bytes.append(f.read())
+    with open("test/images/2.png", "rb") as f:
+        test_images_bytes.append(f.read())
+    with open("test/images/1.png", "rb") as f:
+        test_images_bytes.append(f.read())
 
     # Create and show the UI
-    selector = CoverArtSelector(test_images)
+    selector = CoverArtSelector(test_images_bytes)
     selected_index = selector.show_selection_window()
 
     if selected_index != -1:

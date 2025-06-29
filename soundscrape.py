@@ -7,6 +7,7 @@ from lyrics import *
 from artwork_search import *
 from file_metadata import *
 from parse_and_clean import *
+from artwork_selector import CoverArtSelector
 
 
 @dataclass
@@ -86,6 +87,9 @@ def process_dir(output_dir: str):
         print(album)
 
     for album in albums.values():
+        cover_art_options = [album.cover_art]
+        selector = CoverArtSelector(cover_art_options)
+        chosen_artwork = cover_art_options[selector.show_selection_window()]
         for track in album.tracks:
             if track.features:
                 new_filename_base = f"{track.title} (feat. {', '.join(track.features)})"
@@ -104,7 +108,7 @@ def process_dir(output_dir: str):
             set_song_title(new_filepath, new_filename_base)
 
             clear_cover_art(new_filepath)
-            set_cover_art(new_filepath, album.cover_art)
+            set_cover_art(new_filepath, chosen_artwork)
 
 
 def main(input_path: str, output_path: str, no_processing: bool = False):

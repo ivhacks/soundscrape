@@ -25,3 +25,4 @@ Always validate your code works by running it frequently.
 You are strongly encouraged to make many tool calls e.g. to curl the contents of websites, make bash scripts, do data processing, etc.
 Don't provide summaries of your work after you're done, just make the edits and end.
 Don't put comments on every single thing you do, 90% of the code you write should be clearly self-explanatory based on variable names. Only put comments on weird or unintuitive code.
+Once you're done changing code, STOP. DON'T give summaries of your work, and ESPECIALLY don't make them really long and have a bunch of emojis.

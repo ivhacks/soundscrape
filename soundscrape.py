@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import hashlib
 import os
 import shutil
 import sys
@@ -40,6 +41,7 @@ class Album:
     artists: List[str]
     tracks: List[Track]
     art_choices: List[bytes]
+    art_choice_hashes: List[bytes]
     chosen_art: bytes
 
     def __repr__(self):
@@ -66,6 +68,7 @@ def process_dir(output_dir: str):
                     artists=[],
                     tracks=[],
                     art_choices=[],
+                    art_choice_hashes=[],
                     chosen_art=b"",
                 )
 
@@ -78,8 +81,13 @@ def process_dir(output_dir: str):
                     filepath=filepath,
                 )
             )
+            # Hash each new cover artwork so we can check for duplicates without doing a byte-by-byte comparison between all the images
             art = get_cover_art(filepath)
-            albums[album_name].art_choices.append(art)
+            hash = hashlib.sha256(art).digest()
+
+            if hash not in albums[album_name].art_choice_hashes:
+                albums[album_name].art_choices.append(art)
+                albums[album_name].art_choice_hashes.append(hash)
 
     for album in albums.values():
         # Set album artists to artists who appear in every track
@@ -94,9 +102,12 @@ def process_dir(output_dir: str):
         if not album.artists:
             album.artists = ["Various Artists"]
 
-        album.art_choices.append(
-            search_cover_art_by_text(", ".join(album.artists), album.title, True)
+        searched_art = search_cover_art_by_text(
+            ", ".join(album.artists), album.title, True
         )
+        hash = hashlib.sha256(searched_art).digest()
+        album.art_choices.append(searched_art)
+        album.art_choice_hashes.append(hash)
 
     for album in albums.values():
         print(album)

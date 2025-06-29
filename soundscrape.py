@@ -1,17 +1,43 @@
 import os
 import sys
 import shutil
+from dataclasses import dataclass
+from typing import List
 from lyrics import *
 from artwork_search import *
 from file_metadata import *
 
 
-def do_stuff(filepath: str):
-    artist = get_artist(filepath)
-    title = get_song_title(filepath)
-    album = get_album_title(filepath)
+@dataclass
+class Album:
+    title: str
+    filenames: List[str]
 
-    print(f"{artist} - {title} ({album})")
+    def __repr__(self):
+        output = f"{self.title}:\n"
+        for filename in self.filenames:
+            output += f" - {os.path.basename(filename)}\n"
+        return output
+
+
+def process_dir(output_dir: str):
+    # Process all files in the output directory
+    albums = {}
+    for filename in os.listdir(output_dir):
+        if filename.lower().endswith((".mp3", ".flac")):
+            filepath = os.path.join(output_dir, filename)
+            artist = get_artist(filepath)
+            title = get_song_title(filepath)
+            album_name = get_album_title(filepath)
+
+            print(f"{artist} - {title} ({album_name})")
+            if album_name not in albums.keys():
+                albums[album_name] = Album(title=album_name, filenames=[])
+
+            albums[album_name].filenames.append(filepath)
+
+    for album in albums.values():
+        print(album)
 
 
 def main(input_path: str, output_path: str, no_processing: bool = False):
@@ -51,14 +77,14 @@ def main(input_path: str, output_path: str, no_processing: bool = False):
     for filename in filenames:
         if output_is_file:
             shutil.copy2(filename, output_path)
-            output_file_to_process = output_path
         else:
             output_filename = os.path.join(output_path, os.path.basename(filename))
             shutil.copy2(filename, output_filename)
-            output_file_to_process = output_filename
 
-        if not no_processing:
-            do_stuff(output_file_to_process)
+    # Process the output directory if we're working with a directory input
+    if not no_processing:
+        if not input_is_file:
+            process_dir(output_path)
 
 
 if __name__ == "__main__":

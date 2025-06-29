@@ -1,4 +1,5 @@
 from PIL import Image
+from io import BytesIO
 
 
 def _perceptual_hash(image: Image.Image, hash_size: int = 8) -> str:
@@ -83,14 +84,18 @@ def _histogram_similarity(image1: Image.Image, image2: Image.Image) -> float:
     return (r_sim + g_sim + b_sim) / 3.0
 
 
-def same_images(image1: Image.Image, image2: Image.Image) -> float:
+def same_images(image1_bytes: bytes, image2_bytes: bytes) -> float:
     """
-    Calculate similarity between two images.
+    Calculate similarity between two images from raw bytes.
     Returns a float between 0.0 and 1.0, where 1.0 means identical.
     """
-    # Handle identical image objects
-    if image1 is image2:
+    # Handle identical byte objects
+    if image1_bytes == image2_bytes:
         return 1.0
+
+    # Convert bytes to PIL Images
+    image1 = Image.open(BytesIO(image1_bytes))
+    image2 = Image.open(BytesIO(image2_bytes))
 
     # Generate perceptual hashes with different sizes for better discrimination
     hash1_8 = _perceptual_hash(image1, 8)

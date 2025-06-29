@@ -1,16 +1,23 @@
 from unittest import TestCase
 from PIL import Image
+from io import BytesIO
 from artwork_util import same_images
 from artwork_search import search_cover_artwork_by_text
 
 
 class ArtworkSearchTests(TestCase):
     def test_knock2_feel_u_luv_me_single(self):
-        image1 = Image.open("test/test_artwork/knock2_feel_u_luv_me.jpg")
+        with open("test/test_artwork/knock2_feel_u_luv_me.jpg", "rb") as f:
+            expected = f.read()
+
         result = search_cover_artwork_by_text("knock2", "feel u luv me", album=False)
-        self.assertTrue(same_images(image1, result))
+
+        self.assertTrue(same_images(expected, result))
 
     def test_knock2_feel_u_luv_me_album(self):
-        image1 = Image.open("test/test_artwork/knock2_nolimit.jpg")
+        with open("test/test_artwork/knock2_nolimit.jpg", "rb") as f:
+            expected = f.read()
+
         result = search_cover_artwork_by_text("knock2", "feel u luv me", album=True)
-        self.assertTrue(same_images(image1, result))
+
+        self.assertTrue(same_images(expected, result))

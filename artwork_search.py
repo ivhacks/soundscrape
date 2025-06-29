@@ -170,9 +170,7 @@ def search_cover_artwork_by_image(image: Image.Image):
     return (full_size_images_pillow, full_size_images_raw)
 
 
-def search_cover_artwork_by_text(
-    artist: str, title: str, album: bool = False
-) -> Image.Image:
+def search_cover_artwork_by_text(artist: str, title: str, album: bool = False) -> bytes:
     token = get_token()
 
     if album:
@@ -185,12 +183,10 @@ def search_cover_artwork_by_text(
             token, title, artist, single=True, is_album=False
         )
 
-    # Download the image
     response = requests.get(artwork_url)
     response.raise_for_status()
 
-    # Convert to PIL Image
-    return Image.open(BytesIO(response.content))
+    return response.content
 
 
 def search_cover_artwork_by_text_musicbrainz(

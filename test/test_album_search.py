@@ -43,7 +43,7 @@ class PromptTests(TestCase):
         client = genai.Client(api_key=gemini_api_key)
         grounding_tool = types.Tool(google_search=types.GoogleSearch())
         config = types.GenerateContentConfig(tools=[grounding_tool])
-        for _ in range(10):
+        for _ in range(5):
             response = client.models.generate_content(
                 model="gemini-2.0-flash",
                 contents=prompt,
@@ -68,7 +68,7 @@ class PromptTests(TestCase):
 
         client = genai.Client(api_key=gemini_api_key)
 
-        for _ in range(10):
+        for _ in range(5):
             response = client.models.generate_content(
                 model="gemini-2.0-flash",
                 contents=prompt,

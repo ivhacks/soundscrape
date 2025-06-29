@@ -78,7 +78,7 @@ def search_for_artist(token, artist_name):
     return json_result
 
 
-def get_cover_artwork_url(
+def get_cover_art_url(
     token, title: str, artist: str, single: bool, is_album: bool
 ) -> str:
     if single and is_album:
@@ -113,7 +113,7 @@ def get_cover_artwork_url(
 
         found = False
 
-        if single:  # We're looking for the single cover artwork
+        if single:  # We're looking for the single cover art
             for track in tracks:
                 album = track.get("album")
                 if album.get("album_type") == "single":
@@ -125,7 +125,7 @@ def get_cover_artwork_url(
                     f"Couldn't find a single by '{artist}' called '{title}'"
                 )
 
-        else:  # We're looking for the cover artwork of the album containing this track
+        else:  # We're looking for the cover art of the album containing this track
             for track in tracks:
                 album = track.get("album")
                 if album.get("album_type") == "album":

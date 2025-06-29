@@ -9,7 +9,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.wait import WebDriverWait
 
-from spoti import get_cover_artwork_url, get_token
+from spoti import get_cover_art_url, get_token
 
 
 MAX_NUM_THUMBNAILS = 5
@@ -17,7 +17,7 @@ MAX_NUM_THUMBNAILS = 5
 
 # Returns tuple of (List[Image.Image], List[Bytes]) where both lists are the same length
 # List of bytestrings are the directly downloaded image datas that will be used to create the pillow images
-def search_cover_artwork_by_image(image: Image.Image):
+def search_cover_art_by_image(image: Image.Image):
     IMAGE_BUTTON_CLASS = "tdPRye"
     UPLOAD_IMAGE_TAB_XPATH = "/html/body/div[1]/div[3]/div/div[2]/form/div[1]/div/a"
     BROWSE_BUTTON_ID = "awyMjb"
@@ -108,7 +108,7 @@ def search_cover_artwork_by_image(image: Image.Image):
         width = int(thumbnail.get_attribute("data-ow"))
         height = int(thumbnail.get_attribute("data-oh"))
 
-        # Skip images that aren't roughly square, they probably aren't cover artworks or are cropped weirdly
+        # Skip images that aren't roughly square, they probably aren't cover arts or are cropped weirdly
         if width < (float(height) * 0.95) or height > (float(width) * 1.05):
             continue
 
@@ -164,26 +164,21 @@ def search_cover_artwork_by_image(image: Image.Image):
     return (full_size_images_pillow, full_size_images_raw)
 
 
-def search_cover_artwork_by_text(artist: str, title: str, album: bool = False) -> bytes:
+def search_cover_art_by_text(artist: str, title: str, album: bool = False) -> bytes:
     token = get_token()
 
     if album:
-        # Search for album artwork
-        artwork_url = get_cover_artwork_url(
-            token, title, artist, single=False, is_album=False
-        )
+        art_url = get_cover_art_url(token, title, artist, single=False, is_album=False)
     else:
-        artwork_url = get_cover_artwork_url(
-            token, title, artist, single=True, is_album=False
-        )
+        art_url = get_cover_art_url(token, title, artist, single=True, is_album=False)
 
-    response = requests.get(artwork_url)
+    response = requests.get(art_url)
     response.raise_for_status()
 
     return response.content
 
 
-def search_cover_artwork_by_text_musicbrainz(
+def search_cover_art_by_text_musicbrainz(
     artist: str, title: str, album: bool = False
 ) -> List[Image.Image]:
     # MusicBrainz requires a User-Agent header
@@ -229,10 +224,10 @@ def search_cover_artwork_by_text_musicbrainz(
         try:
             caa_response = requests.get(caa_url, headers=headers)
             caa_response.raise_for_status()
-            artwork_data = caa_response.json()
+            art_data = caa_response.json()
 
             # Get the front cover image, or first image if no front cover
-            images = artwork_data.get("images", [])
+            images = art_data.get("images", [])
             if not images:
                 continue
 

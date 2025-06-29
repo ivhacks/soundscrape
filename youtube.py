@@ -185,13 +185,13 @@ def _parse_title_and_featured(raw_title: str):
     return title.strip(), featured_artists, main_artist
 
 
-def process_link(link: str, cover_artwork: bool = False, music: bool = False):
+def process_link(link: str, cover_art: bool = False, music: bool = False):
     listdir_before = os.listdir()
 
     args = "--extract-audio "
     args += "--audio-format mp3 --audio-quality 256k"
 
-    if cover_artwork:
+    if cover_art:
         args += "--embed-thumbnail "
 
     os.system("youtube-dl" + " " + args + " " + link)
@@ -239,8 +239,8 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "-c",
-        "--cover-artwork",
-        help="Embed video thumbnail as cover artwork",
+        "--cover-art",
+        help="Embed video thumbnail as cover art",
         action="store_true",
     )
     parser.add_argument(
@@ -263,7 +263,7 @@ if __name__ == "__main__":
 
     if is_url:
         # URL
-        process_link(args.target, args.cover_artwork, args.music)
+        process_link(args.target, args.cover_art, args.music)
     else:
         # Path to file containing list of links
         current_directory = os.getcwd()
@@ -273,4 +273,4 @@ if __name__ == "__main__":
 
         for line in lines:
             print(f"Downloading {line}", end="")
-            process_link(line, args.cover_artwork, args.music)
+            process_link(line, args.cover_art, args.music)

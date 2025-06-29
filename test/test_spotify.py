@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from spoti import get_cover_artwork_url, get_token
+from spoti import get_cover_art_url, get_token
 
 
 class SpotifyTests(TestCase):
@@ -11,8 +11,8 @@ class SpotifyTests(TestCase):
         cls.token = get_token()
 
     def test_hold_my_hand_album(self):
-        # Don't get single artwork, should get album artwork for nolimit
-        url = get_cover_artwork_url(
+        # Don't get single art, should get album art for nolimit
+        url = get_cover_art_url(
             self.token, "hold my hand", "knock2", single=False, is_album=False
         )
         self.assertEqual(
@@ -20,8 +20,8 @@ class SpotifyTests(TestCase):
         )
 
     def test_hold_my_hand_single(self):
-        # Do get single artwork, should get hold my hand specific artwork
-        url = get_cover_artwork_url(
+        # Do get single art, should get hold my hand specific art
+        url = get_cover_art_url(
             self.token, "hold my hand", "knock2", single=True, is_album=False
         )
         self.assertEqual(
@@ -29,15 +29,15 @@ class SpotifyTests(TestCase):
         )
 
     def test_single_and_album(self):
-        # It makes no sense to request the single artwork for an album, this should raise an exception
+        # It makes no sense to request the single art for an album, this should raise an exception
         with self.assertRaises(ValueError):
-            get_cover_artwork_url(
+            get_cover_art_url(
                 self.token, "hold my hand", "knock2", single=True, is_album=True
             )
 
     def test_incorrect_album_title(self):
         # hold my hand is a song and not an album, so if we request an album called "hold my hand" it shouldn't work
         with self.assertRaises(ValueError):
-            get_cover_artwork_url(
+            get_cover_art_url(
                 self.token, "hold my hand", "knock2", single=False, is_album=True
             )

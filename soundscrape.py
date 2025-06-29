@@ -4,8 +4,8 @@ import shutil
 import sys
 from typing import Dict, List
 
-from artwork_search import search_cover_artwork_by_text
-from artwork_selector import CoverArtSelector
+from art_search import search_cover_art_by_text
+from art_selector import CoverArtSelector
 from file_metadata import (
     clear_cover_art,
     get_album_title,
@@ -95,7 +95,7 @@ def process_dir(output_dir: str):
             album.artists = ["Various Artists"]
 
         album.art_choices.append(
-            search_cover_artwork_by_text(", ".join(album.artists), album.title, True)
+            search_cover_art_by_text(", ".join(album.artists), album.title, True)
         )
 
     for album in albums.values():
@@ -103,7 +103,7 @@ def process_dir(output_dir: str):
 
     for album in albums.values():
         selector = CoverArtSelector(album.art_choices)
-        chosen_artwork = album.art_choices[selector.show_selection_window()]
+        chosen_art = album.art_choices[selector.show_selection_window()]
         for track in album.tracks:
             if track.features:
                 new_filename_base = f"{track.title} (feat. {', '.join(track.features)})"
@@ -122,7 +122,7 @@ def process_dir(output_dir: str):
             set_song_title(new_filepath, new_filename_base)
 
             clear_cover_art(new_filepath)
-            set_cover_art(new_filepath, chosen_artwork)
+            set_cover_art(new_filepath, chosen_art)
 
 
 def main(input_path: str, output_path: str, no_processing: bool = False):

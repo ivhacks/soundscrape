@@ -78,50 +78,36 @@ def process_dir(output_dir: str):
 
 
 def main(input_path: str, output_path: str, no_processing: bool = False):
-    # Determine if input and output are files or dirs
-    output_is_file = output_path.lower().endswith((".mp3", ".flac"))
-
     if not os.path.exists(input_path):
         raise FileNotFoundError(f"Input path '{input_path}' does not exist")
 
-    input_is_file = not os.path.isdir(input_path)
+    if not os.path.isdir(input_path):
+        raise ValueError(f"Input path '{input_path}' must be a directory")
 
+    # Collect audio files from input directory
     filenames = []
-
-    if input_is_file:
-        filenames.append(input_path)
-    else:
-        # Input is a folder
-        dir_list = os.listdir(input_path)
-        for file in dir_list:
-            if file.lower().endswith((".mp3", ".flac")):
-                filenames.append(os.path.join(input_path, file))
-
-    if output_is_file and len(filenames) > 1:
-        raise ValueError("Cannot copy multiple files to a single output filename")
+    dir_list = os.listdir(input_path)
+    for file in dir_list:
+        if file.lower().endswith((".mp3", ".flac")):
+            filenames.append(os.path.join(input_path, file))
 
     print("About to process the following files:")
     for filename in filenames:
         print(filename)
 
     # Clear the landing zone
-    if not output_is_file:
-        if os.path.exists(output_path):
-            shutil.rmtree(output_path)
-        os.makedirs(output_path)
+    if os.path.exists(output_path):
+        shutil.rmtree(output_path)
+    os.makedirs(output_path)
 
     # Copy files to output location
     for filename in filenames:
-        if output_is_file:
-            shutil.copy2(filename, output_path)
-        else:
-            output_filename = os.path.join(output_path, os.path.basename(filename))
-            shutil.copy2(filename, output_filename)
+        output_filename = os.path.join(output_path, os.path.basename(filename))
+        shutil.copy2(filename, output_filename)
 
-    # Process the output directory if we're working with a directory input
+    # Process the output directory
     if not no_processing:
-        if not input_is_file:
-            process_dir(output_path)
+        process_dir(output_path)
 
 
 if __name__ == "__main__":

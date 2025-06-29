@@ -35,7 +35,7 @@ def _read_or_create_tag(filename: str):
             audiofile = MP3(filename)
             audiofile.add_tags()
         return audiofile
-    except:
+    except OSError:
         audiofile = MP3(filename)
         audiofile.add_tags()
         return audiofile

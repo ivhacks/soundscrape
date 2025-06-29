@@ -2,8 +2,10 @@ from typing import Dict, List
 from urllib.parse import quote_plus, urljoin
 
 from bs4 import BeautifulSoup
+import requests
 
-from http_session import SESSION
+
+SESSION = requests.Session()
 
 
 def search_bandcamp(query: str) -> List[Dict]:

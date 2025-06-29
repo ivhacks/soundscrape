@@ -1,14 +1,22 @@
+from dataclasses import dataclass
 import os
 import shutil
 import sys
-from dataclasses import dataclass
 from typing import List
 
-from artwork_search import *
+from artwork_search import search_cover_artwork_by_text
 from artwork_selector import CoverArtSelector
-from file_metadata import *
-from lyrics import *
-from parse_and_clean import *
+from file_metadata import (
+    clear_cover_art,
+    get_album_title,
+    get_artist,
+    get_song_title,
+    set_artist,
+    set_cover_art,
+    set_song_title,
+)
+from lyrics import clean_title
+from parse_and_clean import parse_artists, parse_features
 
 
 @dataclass

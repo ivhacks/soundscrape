@@ -3,8 +3,15 @@ from typing import Dict, List
 from urllib.parse import quote_plus
 
 from bs4 import BeautifulSoup
+import requests
 
-from http_session import SESSION
+
+SESSION = requests.Session()
+SESSION.headers.update(
+    {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
+)
 
 
 def search_beatport(query: str) -> List[Dict]:

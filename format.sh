@@ -1,6 +1,8 @@
 #!/bin/bash
 
 # Clean up imports and fix other issues
+python -m ruff check --select I --fix *.py
+python -m ruff check --select I --fix test/*.py
 python -m ruff check --fix *.py
 python -m ruff check --fix test/*.py
 

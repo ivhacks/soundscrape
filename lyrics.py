@@ -2,15 +2,17 @@ import os
 import re  # regex
 import sys
 
-import requests
 from bs4 import BeautifulSoup, Comment
 from fuzzywuzzy import fuzz  # Fuzzy string matching library
+import requests
 from selenium import webdriver
+from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.wait import WebDriverWait
 
 from parse_and_clean import clean_artist, clean_title
+
 
 LYRICS_CONTAINER_CLASS = "Lyrics__Container-sc-1ynbvzw-6"
 
@@ -70,9 +72,6 @@ def get_html_genius(artist, title, cache=False):
     # driver = webdriver.Firefox()
     driver = webdriver.Chrome()
 
-    # ublock_origin_path = "ublock_origin-1.43.0.xpi"
-    # driver.install_addon(ublock_origin_path)
-
     driver.get(f"https://genius.com/search?q={processed_artist}+{processed_title}")
 
     wait_for_section = WebDriverWait(driver, 180)
@@ -95,7 +94,7 @@ def get_html_genius(artist, title, cache=False):
             if result_label.get_attribute("innerHTML") == "Songs":
                 song_results_section_html = item.get_attribute("innerHTML")
                 break
-        except:
+        except WebDriverException:
             # This page is weird and not all the results sections have this label
             continue
 

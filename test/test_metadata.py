@@ -4,7 +4,30 @@ from unittest import TestCase
 
 from PIL import Image
 
-from file_metadata import *
+from file_metadata import (
+    NoTagError,
+    clear_album_artist,
+    clear_album_title,
+    clear_artist,
+    clear_cover_art,
+    clear_lyrics,
+    clear_song_title,
+    clear_year,
+    get_album_artist,
+    get_album_title,
+    get_artist,
+    get_cover_art,
+    get_lyrics,
+    get_song_title,
+    get_year,
+    set_album_artist,
+    set_album_title,
+    set_artist,
+    set_cover_art,
+    set_lyrics,
+    set_song_title,
+    set_year,
+)
 
 
 class TestReadMetadata(TestCase):

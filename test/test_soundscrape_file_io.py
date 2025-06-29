@@ -4,6 +4,7 @@ import sys
 import tempfile
 from unittest import TestCase
 
+
 # Add parent directory to path to import soundscrape
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 

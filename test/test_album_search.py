@@ -1,9 +1,9 @@
 import time
 from unittest import TestCase
 
-import yaml
 from google import genai
 from google.genai import types
+import yaml
 
 from album_search import AlbumTemplate, identify_album, search_prompt, structure_prompt
 

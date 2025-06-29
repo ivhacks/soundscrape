@@ -1,7 +1,7 @@
-import yaml
 from google import genai
 from google.genai import types
 from pydantic import BaseModel
+import yaml
 
 
 def search_prompt(artist: str, song_title: str) -> str:

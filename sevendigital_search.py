@@ -5,6 +5,7 @@ from urllib.parse import quote_plus
 
 from bs4 import BeautifulSoup
 from selenium import webdriver
+from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
@@ -110,13 +111,13 @@ def search_7digital(artist: str, title: str, driver=None) -> List[Dict]:
         WebDriverWait(driver, 30).until(
             lambda d: "Client Challenge" not in d.page_source
         )
-    except Exception:
+    except WebDriverException:
         # If timeout, try clicking somewhere on the page to trigger challenge completion
         try:
             driver.execute_script("document.body.click()")
             time.sleep(5)
             # Continue anyway - sometimes the page works even after timeout
-        except:
+        except WebDriverException:
             pass
 
     # Give it a bit more time to fully load the search results

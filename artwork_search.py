@@ -1,15 +1,16 @@
-import os
 from io import BytesIO
+import os
 from typing import List
 
-import requests
 from PIL import Image
+import requests
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.wait import WebDriverWait
 
 from spoti import get_cover_artwork_url, get_token
+
 
 MAX_NUM_THUMBNAILS = 5
 
@@ -149,7 +150,7 @@ def search_cover_artwork_by_image(image: Image.Image):
             img = Image.open(BytesIO(raw))
             full_size_images_pillow.append(img)
             full_size_images_raw.append(raw)
-        except:
+        except OSError:
             continue
 
         # Break once we have enough images
@@ -208,7 +209,7 @@ def search_cover_artwork_by_text_musicbrainz(
         response = requests.get(mb_url, params=params, headers=headers)
         response.raise_for_status()
         releases = response.json().get("releases", [])
-    except:
+    except OSError:
         return []
 
     cover_images = []
@@ -255,7 +256,7 @@ def search_cover_artwork_by_text_musicbrainz(
                 img = Image.open(BytesIO(img_response.content))
                 cover_images.append(img)
 
-        except:
+        except OSError:
             # Cover art not available for this release, continue to next
             continue
 

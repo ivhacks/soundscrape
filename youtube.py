@@ -1,6 +1,6 @@
 import argparse
-import os
 from dataclasses import dataclass
+import os
 from typing import List, Optional
 
 from selenium import webdriver
@@ -10,6 +10,7 @@ from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.wait import WebDriverWait
 
 from file_metadata import set_album_artist, set_album_title, set_artist, set_song_title
+
 
 # Headless mode toggle - set to False to see the browser window
 # Note: This is not used in the test suite, there's another toggle in test_yt_music_metadata.py
@@ -22,7 +23,7 @@ class TrackMetadata:
     artists: List[str]  # Changed from single artist to list
     featured_artists: List[str]  # New field for featured artists
     album: str
-    year: Optional[str] = None
+    year: int | None
 
 
 def get_yt_music_metadata(
@@ -59,7 +60,7 @@ def get_yt_music_metadata(
 
     # Get basic metadata
     title_element = driver.find_element(By.XPATH, TITLE_XPATH)
-    raw_title = title_element.get_attribute("innerHTML").strip()
+    raw_title = str(title_element.get_attribute("innerHTML")).strip()
 
     # Get all artist links to handle multiple main artists (like "deadmau5 & Kaskade")
     all_links = driver.find_elements(
@@ -69,13 +70,13 @@ def get_yt_music_metadata(
 
     # Extract main artists - typically the first few links before the album
     raw_artists = []
-    for link in all_links[:-1]:  # Exclude last link (likely album)
-        artist_name = link.get_attribute("innerHTML").strip()
+    for artist_link in all_links[:-1]:  # Exclude last link (likely album)
+        artist_name = str(artist_link.get_attribute("innerHTML")).strip()
         raw_artists.append(artist_name)
 
     # Get album (last link in the player bar)
     if len(all_links) >= 2:
-        raw_album = all_links[-1].get_attribute("innerHTML").strip()
+        raw_album = str(all_links[-1].get_attribute("innerHTML")).strip()
     else:
         raw_album = raw_title
 
@@ -86,7 +87,7 @@ def get_yt_music_metadata(
         "/html/body/ytmusic-app/ytmusic-app-layout/ytmusic-player-bar/div[2]/div[2]/span/span[2]/yt-formatted-string/span",
     )
     for span in all_spans:
-        span_text = span.get_attribute("innerHTML").strip()
+        span_text = str(span.get_attribute("innerHTML")).strip()
         year_match = re.search(r"\b(\d{4})\b", span_text)
         if year_match:
             year = int(year_match.group(1))

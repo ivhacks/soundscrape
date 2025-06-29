@@ -2,6 +2,7 @@ import unittest
 
 from sevendigital_search import create_driver, search_7digital
 
+
 HEADLESS = True
 
 

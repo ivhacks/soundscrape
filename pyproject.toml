@@ -1,0 +1,29 @@
+[tool.ruff]
+# Global ruff settings
+line-length = 88
+
+[tool.ruff.lint.isort]
+# Strict alphabetical sorting
+force-sort-within-sections = true
+case-sensitive = false
+
+# Use comma-separated imports on the same line when possible
+force-single-line = false
+combine-as-imports = true
+
+# Separate imports into clear groups
+known-first-party = []
+known-third-party = []
+
+# Import grouping order
+section-order = [
+    "future", 
+    "standard-library", 
+    "third-party", 
+    "first-party", 
+    "local-folder"
+]
+
+# Formatting preferences
+lines-after-imports = 2
+split-on-trailing-comma = true 

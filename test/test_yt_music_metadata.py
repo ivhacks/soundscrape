@@ -6,6 +6,7 @@ from selenium.webdriver.chrome.options import Options
 
 from youtube import TrackMetadata, get_yt_music_metadata
 
+
 HEADLESS = True
 
 

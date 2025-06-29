@@ -94,7 +94,7 @@ class RemoveExplicitTests(TestCase):
         expected_output = "Song Title"
         self.assertEqual(remove_explicit(input_title), expected_output)
 
-    def test_explicit_word(self):
+    def test_explicit_end(self):
         input_title = "Song Title explicit"
         expected_output = "Song Title"
         self.assertEqual(remove_explicit(input_title), expected_output)
@@ -104,7 +104,7 @@ class RemoveExplicitTests(TestCase):
         expected_output = "Song Title"
         self.assertEqual(remove_explicit(input_title), expected_output)
 
-    def test_no_explicit(self):
+    def test_legit_explicit(self):
         input_title = "hongdae guy explicit thoughts"
         expected_output = "hongdae guy explicit thoughts"
         self.assertEqual(remove_explicit(input_title), expected_output)

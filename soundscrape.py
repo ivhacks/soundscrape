@@ -26,10 +26,13 @@ class Track:
 @dataclass
 class Album:
     title: str
+    artists: List[str]
     tracks: List[Track]
+    cover_art: bytes
 
     def __repr__(self):
-        output = f"{self.title}:\n"
+        artists_str = "; ".join(self.artists)
+        output = f"{self.title} by {artists_str}:\n"
         for track in self.tracks:
             output += f" - {track}\n"
         return output
@@ -46,7 +49,12 @@ def process_dir(output_dir: str):
 
             print(f"{artist} - {title} ({album_name})")
             if album_name not in albums.keys():
-                albums[album_name] = Album(title=album_name, tracks=[])
+                albums[album_name] = Album(
+                    title=album_name,
+                    artists=[],
+                    tracks=[],
+                    cover_art=b"",
+                )
 
             cleaned_title = clean_title(title)
             albums[album_name].tracks.append(
@@ -57,6 +65,25 @@ def process_dir(output_dir: str):
                     filepath=filepath,
                 )
             )
+    for album in albums.values():
+        # Set album artists to artists who appear in every track
+        common_artists = set(album.tracks[0].artists)
+
+        # Keep only artists that appear in all tracks
+        for track in album.tracks[1:]:
+            common_artists = common_artists.intersection(set(track.artists))
+
+        album.artists = list(common_artists)
+
+        if not album.artists:
+            album.artists = ["Various Artists"]
+
+        album.cover_art = search_cover_artwork_by_text(
+            ", ".join(album.artists), album.title, True
+        )
+
+    for album in albums.values():
+        print(album)
 
     for album in albums.values():
         for track in album.tracks:
@@ -75,6 +102,9 @@ def process_dir(output_dir: str):
             set_artist(new_filepath, artist_string)
 
             set_song_title(new_filepath, new_filename_base)
+
+            clear_cover_art(new_filepath)
+            set_cover_art(new_filepath, album.cover_art)
 
 
 def main(input_path: str, output_path: str, no_processing: bool = False):

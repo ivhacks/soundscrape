@@ -36,7 +36,6 @@ class Album:
 
 
 def process_dir(output_dir: str):
-    # Process all files in the output directory
     albums = {}
     for filename in os.listdir(output_dir):
         if filename.lower().endswith((".mp3", ".flac")):
@@ -60,7 +59,22 @@ def process_dir(output_dir: str):
             )
 
     for album in albums.values():
-        print(album)
+        for track in album.tracks:
+            if track.features:
+                new_filename_base = f"{track.title} (feat. {', '.join(track.features)})"
+            else:
+                new_filename_base = track.title
+
+            original_extension = os.path.splitext(track.filepath)[1]
+            new_filename = f"{new_filename_base}{original_extension}"
+            new_filepath = os.path.join(os.path.dirname(track.filepath), new_filename)
+
+            os.rename(track.filepath, new_filepath)
+
+            artist_string = "; ".join(track.artists)
+            set_artist(new_filepath, artist_string)
+
+            set_song_title(new_filepath, new_filename_base)
 
 
 def main(input_path: str, output_path: str, no_processing: bool = False):

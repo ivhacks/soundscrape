@@ -2,7 +2,7 @@ from dataclasses import dataclass
 import os
 import shutil
 import sys
-from typing import List
+from typing import Dict, List
 
 from artwork_search import search_cover_artwork_by_text
 from artwork_selector import CoverArtSelector
@@ -10,6 +10,7 @@ from file_metadata import (
     clear_cover_art,
     get_album_title,
     get_artist,
+    get_cover_art,
     get_song_title,
     set_artist,
     set_cover_art,
@@ -38,7 +39,8 @@ class Album:
     title: str
     artists: List[str]
     tracks: List[Track]
-    cover_art: bytes
+    art_choices: List[bytes]
+    chosen_art: bytes
 
     def __repr__(self):
         artists_str = "; ".join(self.artists)
@@ -49,7 +51,7 @@ class Album:
 
 
 def process_dir(output_dir: str):
-    albums = {}
+    albums: Dict[str, Album] = {}
     for filename in os.listdir(output_dir):
         if filename.lower().endswith((".mp3", ".flac")):
             filepath = os.path.join(output_dir, filename)
@@ -63,7 +65,8 @@ def process_dir(output_dir: str):
                     title=album_name,
                     artists=[],
                     tracks=[],
-                    cover_art=b"",
+                    art_choices=[],
+                    chosen_art=b"",
                 )
 
             cleaned_title = clean_title(title)
@@ -75,6 +78,9 @@ def process_dir(output_dir: str):
                     filepath=filepath,
                 )
             )
+            art = get_cover_art(filepath)
+            albums[album_name].art_choices.append(art)
+
     for album in albums.values():
         # Set album artists to artists who appear in every track
         common_artists = set(album.tracks[0].artists)
@@ -88,17 +94,16 @@ def process_dir(output_dir: str):
         if not album.artists:
             album.artists = ["Various Artists"]
 
-        album.cover_art = search_cover_artwork_by_text(
-            ", ".join(album.artists), album.title, True
+        album.art_choices.append(
+            search_cover_artwork_by_text(", ".join(album.artists), album.title, True)
         )
 
     for album in albums.values():
         print(album)
 
     for album in albums.values():
-        cover_art_options = [album.cover_art]
-        selector = CoverArtSelector(cover_art_options)
-        chosen_artwork = cover_art_options[selector.show_selection_window()]
+        selector = CoverArtSelector(album.art_choices)
+        chosen_artwork = album.art_choices[selector.show_selection_window()]
         for track in album.tracks:
             if track.features:
                 new_filename_base = f"{track.title} (feat. {', '.join(track.features)})"
@@ -148,7 +153,6 @@ def main(input_path: str, output_path: str, no_processing: bool = False):
         output_filename = os.path.join(output_path, os.path.basename(filename))
         shutil.copy2(filename, output_filename)
 
-    # Process the output directory
     if not no_processing:
         process_dir(output_path)
 

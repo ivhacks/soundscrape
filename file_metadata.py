@@ -1,9 +1,6 @@
-from io import BytesIO
-
 from mutagen import File
 from mutagen.id3 import APIC, TALB, TDRC, TIT2, TPE1, TPE2, USLT
 from mutagen.mp3 import MP3
-from PIL import Image
 
 
 class NoTagError(Exception):
@@ -283,7 +280,7 @@ def clear_lyrics(filename: str):
     audiofile.save()
 
 
-def get_cover_art(filename: str) -> Image.Image:
+def get_cover_art(filename: str) -> bytes:
     audiofile = File(filename)
     if audiofile is None:
         raise NoTagError("No tag found")
@@ -295,15 +292,11 @@ def get_cover_art(filename: str) -> Image.Image:
             raise NoTagError("APIC frame not found")
 
         # Get the first APIC frame
-        image_bytes = audiofile[apic_frames[0]].data
-        image = Image.open(BytesIO(image_bytes))
-        return image
+        return audiofile[apic_frames[0]].data
     else:
         # For FLAC and other formats, look for embedded pictures
         if hasattr(audiofile, "pictures") and audiofile.pictures:
-            image_bytes = audiofile.pictures[0].data
-            image = Image.open(BytesIO(image_bytes))
-            return image
+            return audiofile.pictures[0].data
         raise NoTagError("No cover art found")
 
 

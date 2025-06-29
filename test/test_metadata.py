@@ -2,8 +2,6 @@ import os
 import shutil
 from unittest import TestCase
 
-from PIL import Image
-
 from file_metadata import (
     NoTagError,
     clear_album_artist,
@@ -170,12 +168,10 @@ class TestReadMetadata(TestCase):
 
     def test_get_cover_art_mp3(self):
         extracted_image = get_cover_art("test/nolimit.mp3")
-        expected_image = Image.open("test/image.jpg")
+        with open("test/image.jpg", "rb") as f:
+            expected_image = f.read()
 
-        extracted_bytes = extracted_image.tobytes()
-        expected_bytes = expected_image.tobytes()
-
-        self.assertEqual(extracted_bytes, expected_bytes)
+        self.assertEqual(extracted_image, expected_image)
 
     def test_set_cover_art_mp3(self):
         with open("test/image.jpg", "rb") as f:
@@ -183,12 +179,8 @@ class TestReadMetadata(TestCase):
 
         set_cover_art("test/yeet.mp3", image_data)
         extracted_image = get_cover_art("test/yeet.mp3")
-        expected_image = Image.open("test/image.jpg")
 
-        extracted_bytes = extracted_image.tobytes()
-        expected_bytes = expected_image.tobytes()
-
-        self.assertEqual(extracted_bytes, expected_bytes)
+        self.assertEqual(extracted_image, image_data)
 
     def test_clear_cover_art_mp3(self):
         clear_cover_art("test/yeet.mp3")
@@ -329,26 +321,18 @@ class TestReadMetadata(TestCase):
             image_data = f.read()
         set_cover_art("test/nolimit.flac", image_data)
 
-        extracted_image = get_cover_art("test/nolimit.flac")
-        expected_image = Image.open("test/image.jpg")
+        extracted_bytes = get_cover_art("test/nolimit.flac")
 
-        extracted_bytes = extracted_image.tobytes()
-        expected_bytes = expected_image.tobytes()
-
-        self.assertEqual(extracted_bytes, expected_bytes)
+        self.assertEqual(extracted_bytes, image_data)
 
     def test_set_cover_art_flac(self):
         with open("test/image.jpg", "rb") as f:
             image_data = f.read()
 
         set_cover_art("test/yeet.flac", image_data)
-        extracted_image = get_cover_art("test/yeet.flac")
-        expected_image = Image.open("test/image.jpg")
+        extracted_bytes = get_cover_art("test/yeet.flac")
 
-        extracted_bytes = extracted_image.tobytes()
-        expected_bytes = expected_image.tobytes()
-
-        self.assertEqual(extracted_bytes, expected_bytes)
+        self.assertEqual(extracted_bytes, image_data)
 
     def test_clear_cover_art_flac(self):
         clear_cover_art("test/yeet.flac")

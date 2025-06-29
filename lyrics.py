@@ -10,7 +10,7 @@ import re  # regex
 from fuzzywuzzy import fuzz  # Fuzzy string matching library
 import requests
 from bs4 import BeautifulSoup
-from cleaning import clean_title, clean_artist
+from parse_and_clean import clean_title, clean_artist
 
 LYRICS_CONTAINER_CLASS = "Lyrics__Container-sc-1ynbvzw-6"
 

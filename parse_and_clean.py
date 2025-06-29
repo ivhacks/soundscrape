@@ -27,7 +27,7 @@ def remove_explicit(input: str) -> str:
     return no_explicit
 
 
-def find_features(input: str) -> List[str]:
+def parse_features(input: str) -> List[str]:
     features = []
 
     # Pattern 1: (feat. Artist) or (Feat. Artist) or (ft. Artist) or (featuring Artist)
@@ -45,3 +45,17 @@ def find_features(input: str) -> List[str]:
         features.append(non_paren_feature.group(2).strip())
 
     return features
+
+
+def parse_artists(input: str) -> List[str]:
+    artists = []
+
+    # Split on comma, semicolon, or ampersand
+    artist_parts = re.split(r"[,;&]", input)
+
+    for artist in artist_parts:
+        clean_artist = artist.strip()
+        if clean_artist:  # Only add non-empty strings
+            artists.append(clean_artist)
+
+    return artists

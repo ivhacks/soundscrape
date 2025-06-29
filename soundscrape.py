@@ -6,17 +6,21 @@ from typing import List
 from lyrics import *
 from artwork_search import *
 from file_metadata import *
-from cleaning import *
+from parse_and_clean import *
 
 
 @dataclass
 class Track:
-    artist: str
+    artists: List[str]
     title: str
+    features: List[str]
     filepath: str
 
     def __repr__(self):
-        return f"{self.artist} - {self.title}"
+        if self.features:
+            return f"{'; '.join(self.artists)} - {self.title} (feat. {', '.join(self.features)})"
+        else:
+            return f"{'; '.join(self.artists)} - {self.title}"
 
 
 @dataclass
@@ -47,7 +51,12 @@ def process_dir(output_dir: str):
 
             cleaned_title = clean_title(title)
             albums[album_name].tracks.append(
-                Track(artist=artist, title=cleaned_title, filepath=filepath)
+                Track(
+                    artists=parse_artists(artist),
+                    title=cleaned_title,
+                    features=parse_features(title),
+                    filepath=filepath,
+                )
             )
 
     for album in albums.values():

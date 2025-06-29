@@ -1,5 +1,11 @@
 from unittest import TestCase
-from cleaning import clean_title, clean_artist, remove_explicit, find_features
+from parse_and_clean import (
+    clean_title,
+    clean_artist,
+    remove_explicit,
+    parse_features,
+    parse_artists,
+)
 
 
 class CleanTitleTests(TestCase):
@@ -107,44 +113,61 @@ class FindFeaturesTests(TestCase):
     def test_parens(self):
         input_title = "Downfall (feat. Lexi Norton)"
         expected_output = ["Lexi Norton"]
-        self.assertEqual(find_features(input_title), expected_output)
+        self.assertEqual(parse_features(input_title), expected_output)
 
     def test_parens_capital_feat(self):
         input_title = "Bass Drop Madness (Feat. DJ Sleepless)"
         expected_output = ["DJ Sleepless"]
-        self.assertEqual(find_features(input_title), expected_output)
+        self.assertEqual(parse_features(input_title), expected_output)
 
     def test_parens_ft(self):
         input_title = "Bangarang (ft. Sirah)"
         expected_output = ["Sirah"]
-        self.assertEqual(find_features(input_title), expected_output)
+        self.assertEqual(parse_features(input_title), expected_output)
 
     def test_parens_featuring(self):
         input_title = "twelfth dimension (featuring 3 White Monsters)"
         expected_output = ["3 White Monsters"]
-        self.assertEqual(find_features(input_title), expected_output)
+        self.assertEqual(parse_features(input_title), expected_output)
 
     def test_no_parens_feat(self):
         input_title = "Wake Me Up feat. Aloe Blacc"
         expected_output = ["Aloe Blacc"]
-        self.assertEqual(find_features(input_title), expected_output)
+        self.assertEqual(parse_features(input_title), expected_output)
 
     def test_no_parens_capital_feat(self):
         input_title = "Stay Feat. Alessia Cara"
         expected_output = ["Alessia Cara"]
-        self.assertEqual(find_features(input_title), expected_output)
+        self.assertEqual(parse_features(input_title), expected_output)
 
     def test_no_parens_ft(self):
         input_title = "Titanium ft. Sia"
         expected_output = ["Sia"]
-        self.assertEqual(find_features(input_title), expected_output)
+        self.assertEqual(parse_features(input_title), expected_output)
 
     def test_no_parens_featuring(self):
         input_title = "Scared to be Lonely featuring Dua Lipa"
         expected_output = ["Dua Lipa"]
-        self.assertEqual(find_features(input_title), expected_output)
+        self.assertEqual(parse_features(input_title), expected_output)
 
     def test_no_features_found(self):
         input_title = "Solo Bangers Only"
         expected_output = []
-        self.assertEqual(find_features(input_title), expected_output)
+        self.assertEqual(parse_features(input_title), expected_output)
+
+
+class ParseArtistsTests(TestCase):
+    def test_ampersand(self):
+        input = "Essgener & knock tuah"
+        expected_output = ["Essgener", "knock tuah"]
+        self.assertEqual(parse_artists(input), expected_output)
+
+    def test_comma(self):
+        input = "jousboxx, jousbocc"
+        expected_output = ["jousboxx", "jousbocc"]
+        self.assertEqual(parse_artists(input), expected_output)
+
+    def test_semicolon(self):
+        input = "Virtual Riot; Skrillex"
+        expected_output = ["Virtual Riot", "Skrillex"]
+        self.assertEqual(parse_artists(input), expected_output)

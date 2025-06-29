@@ -6,17 +6,28 @@ from typing import List
 from lyrics import *
 from artwork_search import *
 from file_metadata import *
+from cleaning import *
+
+
+@dataclass
+class Track:
+    artist: str
+    title: str
+    filepath: str
+
+    def __repr__(self):
+        return f"{self.artist} - {self.title}"
 
 
 @dataclass
 class Album:
     title: str
-    filenames: List[str]
+    tracks: List[Track]
 
     def __repr__(self):
         output = f"{self.title}:\n"
-        for filename in self.filenames:
-            output += f" - {os.path.basename(filename)}\n"
+        for track in self.tracks:
+            output += f" - {track}\n"
         return output
 
 
@@ -32,9 +43,12 @@ def process_dir(output_dir: str):
 
             print(f"{artist} - {title} ({album_name})")
             if album_name not in albums.keys():
-                albums[album_name] = Album(title=album_name, filenames=[])
+                albums[album_name] = Album(title=album_name, tracks=[])
 
-            albums[album_name].filenames.append(filepath)
+            cleaned_title = clean_title(title)
+            albums[album_name].tracks.append(
+                Track(artist=artist, title=cleaned_title, filepath=filepath)
+            )
 
     for album in albums.values():
         print(album)

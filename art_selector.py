@@ -27,7 +27,7 @@ class CoverArtSelector:
 
         try:
             self.image_index = int(widget._name)
-        except AttributeError:
+        except (AttributeError, ValueError):
             # We're not on an image
             self.image_index = -1
             pass

@@ -6,6 +6,14 @@ from artwork_search import *
 from file_metadata import *
 
 
+def do_stuff(filepath: str):
+    artist = get_artist(filepath)
+    title = get_song_title(filepath)
+    album = get_album_title(filepath)
+
+    print(f"{artist} - {title} ({album})")
+
+
 def main(input_path: str, output_path: str, no_processing: bool = False):
     # Determine if input and output are files or dirs
     output_is_file = output_path.lower().endswith((".mp3", ".flac"))
@@ -33,23 +41,24 @@ def main(input_path: str, output_path: str, no_processing: bool = False):
     for filename in filenames:
         print(filename)
 
-    # Create output directory if needed
-    if not output_is_file and not os.path.exists(output_path):
+    # Clear the landing zone
+    if not output_is_file:
+        if os.path.exists(output_path):
+            shutil.rmtree(output_path)
         os.makedirs(output_path)
 
     # Copy files to output location
     for filename in filenames:
         if output_is_file:
             shutil.copy2(filename, output_path)
-            print(f"Copied {filename} to {output_path}")
+            output_file_to_process = output_path
         else:
             output_filename = os.path.join(output_path, os.path.basename(filename))
             shutil.copy2(filename, output_filename)
-            print(f"Copied {filename} to {output_filename}")
+            output_file_to_process = output_filename
 
         if not no_processing:
-            # will do a bunch of processing here
-            pass
+            do_stuff(output_file_to_process)
 
 
 if __name__ == "__main__":

@@ -1,7 +1,6 @@
 import unittest
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from sevendigital_search import search_7digital, create_driver
+
+from sevendigital_search import create_driver, search_7digital
 
 HEADLESS = True
 

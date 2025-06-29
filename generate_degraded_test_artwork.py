@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
 import os
-from PIL import Image, ImageOps
 import sys
+
+from PIL import Image
 
 
 def generate_degraded_images(input_path, output_dir="test/images"):

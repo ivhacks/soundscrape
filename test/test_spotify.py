@@ -1,4 +1,5 @@
 from unittest import TestCase
+
 from spoti import get_cover_artwork_url, get_token
 
 

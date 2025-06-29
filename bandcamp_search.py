@@ -1,6 +1,8 @@
+from typing import Dict, List
 from urllib.parse import quote_plus, urljoin
+
 from bs4 import BeautifulSoup
-from typing import List, Dict
+
 from http_session import SESSION
 
 
@@ -62,7 +64,7 @@ def search_bandcamp(query: str) -> List[Dict]:
                         }
                     )
 
-            except Exception as e:
+            except Exception:
                 continue
 
         return results[:10]  # Limit to 10 results

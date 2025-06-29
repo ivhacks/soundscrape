@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import Dict, List
 
 
 def search_amazon_music(query: str) -> List[Dict]:

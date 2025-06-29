@@ -5,8 +5,8 @@ from typing import List
 def clean_title(title):
     no_explicit = remove_explicit(title)
 
-    no_parens = re.sub("\(.*\)", "", no_explicit)
-    no_brackets = re.sub("\[.*\]", "", no_parens)
+    no_parens = re.sub(r"\(.*\)", "", no_explicit)
+    no_brackets = re.sub(r"\[.*\]", "", no_parens)
     no_ft = no_brackets.split("ft.")[0]
     no_feat = no_ft.split("feat.")[0]
     no_Feat = no_feat.split("Feat.")[0]

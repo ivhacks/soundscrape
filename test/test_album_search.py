@@ -1,11 +1,11 @@
 import time
-import yaml
 from unittest import TestCase
-from album_search import search_prompt, structure_prompt
-from album_search import identify_album
-from album_search import AlbumTemplate
+
+import yaml
 from google import genai
 from google.genai import types
+
+from album_search import AlbumTemplate, identify_album, search_prompt, structure_prompt
 
 
 class AlbumSearchTests(TestCase):

@@ -1,19 +1,19 @@
 import argparse
 import os
-import sys
 from dataclasses import dataclass
 from typing import List, Optional
+
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions
+from selenium.webdriver.support.wait import WebDriverWait
+
+from file_metadata import set_album_artist, set_album_title, set_artist, set_song_title
 
 # Headless mode toggle - set to False to see the browser window
 # Note: This is not used in the test suite, there's another toggle in test_yt_music_metadata.py
 HEADLESS = True
-
-from file_metadata import set_song_title, set_artist, set_album_artist, set_album_title
 
 
 @dataclass
@@ -185,7 +185,6 @@ def _parse_title_and_featured(raw_title: str):
 
 
 def process_link(link: str, cover_artwork: bool = False, music: bool = False):
-
     listdir_before = os.listdir()
 
     args = "--extract-audio "
@@ -202,7 +201,7 @@ def process_link(link: str, cover_artwork: bool = False, music: bool = False):
         if file not in listdir_before:
             newly_downloaded_file = file
 
-    if newly_downloaded_file == None:
+    if newly_downloaded_file is None:
         raise Exception(f"Couldn't identify downloaded file for {link}")
 
     if music:

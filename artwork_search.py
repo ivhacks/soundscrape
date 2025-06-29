@@ -1,13 +1,15 @@
-from typing import List
 import os
+from io import BytesIO
+from typing import List
+
+import requests
 from PIL import Image
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions
-import requests
-from io import BytesIO
-from spoti import get_token, get_cover_artwork_url
+from selenium.webdriver.support.wait import WebDriverWait
+
+from spoti import get_cover_artwork_url, get_token
 
 MAX_NUM_THUMBNAILS = 5
 
@@ -15,14 +17,11 @@ MAX_NUM_THUMBNAILS = 5
 # Returns tuple of (List[Image.Image], List[Bytes]) where both lists are the same length
 # List of bytestrings are the directly downloaded image datas that will be used to create the pillow images
 def search_cover_artwork_by_image(image: Image.Image):
-
     IMAGE_BUTTON_CLASS = "tdPRye"
-    UPLOAD_IMAGE_TAB_CLASS = "iOGqzf H4qWMc aXIg1b"
     UPLOAD_IMAGE_TAB_XPATH = "/html/body/div[1]/div[3]/div/div[2]/form/div[1]/div/a"
     BROWSE_BUTTON_ID = "awyMjb"
     ALL_SIZES_LINK_XPATH = "/html/body/div[7]/div/div[10]/div/div[2]/div[1]/div/div[1]/div[2]/div[2]/span[1]/a"
     ALL_IMAGE_THUMBNAILS_DIV_CLASS = "islrc"
-    ALL_IMAGE_THUMBNAILS_DIV_XPATH = "/html/body/div[2]/c-wiz/div[3]/div[1]/div/div/div/div[1]/div[1]/span/div[1]/div[1]"
     EXPANDED_IMAGE_XPATH = "/html/body/div[2]/c-wiz/div[3]/div[2]/div[3]/div/div/div[3]/div[2]/c-wiz/div/div[1]/div[1]/div[3]/div/a/img"
 
     # TODO: Determine this experimentally
@@ -38,7 +37,7 @@ def search_cover_artwork_by_image(image: Image.Image):
     ublock_origin_path = "ublock_origin-1.43.0.xpi"
     driver.install_addon(ublock_origin_path)
 
-    driver.get(f"https://images.google.com")
+    driver.get("https://images.google.com")
 
     # Click the image button with the camera icon
     wait_for_section = WebDriverWait(driver, 180)

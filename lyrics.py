@@ -1,16 +1,16 @@
 import os
+import re  # regex
 import sys
-from bs4 import BeautifulSoup
-from bs4 import Comment
+
+import requests
+from bs4 import BeautifulSoup, Comment
+from fuzzywuzzy import fuzz  # Fuzzy string matching library
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions
-import re  # regex
-from fuzzywuzzy import fuzz  # Fuzzy string matching library
-import requests
-from bs4 import BeautifulSoup
-from parse_and_clean import clean_title, clean_artist
+from selenium.webdriver.support.wait import WebDriverWait
+
+from parse_and_clean import clean_artist, clean_title
 
 LYRICS_CONTAINER_CLASS = "Lyrics__Container-sc-1ynbvzw-6"
 
@@ -54,7 +54,6 @@ def get_html_genius(artist, title, cache=False):
     if cache:
         # Does cache dir exist?
         if os.path.isdir(cache_path):
-
             # Is the HTML for this particular song cached?
             if os.path.isfile(cache_full_path):
                 with open(cache_full_path, "r", encoding="utf-8") as f:
@@ -108,7 +107,6 @@ def get_html_genius(artist, title, cache=False):
     best_confidence = 0
 
     for anchor in anchors:
-
         a_title = anchor.find_all(class_="mini_card-title")[0].text.strip().lower()
         a_artist = anchor.find_all(class_="mini_card-subtitle")[0].text.strip().lower()
 
@@ -166,11 +164,10 @@ def genius_parse_preprocessing(input_string: str):
 
     # Remove square bracket sections (e.g. [Verse 1: Mitchel Cave]) by converting to string, applying regex substitution, then converting back to soup
     # https://stackoverflow.com/a/14599280
-    return re.sub("[\[].*?[\]]", "", str(no_newlines))
+    return re.sub(r"[\[].*?[\]]", "", str(no_newlines))
 
 
 def extract_lyrics_from_html_genius(html):
-
     lyrics_soup = BeautifulSoup(str(html), "html.parser")
     # Find div tags
     lyrics_divs = lyrics_soup.find_all(class_=LYRICS_CONTAINER_CLASS)
@@ -208,7 +205,6 @@ def genius_parser(input_soup):
     in_parens = False
 
     for i, item in enumerate(contents):
-
         if item.name == "a":
             # This is an annotated section, comprised of a span wrapped in an anchor tag
             # Get inside the anchor, find and recurse into the span (there might be \n, <br>, or other junk to skip)
@@ -253,7 +249,6 @@ def genius_parser(input_soup):
         else:
             stripped_item = str(item).strip()
             if len(stripped_item) > 0:
-
                 # Implicitly trusting Genius not to go more than one parens deep to avoid having to do full-blown tokenization or whatever
                 if in_parens:
                     if ")" in stripped_item and "(" not in stripped_item:
@@ -330,7 +325,6 @@ def get_lyrics_genius(artist, title, cache=False):
 
 
 def get_lyrics_azlyrics(artist, title):
-
     search_soup = soup_url(f"https://search.azlyrics.com/search.php?q={artist}+{title}")
 
     # Find bold tags
@@ -342,7 +336,7 @@ def get_lyrics_azlyrics(artist, title):
             song_results_pane = bold.parent.parent
             break
 
-    if not ("song_results_pane" in locals()):
+    if "song_results_pane" not in locals():
         # Couldn't find this song
         return None
 
@@ -355,7 +349,6 @@ def get_lyrics_azlyrics(artist, title):
     for anchor in anchors:
         # Valid links to lyrics pages have format like '1. "Breathe" - Mako'. All other a tags don't have periods.
         if "." in anchor.text:
-
             # just be happy it's not regex
             a_title = anchor.text[4 : anchor.text[4:].find('"') + 4].strip().lower()
             a_artist = anchor.text[anchor.text[1:].find("-") + 3 :].strip().lower()
@@ -387,7 +380,6 @@ def get_lyrics_azlyrics(artist, title):
     licensing_comment_text = " Usage of azlyrics.com content by any third-party lyrics provider is prohibited by our licensing agreement. Sorry about that. "
 
     for i, div in enumerate(divs):
-
         # Get all comments in this div
         comments = div.find_all(string=lambda text: isinstance(text, Comment))
 
@@ -395,7 +387,6 @@ def get_lyrics_azlyrics(artist, title):
         if len(comments) > 0:
             # Check if the first comment is the licensing warning
             if comments[0] == licensing_comment_text:
-
                 divs_in_lyric_div_candidate = div.find_all("div")
 
                 # The lyrics div has no divs nested inside it
@@ -417,7 +408,6 @@ def gen_filename_helper(input_string):
 
 
 def generate_lyrics_filename(artist, title):
-
     cleaned_artist = gen_filename_helper(artist)
     cleaned_title = gen_filename_helper(title)
 
@@ -427,7 +417,6 @@ def generate_lyrics_filename(artist, title):
 
 
 def notepad(artist, title, lyrics):
-
     lyric_filename = generate_lyrics_filename(artist, title)
     lyric_file_path = os.path.join(os.path.join(os.getcwd(), "temp"), lyric_filename)
 

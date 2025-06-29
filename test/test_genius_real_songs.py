@@ -1,5 +1,6 @@
-from unittest import TestCase
 import os
+from unittest import TestCase
+
 from lyrics import extract_lyrics_from_html_genius
 
 

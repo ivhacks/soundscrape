@@ -1,9 +1,10 @@
+import math
+from io import BytesIO
 from tkinter import *
 from tkinter import Event
 from typing import List
+
 from PIL import Image, ImageDraw, ImageTk
-from io import BytesIO
-import math
 
 THUMBNAIL_SIZE = 200
 ZOOM_BOX_HEIGHT = 600

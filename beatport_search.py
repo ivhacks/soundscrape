@@ -1,7 +1,9 @@
 import json
+from typing import Dict, List
 from urllib.parse import quote_plus
+
 from bs4 import BeautifulSoup
-from typing import List, Dict
+
 from http_session import SESSION
 
 
@@ -68,7 +70,7 @@ def search_beatport(query: str) -> List[Dict]:
                                         "track_id": track_id,
                                     }
                                 )
-                            except Exception as e:
+                            except Exception:
                                 continue
                         break
 

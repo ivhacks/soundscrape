@@ -1,8 +1,9 @@
 import os
 import shutil
 from unittest import TestCase
-from lyrics import search_term_preprocessing, generate_lyrics_filename
-from file_metadata import set_lyrics, get_lyrics
+
+from file_metadata import get_lyrics, set_lyrics
+from lyrics import generate_lyrics_filename, search_term_preprocessing
 
 
 class MiscTests(TestCase):

@@ -1,9 +1,9 @@
+from io import BytesIO
+
 from mutagen import File
-from mutagen.id3 import ID3, TIT2, TPE1, TALB, TDRC, USLT, APIC, ID3NoHeaderError, TPE2
+from mutagen.id3 import APIC, TALB, TDRC, TIT2, TPE1, TPE2, USLT
 from mutagen.mp3 import MP3
 from PIL import Image
-from io import BytesIO
-import os
 
 
 class NoTagError(Exception):

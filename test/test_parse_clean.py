@@ -1,10 +1,11 @@
 from unittest import TestCase
+
 from parse_and_clean import (
-    clean_title,
     clean_artist,
-    remove_explicit,
-    parse_features,
+    clean_title,
     parse_artists,
+    parse_features,
+    remove_explicit,
 )
 
 

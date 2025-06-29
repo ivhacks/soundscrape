@@ -1,13 +1,14 @@
 import os
-import sys
 import shutil
+import sys
 from dataclasses import dataclass
 from typing import List
-from lyrics import *
+
 from artwork_search import *
-from file_metadata import *
-from parse_and_clean import *
 from artwork_selector import CoverArtSelector
+from file_metadata import *
+from lyrics import *
+from parse_and_clean import *
 
 
 @dataclass

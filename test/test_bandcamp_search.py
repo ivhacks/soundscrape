@@ -1,9 +1,9 @@
 import unittest
+
 from bandcamp_search import search_bandcamp
 
 
 class TestBandcampSearch(unittest.TestCase):
-
     def _assert_url_in_results(self, search_term: str, expected_url: str):
         results = search_bandcamp(search_term)
 

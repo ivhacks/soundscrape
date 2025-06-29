@@ -1,6 +1,6 @@
 import os
-import sys
 import shutil
+import sys
 import tempfile
 from unittest import TestCase
 

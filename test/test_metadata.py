@@ -1,8 +1,10 @@
-from unittest import TestCase
-from file_metadata import *
-from PIL import Image
-import shutil
 import os
+import shutil
+from unittest import TestCase
+
+from PIL import Image
+
+from file_metadata import *
 
 
 class TestReadMetadata(TestCase):

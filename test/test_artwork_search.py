@@ -1,8 +1,7 @@
 from unittest import TestCase
-from PIL import Image
-from io import BytesIO
-from artwork_util import same_images
+
 from artwork_search import search_cover_artwork_by_text
+from artwork_util import same_images
 
 
 class ArtworkSearchTests(TestCase):

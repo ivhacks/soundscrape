@@ -1,8 +1,9 @@
+import json
+from base64 import b64encode
+from urllib.parse import urlencode
+
 import requests
 import yaml
-from base64 import b64encode
-import json
-from urllib.parse import urlencode
 
 PRINT_CURL_COMMANDS = False
 

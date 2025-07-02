@@ -12,4 +12,4 @@ class SoundcloudTests(TestCase):
 
         with open("test/image.jpg", "rb") as f:
             expected = f.read()
-        self.assertTrue(same_images(result, expected))
+        self.assertGreater(same_images(result, expected), 0.8)

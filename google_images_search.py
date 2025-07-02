@@ -93,3 +93,10 @@ def search_google_images(
             continue
 
     return results
+
+
+if __name__ == "__main__":
+    results = search_google_images("/Users/iv/nolimit/knock2_nolimit.jpg", min_size=500)
+    print(f"Found {len(results)} image results:")
+    for i, result in enumerate(results, 1):
+        print(f"{i}. {result.x_dimension}x{result.y_dimension} - {result.link}")

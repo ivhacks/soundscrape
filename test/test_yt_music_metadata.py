@@ -1,9 +1,8 @@
 from unittest import TestCase
 
 import pytest
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
 
+from stealth_driver import create_stealth_driver
 from youtube import TrackMetadata, get_yt_music_metadata
 
 
@@ -16,17 +15,7 @@ class YTMusicMetadataTests(TestCase):
     @classmethod
     def setUpClass(cls):
         # Create a shared driver instance for all tests
-        chrome_options = Options()
-        if HEADLESS:
-            chrome_options.add_argument("--headless")
-            chrome_options.add_argument("--no-sandbox")
-            chrome_options.add_argument("--disable-dev-shm-usage")
-            chrome_options.add_argument("--disable-gpu")
-            chrome_options.add_argument("--window-size=1920,1080")
-            chrome_options.add_argument(
-                "--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-            )
-        cls.driver = webdriver.Chrome(options=chrome_options)
+        cls.driver = create_stealth_driver(headless=HEADLESS)
 
     @classmethod
     def tearDownClass(cls):

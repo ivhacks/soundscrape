@@ -4,59 +4,10 @@ from typing import Dict, List
 from urllib.parse import quote_plus
 
 from bs4 import BeautifulSoup
-from selenium import webdriver
 from selenium.common.exceptions import WebDriverException
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
-from webdriver_manager.chrome import ChromeDriverManager
 
-
-def create_driver(headless: bool = False) -> webdriver.Chrome:
-    # Set up Chrome options with stealth settings
-    chrome_options = Options()
-    if headless:
-        chrome_options.add_argument("--headless")
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-    chrome_options.add_argument("--disable-gpu")
-    chrome_options.add_argument("--window-size=1920,1080")
-    chrome_options.add_argument(
-        "--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-    )
-
-    # Additional stealth options
-    chrome_options.add_argument("--disable-blink-features=AutomationControlled")
-    chrome_options.add_argument("--disable-extensions")
-    chrome_options.add_argument("--disable-plugins")
-    chrome_options.add_argument("--disable-images")
-    chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
-    chrome_options.add_experimental_option("useAutomationExtension", False)
-
-    # Set Chrome binary location on macOS
-    chrome_options.binary_location = (
-        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-    )
-
-    # Create driver with webdriver-manager - fix path issue
-    chromedriver_path = ChromeDriverManager().install()
-
-    # Fix the path if webdriver-manager returns wrong file
-    if chromedriver_path.endswith("THIRD_PARTY_NOTICES.chromedriver"):
-        chromedriver_path = chromedriver_path.replace(
-            "THIRD_PARTY_NOTICES.chromedriver", "chromedriver"
-        )
-
-    service = Service(chromedriver_path)
-    driver = webdriver.Chrome(service=service, options=chrome_options)
-    driver.set_page_load_timeout(30)
-
-    # Hide webdriver property to avoid detection
-    driver.execute_script(
-        "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
-    )
-
-    return driver
+from stealth_driver import create_stealth_driver
 
 
 def string_match(a: str, b: str) -> bool:
@@ -99,7 +50,7 @@ def search_album_for_track(driver, album_url: str, track_title: str) -> bool:
 def search_7digital(artist: str, title: str, driver=None) -> List[Dict]:
     """Search 7digital for tracks/albums, checking albums for specific tracks"""
     if driver is None:
-        driver = create_driver()
+        driver = create_stealth_driver()
 
     # Navigate to search page with combined query
     query = f"{artist} {title}"

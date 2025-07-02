@@ -4,12 +4,12 @@ import os
 from typing import List, Optional
 
 from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.wait import WebDriverWait
 
 from file_metadata import set_album_artist, set_album_title, set_artist, set_song_title
+from stealth_driver import create_stealth_driver
 
 
 # Headless mode toggle - set to False to see the browser window
@@ -38,17 +38,7 @@ def get_yt_music_metadata(
     # Use provided driver or create a new one
     driver_created = driver is None
     if driver_created:
-        chrome_options = Options()
-        if HEADLESS:
-            chrome_options.add_argument("--headless")
-            chrome_options.add_argument("--no-sandbox")
-            chrome_options.add_argument("--disable-dev-shm-usage")
-            chrome_options.add_argument("--disable-gpu")
-            chrome_options.add_argument("--window-size=1920,1080")
-            chrome_options.add_argument(
-                "--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-            )
-        driver = webdriver.Chrome(options=chrome_options)
+        driver = create_stealth_driver(headless=HEADLESS)
 
     driver.get(link)
 

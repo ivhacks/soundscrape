@@ -1,6 +1,7 @@
 import unittest
 
-from sevendigital_search import create_driver, search_7digital
+from sevendigital_search import search_7digital
+from stealth_driver import create_stealth_driver
 
 
 HEADLESS = True
@@ -11,7 +12,7 @@ class TestSevendigitalSearch(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.driver = create_driver(HEADLESS)
+        cls.driver = create_stealth_driver(HEADLESS)
 
     @classmethod
     def tearDownClass(cls):

@@ -5,13 +5,13 @@ import sys
 from bs4 import BeautifulSoup, Comment
 from fuzzywuzzy import fuzz  # Fuzzy string matching library
 import requests
-from selenium import webdriver
 from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.wait import WebDriverWait
 
 from parse_and_clean import clean_artist, clean_title
+from stealth_driver import create_stealth_driver
 
 
 LYRICS_CONTAINER_CLASS = "Lyrics__Container-sc-1ynbvzw-6"
@@ -69,8 +69,7 @@ def get_html_genius(artist, title, cache=False):
     processed_artist = search_term_preprocessing(artist)
     processed_title = search_term_preprocessing(title)
 
-    # driver = webdriver.Firefox()
-    driver = webdriver.Chrome()
+    driver = create_stealth_driver()
 
     driver.get(f"https://genius.com/search?q={processed_artist}+{processed_title}")
 

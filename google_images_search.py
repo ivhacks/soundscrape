@@ -50,71 +50,46 @@ def search_google_images(
     file_input.send_keys(image_path)
 
     # Click "Exact matches"
-    print("Looking for 'Exact matches' button...")
     exact_matches = WebDriverWait(driver, 10).until(
         lambda d: d.find_element("xpath", "//div[text()='Exact matches']")
     )
-    print("Found and clicking 'Exact matches'")
     exact_matches.click()
 
     # Wait for results to load
-    print("Waiting for results to load...")
     WebDriverWait(driver, 10).until(
         lambda d: d.find_elements("css selector", ".B2VR9.CJHX3e")
     )
 
-    # Debug: dump page source to see what we have
-    with open("debug_page.html", "w") as f:
-        f.write(driver.page_source)
-    print("Page source dumped to debug_page.html")
-
     # Extract image results
     result_elements = driver.find_elements("css selector", ".B2VR9.CJHX3e")[:30]
-    print(f"Found {len(result_elements)} result elements")
     results = []
 
-    for i, element in enumerate(result_elements):
+    for _, element in enumerate(result_elements):
         try:
-            print(f"Processing element {i + 1}")
             # Extract dimensions from text like "500x500"
             dimension_elements = element.find_elements(
                 "css selector", ".cyspcb.DH9lqb.VBZLA"
             )
-            print(f"Found {len(dimension_elements)} dimension elements")
 
             for dim_elem in dimension_elements:
                 dimension_text = dim_elem.text
-                print(f"Dimension text: '{dimension_text}'")
                 if "x" in dimension_text:
                     x_dim, y_dim = map(
                         lambda x: int(x.replace(",", "")), dimension_text.split("x")
                     )
-                    print(f"Parsed dimensions: {x_dim}x{y_dim}")
 
-                    # Skip if either dimension is below min_size
                     if x_dim < min_size or y_dim < min_size:
-                        print(f"Skipping {x_dim}x{y_dim} (below {min_size})")
                         continue
 
                     # Extract link from the parent element
                     link_element = element.find_element("xpath", "..")
                     link = link_element.get_attribute("href")
-                    print(f"Found link: {link}")
 
                     results.append(
                         ImageResult(link=link, x_dimension=x_dim, y_dimension=y_dim)
                     )
                     break
-        except Exception as e:
-            print(f"Error processing element {i + 1}: {e}")
+        except Exception:
             continue
 
     return results
-
-
-if __name__ == "__main__":
-    results = search_google_images("/Users/iv/nolimit/knock2_nolimit.jpg", min_size=500)
-
-    print(f"Found {len(results)} image results:")
-    for i, result in enumerate(results, 1):
-        print(f"{i}. {result.x_dimension}x{result.y_dimension} - {result.link}")

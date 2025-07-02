@@ -4,7 +4,7 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 
 
-def create_stealth_driver(headless: bool = False) -> webdriver.Chrome:
+def create_stealth_driver(headless: bool = True) -> webdriver.Chrome:
     """Create a Chrome driver with comprehensive stealth settings to avoid detection"""
     chrome_options = Options()
 

@@ -1,6 +1,5 @@
 from unittest import TestCase
 
-from art_util import same_images
 from get_img_bandcamp import get_image_bandcamp
 from get_img_facebook import get_image_facebook
 from get_img_genius import get_image_genius
@@ -8,6 +7,7 @@ from get_img_instagram import get_image_instagram
 from get_img_soundcloud import get_image_soundcloud
 from get_img_threads import get_image_threads
 from get_img_x import get_image_x
+from img_diff import image_difference
 from stealth_driver import create_stealth_driver
 
 
@@ -29,7 +29,7 @@ class GetImageTests(TestCase):
 
         with open("test/image.jpg", "rb") as f:
             expected = f.read()
-        self.assertGreater(same_images(result, expected), 0.8)
+        self.assertLessEqual(image_difference(result, expected), 2)
 
     def test_bandcamp_beyond(self):
         result = get_image_bandcamp(
@@ -39,7 +39,7 @@ class GetImageTests(TestCase):
 
         with open("test/beyond.jpg", "rb") as f:
             expected = f.read()
-        self.assertGreater(same_images(result, expected), 0.8)
+        self.assertLessEqual(image_difference(result, expected), 2)
 
     def test_x_nolimit(self):
         result = get_image_x(
@@ -49,8 +49,7 @@ class GetImageTests(TestCase):
         with open("test/image.jpg", "rb") as f:
             expected = f.read()
 
-        # TODO: This image similarity function is shit, should return almost 1 here
-        self.assertGreater(same_images(result, expected), 0.3)
+        self.assertLessEqual(image_difference(result, expected), 2)
 
     def test_instagram_nolimit_post(self):
         result = get_image_instagram(
@@ -59,7 +58,7 @@ class GetImageTests(TestCase):
 
         with open("test/image.jpg", "rb") as f:
             expected = f.read()
-        self.assertGreater(same_images(result, expected), 0.8)
+        self.assertLessEqual(image_difference(result, expected), 2)
 
     def test_facebook_nolimit_post(self):
         result = get_image_facebook(
@@ -69,7 +68,7 @@ class GetImageTests(TestCase):
 
         with open("test/image.jpg", "rb") as f:
             expected = f.read()
-        self.assertGreater(same_images(result, expected), 0.8)
+        self.assertLessEqual(image_difference(result, expected), 2)
 
     def test_genius_nolimit_album(self):
         result = get_image_genius(
@@ -78,7 +77,7 @@ class GetImageTests(TestCase):
 
         with open("test/image.jpg", "rb") as f:
             expected = f.read()
-        self.assertGreater(same_images(result, expected), 0.75)
+        self.assertLessEqual(image_difference(result, expected), 2)
 
     def test_threads_nolimit_post(self):
         result = get_image_threads(
@@ -88,4 +87,4 @@ class GetImageTests(TestCase):
 
         with open("test/image.jpg", "rb") as f:
             expected = f.read()
-        self.assertGreater(same_images(result, expected), 0.4)
+        self.assertLessEqual(image_difference(result, expected), 2)

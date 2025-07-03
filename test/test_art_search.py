@@ -1,7 +1,7 @@
 from unittest import TestCase
 
 from art_search import search_cover_art_by_text
-from art_util import same_images
+from img_diff import image_difference
 
 
 class ArtSearchTests(TestCase):
@@ -11,7 +11,8 @@ class ArtSearchTests(TestCase):
 
         result = search_cover_art_by_text("knock2", "feel u luv me", album=False)
 
-        self.assertTrue(same_images(expected, result))
+        delta = image_difference(expected, result)
+        self.assertLessEqual(delta, 2, f"Expected <= 2, got {delta}")
 
     def test_knock2_feel_u_luv_me_album(self):
         with open("test/test_art/knock2_nolimit.jpg", "rb") as f:
@@ -19,4 +20,5 @@ class ArtSearchTests(TestCase):
 
         result = search_cover_art_by_text("knock2", "feel u luv me", album=True)
 
-        self.assertTrue(same_images(expected, result))
+        delta = image_difference(expected, result)
+        self.assertLessEqual(delta, 2, f"Expected <= 2, got {delta}")

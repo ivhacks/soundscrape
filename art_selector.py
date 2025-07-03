@@ -62,7 +62,7 @@ class CoverArtSelector:
                     left = 0
                 right = left + self.zoom_box_width
 
-            if mapped_y > self.zoom_box_width / 2:
+            if mapped_y > ZOOM_BOX_HEIGHT / 2:
                 # Calc y based on bottom edge
                 bottom = mapped_y + math.ceil(ZOOM_BOX_HEIGHT / 2)
                 if bottom > original_image_size:
@@ -74,6 +74,9 @@ class CoverArtSelector:
                 if top < 0:
                     top = 0
                 bottom = top + ZOOM_BOX_HEIGHT
+                if bottom > original_image_size:
+                    bottom = original_image_size
+                    top = bottom - ZOOM_BOX_HEIGHT
 
             box_tuple = (left, top, right, bottom)
             zoom_box_image = original_image.crop(box_tuple)

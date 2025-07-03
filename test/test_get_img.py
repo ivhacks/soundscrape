@@ -3,6 +3,7 @@ from unittest import TestCase
 from art_util import same_images
 from get_img_bandcamp import get_image_bandcamp
 from get_img_facebook import get_image_facebook
+from get_img_genius import get_image_genius
 from get_img_instagram import get_image_instagram
 from get_img_soundcloud import get_image_soundcloud
 from get_img_x import get_image_x
@@ -59,3 +60,12 @@ class FacebookTests(TestCase):
         with open("test/image.jpg", "rb") as f:
             expected = f.read()
         self.assertGreater(same_images(result, expected), 0.8)
+
+
+class GeniusTests(TestCase):
+    def test_nolimit_album(self):
+        result = get_image_genius("https://genius.com/albums/Knock2/Nolimit")
+
+        with open("test/image.jpg", "rb") as f:
+            expected = f.read()
+        self.assertGreater(same_images(result, expected), 0.75)

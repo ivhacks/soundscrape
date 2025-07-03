@@ -2,6 +2,7 @@ from unittest import TestCase
 
 from art_util import same_images
 from get_img_bandcamp import get_image_bandcamp
+from get_img_instagram import get_image_instagram
 from get_img_soundcloud import get_image_soundcloud
 from get_img_x import get_image_x
 
@@ -37,3 +38,12 @@ class XTests(TestCase):
 
         # TODO: This image similarity function is shit, should return almost 1 here
         self.assertGreater(same_images(result, expected), 0.3)
+
+
+class InstagramTests(TestCase):
+    def test_nolimit_post(self):
+        result = get_image_instagram("https://www.instagram.com/p/DDiBXLkTXds/")
+
+        with open("test/image.jpg", "rb") as f:
+            expected = f.read()
+        self.assertGreater(same_images(result, expected), 0.8)

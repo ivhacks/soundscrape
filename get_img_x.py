@@ -1,23 +1,30 @@
 import re
-import time
 
 import requests
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 
 from art_selector import CoverArtSelector
 from stealth_driver import create_stealth_driver
 
 
 def get_image_x(link: str, driver=None) -> bytes:
-    # X blocks requests, so we need selenium
     if driver is None:
         driver = create_stealth_driver(headless=True)
 
     driver.get(link)
-    # Wait for content to load
-    time.sleep(5)
+
+    # Wait for the image element to appear
+    wait = WebDriverWait(driver, 30)
+    wait.until(
+        EC.presence_of_element_located(
+            (By.CSS_SELECTOR, 'img[src*="pbs.twimg.com/media"]')
+        )
+    )
+
     html_content = driver.page_source
 
-    # Look for pbs.twimg.com images with name=small parameter (HTML encoded)
     pattern = r'(https://pbs\.twimg\.com/media/[^"\']*\?format=jpg&amp;name=small)'
     match = re.search(pattern, html_content)
 

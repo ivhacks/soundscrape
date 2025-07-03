@@ -1,7 +1,6 @@
 import re
 
 import requests
-from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
@@ -15,17 +14,6 @@ def get_image_facebook(link: str, driver=None) -> bytes:
         driver = create_stealth_driver(headless=True)
 
     driver.get(link)
-
-    # Close any login dialog if it appears
-    try:
-        wait = WebDriverWait(driver, 10)
-        close_button = wait.until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, 'svg[aria-label="Close"]'))
-        )
-        close_button.click()
-    except WebDriverException:
-        # Login dialog might not appear, continue
-        pass
 
     # Wait for the image element to appear
     wait = WebDriverWait(driver, 30)

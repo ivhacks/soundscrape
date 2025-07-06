@@ -107,34 +107,53 @@ def search_google_images(
     return results
 
 
-def download_images(results: List[ImageResult]) -> List[bytes]:
+def download_images(results: List[ImageResult], driver=None) -> List[bytes]:
     images = []
+    created_driver = False
 
-    for result in results:
-        try:
-            if "bandcamp.com" in result.link:
-                image_data = get_image_bandcamp(result.link)
-                images.append(image_data)
-            elif "facebook.com" in result.link:
-                image_data = get_image_facebook(result.link)
-                images.append(image_data)
-            elif "genius.com" in result.link:
-                image_data = get_image_genius(result.link)
-                images.append(image_data)
-            elif "instagram.com" in result.link:
-                image_data = get_image_instagram(result.link)
-                images.append(image_data)
-            elif "soundcloud.com" in result.link:
-                image_data = get_image_soundcloud(result.link)
-                images.append(image_data)
-            elif "threads.net" in result.link or "threads.com" in result.link:
-                image_data = get_image_threads(result.link)
-                images.append(image_data)
-            elif "x.com" in result.link or "twitter.com" in result.link:
-                image_data = get_image_x(result.link)
-                images.append(image_data)
-        except (requests.exceptions.RequestException, WebDriverException, ValueError):
-            continue
+    if driver is None:
+        driver = create_stealth_driver(headless=True)
+        created_driver = True
+
+    try:
+        for result in results:
+            print(f"Attempting to download {result.link}", end="")
+            try:
+                if "bandcamp.com" in result.link:
+                    image_data = get_image_bandcamp(result.link, driver)
+                    images.append(image_data)
+                elif "facebook.com" in result.link:
+                    image_data = get_image_facebook(result.link, driver)
+                    images.append(image_data)
+                elif "genius.com" in result.link:
+                    image_data = get_image_genius(result.link, driver)
+                    images.append(image_data)
+                elif "instagram.com" in result.link:
+                    image_data = get_image_instagram(result.link, driver)
+                    images.append(image_data)
+                elif "soundcloud.com" in result.link:
+                    image_data = get_image_soundcloud(result.link, driver)
+                    images.append(image_data)
+                elif "threads.net" in result.link or "threads.com" in result.link:
+                    image_data = get_image_threads(result.link, driver)
+                    images.append(image_data)
+                elif "x.com" in result.link or "twitter.com" in result.link:
+                    image_data = get_image_x(result.link, driver)
+                    images.append(image_data)
+                else:
+                    print(" - incompatible site")
+                    continue
+                print(" - success")
+            except (
+                requests.exceptions.RequestException,
+                WebDriverException,
+                ValueError,
+            ):
+                print(" - failure")
+                continue
+    finally:
+        if created_driver:
+            driver.quit()
 
     return images
 
@@ -185,20 +204,31 @@ def downselect_images(all_images: List[bytes], original: None | bytes) -> List[b
 
 
 if __name__ == "__main__":
-    results = search_google_images("/Users/iv/nolimit/knock2_nolimit.jpg", min_size=500)
-    print(f"Found {len(results)} image results:")
-    for i, result in enumerate(results, 1):
-        print(f"{i}. {result.x_dimension}x{result.y_dimension} - {result.link}")
+    driver = create_stealth_driver()
 
-    images = download_images(results)
-    print(f"Downloaded {len(images)} images")
+    try:
+        results = search_google_images(
+            "/Users/iv/nolimit/knock2_nolimit.jpg", driver, min_size=500
+        )
+        print(f"Found {len(results)} image results:")
+        for i, result in enumerate(results, 1):
+            print(f"{i}. {result.x_dimension}x{result.y_dimension} - {result.link}")
 
-    # Load original image for comparison
-    with open("/Users/iv/nolimit/knock2_nolimit.jpg", "rb") as f:
-        original_image = f.read()
+        images = download_images(results, driver)
+        print(f"Downloaded {len(images)} images")
 
-    # Downselect to best 5 images
-    selected_images = downselect_images(images, original_image)
+        # Load original image for comparison
+        with open("/Users/iv/nolimit/knock2_nolimit.jpg", "rb") as f:
+            original_image = f.read()
 
-    selector = CoverArtSelector(selected_images)
-    selected_index = selector.show_selection_window()
+        # Downselect to best 5 images
+        selected_images = downselect_images(images, original_image)
+        print(f"Selected {len(selected_images)} images for display")
+
+        if selected_images:
+            selector = CoverArtSelector(selected_images)
+            selected_index = selector.show_selection_window()
+        else:
+            print("No suitable images found")
+    finally:
+        driver.quit()

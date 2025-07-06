@@ -6,7 +6,7 @@ import requests
 from art_selector import CoverArtSelector
 
 
-def get_image_genius(link: str, driver=None) -> bytes:
+def get_image_genius(link: str) -> bytes:
     response = requests.get(link)
     response.raise_for_status()
     html_content = response.text

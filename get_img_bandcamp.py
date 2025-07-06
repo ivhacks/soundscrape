@@ -3,7 +3,7 @@ import re
 import requests
 
 
-def get_image_bandcamp(link: str, driver=None) -> bytes:
+def get_image_bandcamp(link: str) -> bytes:
     response = requests.get(link)
     response.raise_for_status()
 

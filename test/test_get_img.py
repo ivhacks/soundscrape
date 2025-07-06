@@ -23,8 +23,7 @@ class GetImageTests(TestCase):
 
     def test_soundcloud_nolimit(self):
         result = get_image_soundcloud(
-            "https://soundcloud.com/knock2music/knock2-lauren-larue-nolimit-1",
-            driver=self.driver,
+            "https://soundcloud.com/knock2music/knock2-lauren-larue-nolimit-1"
         )
 
         with open("test/image.jpg", "rb") as f:
@@ -33,8 +32,7 @@ class GetImageTests(TestCase):
 
     def test_bandcamp_beyond(self):
         result = get_image_bandcamp(
-            "https://jousboxx.bandcamp.com/track/beyond-featuring-joelle-j",
-            driver=self.driver,
+            "https://jousboxx.bandcamp.com/track/beyond-featuring-joelle-j"
         )
 
         with open("test/beyond.jpg", "rb") as f:
@@ -71,8 +69,15 @@ class GetImageTests(TestCase):
         self.assertLessEqual(image_difference(result, expected), 2)
 
     def test_genius_nolimit_album(self):
+        result = get_image_genius("https://genius.com/albums/Knock2/Nolimit")
+
+        with open("test/image.jpg", "rb") as f:
+            expected = f.read()
+        self.assertLessEqual(image_difference(result, expected), 2)
+
+    def test_genius_dance_or_dead_song(self):
         result = get_image_genius(
-            "https://genius.com/albums/Knock2/Nolimit", driver=self.driver
+            "https://genius.com/Knock2-and-milli-dance-or-dead-lyrics"
         )
 
         with open("test/image.jpg", "rb") as f:

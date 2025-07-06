@@ -20,6 +20,10 @@ from img_diff import image_difference
 from stealth_driver import create_stealth_driver
 
 
+HEADLESS = False
+WAIT_TIME = 15
+
+
 @dataclass
 class ImageResult:
     link: str
@@ -50,25 +54,25 @@ def search_google_images(
             pass
 
     # Find and click the search by image button using aria-label (most future-proof)
-    camera_button = WebDriverWait(driver, 10).until(
+    camera_button = WebDriverWait(driver, WAIT_TIME).until(
         lambda d: d.find_element("css selector", '[aria-label="Search by image"]')
     )
     camera_button.click()
 
     # Find file input and upload image directly
-    file_input = WebDriverWait(driver, 10).until(
+    file_input = WebDriverWait(driver, WAIT_TIME).until(
         lambda d: d.find_element("css selector", 'input[type="file"]')
     )
     file_input.send_keys(image_path)
 
     # Click "Exact matches"
-    exact_matches = WebDriverWait(driver, 10).until(
+    exact_matches = WebDriverWait(driver, WAIT_TIME).until(
         lambda d: d.find_element("xpath", "//div[text()='Exact matches']")
     )
     exact_matches.click()
 
     # Wait for results to load
-    WebDriverWait(driver, 10).until(
+    WebDriverWait(driver, WAIT_TIME).until(
         lambda d: d.find_elements("css selector", ".B2VR9.CJHX3e")
     )
 
@@ -112,12 +116,12 @@ def download_images(results: List[ImageResult], driver=None) -> List[bytes]:
     created_driver = False
 
     if driver is None:
-        driver = create_stealth_driver(headless=True)
+        driver = create_stealth_driver(headless=HEADLESS)
         created_driver = True
 
     try:
         for result in results:
-            print(f"Attempting to download {result.link}", end="")
+            print(f"Attempting to download {result.link}", end="", flush=True)
             try:
                 if "bandcamp.com" in result.link:
                     image_data = get_image_bandcamp(result.link)
@@ -204,7 +208,7 @@ def downselect_images(all_images: List[bytes], original: None | bytes) -> List[b
 
 
 if __name__ == "__main__":
-    driver = create_stealth_driver()
+    driver = create_stealth_driver(headless=HEADLESS)
 
     try:
         results = search_google_images(

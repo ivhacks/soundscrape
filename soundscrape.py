@@ -28,6 +28,9 @@ from parse_and_clean import parse_artists, parse_features
 from stealth_driver import create_stealth_driver
 
 
+HEADLESS = False
+
+
 @dataclass
 class Track:
     artists: List[str]
@@ -123,7 +126,7 @@ def process_dir(output_dir: str):
         print(album)
 
     # Search out album arts for each album
-    driver = create_stealth_driver()
+    driver = create_stealth_driver(headless=HEADLESS)
     try:
         for album in albums.values():
             if not album.art_choices:

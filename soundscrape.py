@@ -3,6 +3,7 @@ import hashlib
 import os
 import shutil
 import sys
+import tempfile
 from typing import Dict, List
 
 from art_search import search_cover_art_by_text
@@ -17,8 +18,14 @@ from file_metadata import (
     set_cover_art,
     set_song_title,
 )
+from google_images_search import (
+    download_images,
+    downselect_images,
+    search_google_images,
+)
 from lyrics import clean_title
 from parse_and_clean import parse_artists, parse_features
+from stealth_driver import create_stealth_driver
 
 
 @dataclass
@@ -54,6 +61,8 @@ class Album:
 
 def process_dir(output_dir: str):
     albums: Dict[str, Album] = {}
+
+    # Loop thru all files, group into albums
     for filename in os.listdir(output_dir):
         if filename.lower().endswith((".mp3", ".flac")):
             filepath = os.path.join(output_dir, filename)
@@ -89,6 +98,7 @@ def process_dir(output_dir: str):
                 albums[album_name].art_choices.append(art)
                 albums[album_name].art_choice_hashes.append(hash)
 
+    # Loop thru albums, identify album artist for each by who appears on every track
     for album in albums.values():
         # Set album artists to artists who appear in every track
         common_artists = set(album.tracks[0].artists)
@@ -112,6 +122,42 @@ def process_dir(output_dir: str):
     for album in albums.values():
         print(album)
 
+    # Search out album arts for each album
+    driver = create_stealth_driver()
+    try:
+        for album in albums.values():
+            if not album.art_choices:
+                continue
+
+            # Create temporary file for the query image
+            with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as temp_file:
+                temp_file.write(album.art_choices[0])
+                temp_path = temp_file.name
+
+            try:
+                # Search for visually similar images
+                print(f"Searching for similar images for {album.title}...")
+                results = search_google_images(temp_path, driver, min_size=500)
+
+                # Download images from supported sites
+                downloaded_images = download_images(results, driver)
+
+                # Combine existing art choices with downloaded images
+                all_images = album.art_choices + downloaded_images
+
+                # Downselect to 5 best choices using the original query image
+                selected_images = downselect_images(all_images, album.art_choices[0])
+
+                # Update album art choices
+                album.art_choices = selected_images
+
+            finally:
+                # Clean up temporary file
+                os.unlink(temp_path)
+    finally:
+        driver.quit()
+
+    # Apply cover art for each album
     for album in albums.values():
         selector = CoverArtSelector(album.art_choices)
         chosen_art = album.art_choices[selector.show_selection_window()]

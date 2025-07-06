@@ -120,19 +120,19 @@ def download_images(results: List[ImageResult], driver=None) -> List[bytes]:
             print(f"Attempting to download {result.link}", end="")
             try:
                 if "bandcamp.com" in result.link:
-                    image_data = get_image_bandcamp(result.link, driver)
+                    image_data = get_image_bandcamp(result.link)
                     images.append(image_data)
                 elif "facebook.com" in result.link:
                     image_data = get_image_facebook(result.link, driver)
                     images.append(image_data)
                 elif "genius.com" in result.link:
-                    image_data = get_image_genius(result.link, driver)
+                    image_data = get_image_genius(result.link)
                     images.append(image_data)
                 elif "instagram.com" in result.link:
                     image_data = get_image_instagram(result.link, driver)
                     images.append(image_data)
                 elif "soundcloud.com" in result.link:
-                    image_data = get_image_soundcloud(result.link, driver)
+                    image_data = get_image_soundcloud(result.link)
                     images.append(image_data)
                 elif "threads.net" in result.link or "threads.com" in result.link:
                     image_data = get_image_threads(result.link, driver)

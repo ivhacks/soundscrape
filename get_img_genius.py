@@ -1,5 +1,4 @@
 import re
-from urllib.parse import unquote
 
 import requests
 
@@ -11,27 +10,17 @@ def get_image_genius(link: str) -> bytes:
     response.raise_for_status()
     html_content = response.text
 
-    # Look for Genius CDN images, using different regex for album vs indivdual track
-    if "genius.com/albums" in link:
-        pattern = r'src="(https://t2\.genius\.com/unsafe/\d+x\d+/https%3A%2F%2Fimages\.genius\.com%2F[^"]*)"'
-    else:
-        pattern = r'content="(https://images\.genius\.com/[^"]*\d+x\d+x\d+[^"]*)"'
-
+    # Look for Genius CDN images
+    pattern = r'content="(https://images\.genius\.com/[^"]*\d+x\d+x\d+[^"]*)"'
     match = re.search(pattern, html_content)
+
     if not match:
         raise ValueError("Could not find Genius image in page")
 
     image_url = match.group(1)
 
-    # If this is URL encoded, undo the part we care about
-    if "/unsafe/" in image_url:
-        # Decode the URL to get the actual image path
-        decoded_url = unquote(image_url.split("/")[-1])  # Get the last part and decode
-    else:
-        decoded_url = image_url
-
     # Extract dimensions from the decoded URL (e.g., "1000x1000x1.png")
-    size_match = re.search(r"(\d+)x(\d+)x\d+\.png", decoded_url)
+    size_match = re.search(r"(\d+)x(\d+)x\d+\.png", image_url)
     if size_match:
         width = size_match.group(1)
         # Replace the size in the original URL with width x 0 for square

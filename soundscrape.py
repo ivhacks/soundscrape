@@ -28,7 +28,7 @@ from parse_and_clean import parse_artists, parse_features
 from stealth_driver import create_stealth_driver
 
 
-HEADLESS = False
+HEADLESS = True
 
 
 @dataclass

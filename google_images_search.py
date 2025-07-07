@@ -5,7 +5,7 @@ from typing import List
 
 from PIL import Image
 import requests
-from selenium.common.exceptions import WebDriverException
+from selenium.common.exceptions import TimeoutException, WebDriverException
 from selenium.webdriver.support.ui import WebDriverWait
 
 from art_selector import CoverArtSelector
@@ -20,7 +20,7 @@ from img_diff import image_difference
 from stealth_driver import create_stealth_driver
 
 
-HEADLESS = False
+HEADLESS = True
 WAIT_TIME = 15
 
 
@@ -37,44 +37,53 @@ def search_google_images(
     if driver is None:
         driver = create_stealth_driver()
 
-    driver.get("https://images.google.com/")
-
-    # Wait for page to load and bot protection to complete with longer timeout
-    try:
-        WebDriverWait(driver, 30).until(
-            lambda d: "Client Challenge" not in d.page_source
-        )
-    except WebDriverException:
-        # If timeout, try clicking somewhere on the page to trigger challenge completion
+    for i in range(3):
         try:
-            driver.execute_script("document.body.click()")
-            time.sleep(5)
-            # Continue anyway - sometimes the page works even after timeout
-        except WebDriverException:
-            pass
+            driver.get("https://images.google.com/")
 
-    # Find and click the search by image button using aria-label (most future-proof)
-    camera_button = WebDriverWait(driver, WAIT_TIME).until(
-        lambda d: d.find_element("css selector", '[aria-label="Search by image"]')
-    )
-    camera_button.click()
+            # Wait for page to load and bot protection to complete with longer timeout
+            try:
+                WebDriverWait(driver, 30).until(
+                    lambda d: "Client Challenge" not in d.page_source
+                )
+            except WebDriverException:
+                # If timeout, try clicking somewhere on the page to trigger challenge completion
+                try:
+                    driver.execute_script("document.body.click()")
+                    time.sleep(5)
+                    # Continue anyway - sometimes the page works even after timeout
+                except WebDriverException:
+                    pass
 
-    # Find file input and upload image directly
-    file_input = WebDriverWait(driver, WAIT_TIME).until(
-        lambda d: d.find_element("css selector", 'input[type="file"]')
-    )
-    file_input.send_keys(image_path)
+            # Find and click the search by image button using aria-label (most future-proof)
+            camera_button = WebDriverWait(driver, WAIT_TIME).until(
+                lambda d: d.find_element(
+                    "css selector", '[aria-label="Search by image"]'
+                )
+            )
+            camera_button.click()
 
-    # Click "Exact matches"
-    exact_matches = WebDriverWait(driver, WAIT_TIME).until(
-        lambda d: d.find_element("xpath", "//div[text()='Exact matches']")
-    )
-    exact_matches.click()
+            # Find file input and upload image directly
+            file_input = WebDriverWait(driver, WAIT_TIME).until(
+                lambda d: d.find_element("css selector", 'input[type="file"]')
+            )
+            file_input.send_keys(image_path)
 
-    # Wait for results to load
-    WebDriverWait(driver, WAIT_TIME).until(
-        lambda d: d.find_elements("css selector", ".B2VR9.CJHX3e")
-    )
+            # Click "Exact matches"
+            exact_matches = WebDriverWait(driver, WAIT_TIME).until(
+                lambda d: d.find_element("xpath", "//div[text()='Exact matches']")
+            )
+            exact_matches.click()
+
+            # Wait for results to load
+            WebDriverWait(driver, WAIT_TIME).until(
+                lambda d: d.find_elements("css selector", ".B2VR9.CJHX3e")
+            )
+            break
+        except TimeoutException:
+            print("driver timed out, creating new driver...")
+            driver.quit()
+            driver = create_stealth_driver()
 
     # Extract image results
     result_elements = driver.find_elements("css selector", ".B2VR9.CJHX3e")[:30]
@@ -142,7 +151,7 @@ def download_images(results: List[ImageResult], driver=None) -> List[bytes]:
                     image_data = get_image_threads(result.link, driver)
                     images.append(image_data)
                 elif "x.com" in result.link or "twitter.com" in result.link:
-                    image_data = get_image_x(result.link, driver)
+                    image_data = get_image_x(result.link)
                     images.append(image_data)
                 else:
                     print(" - incompatible site")
@@ -174,6 +183,8 @@ def downselect_images(all_images: List[bytes], original: None | bytes) -> List[b
             except Exception:
                 continue
         filtered_images = similar_images
+    else:
+        filtered_images = all_images
 
     # Step 2: Filter by aspect ratio (square or almost square)
     square_images = []

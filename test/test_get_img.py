@@ -40,9 +40,7 @@ class GetImageTests(TestCase):
         self.assertLessEqual(image_difference(result, expected), 2)
 
     def test_x_nolimit(self):
-        result = get_image_x(
-            "https://x.com/Knock2Music/status/1867292451918295158", driver=self.driver
-        )
+        result = get_image_x("https://x.com/Knock2Music/status/1867292451918295158")
 
         with open("test/image.jpg", "rb") as f:
             expected = f.read()

@@ -9,10 +9,10 @@ from art_selector import CoverArtSelector
 from stealth_driver import create_stealth_driver
 
 
-def get_image_x(link: str, driver=None) -> bytes:
-    if driver is None:
-        driver = create_stealth_driver(headless=True)
-
+def get_image_x(link: str) -> bytes:
+    # twitter is a special snowflake and breaks in headless mode
+    # with the already-used driver. So we need to always make a new one.
+    driver = create_stealth_driver(headless=True)
     driver.get(link)
 
     # Wait for the image element to appear

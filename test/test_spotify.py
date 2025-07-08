@@ -41,3 +41,16 @@ class SpotifyTests(TestCase):
             get_cover_art_url(
                 self.token, "hold my hand", "knock2", single=False, is_album=True
             )
+
+    def test_lose_my_mind(self):
+        # Format of the title is a little different on Spotify so this tests the fuzzy matching
+        url = get_cover_art_url(
+            self.token,
+            "Ryan Tedder, Sebastian Ingrosso, Alesso",
+            "Calling (Lose My Mind) (Extended Club Mix)",
+            single=False,
+            is_album=True,
+        )
+        self.assertEqual(
+            url, "https://i.scdn.co/image/ab67616d0000b273182bce790811337a5b37c8af"
+        )

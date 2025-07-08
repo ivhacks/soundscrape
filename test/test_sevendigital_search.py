@@ -16,76 +16,59 @@ class TestSevendigitalSearch(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        # Clean up the shared driver
         if cls.driver:
             cls.driver.quit()
 
-    def _assert_url_in_results(self, artist: str, title: str, expected_url: str):
-        results = search_7digital(artist, title, self.driver)
-
-        # Check that we got some results
-        self.assertGreater(
-            len(results), 0, f"No results found for '{artist} - {title}'"
-        )
-
-        # Extract all URLs from results
-        found_urls = [result["url"] for result in results]
-
-        # Check that the expected URL is in the results
-        self.assertIn(
-            expected_url,
-            found_urls,
-            f"Expected URL '{expected_url}' not found in results for '{artist} - {title}'. "
-            f"Found URLs: {found_urls}",
-        )
-
     def test_knock2_jade(self):
-        self._assert_url_in_results(
-            "Knock2",
-            "JADE",
-            "https://us.7digital.com/artist/knock2/release/jade-45577393",
+        results = search_7digital("Knock2", "JADE", self.driver)
+        found_urls = [result["url"] for result in results]
+        self.assertIn(
+            "https://us.7digital.com/artist/knock2/release/jade-45577393", found_urls
         )
 
     def test_martin_garrix_album_search(self):
-        """Test that searching for an album returns the album when found"""
-        self._assert_url_in_results(
-            "Martin Garrix",
-            "Bylaw EP",
+        results = search_7digital("Martin Garrix", "Bylaw EP", self.driver)
+        found_urls = [result["url"] for result in results]
+        self.assertIn(
             "https://us.7digital.com/artist/martin-garrix/release/bylaw-ep-8536371",
+            found_urls,
         )
 
     def test_charli_xcx_360_track(self):
-        """Test searching for a track within an album (360 from BRAT)"""
-        self._assert_url_in_results(
-            "Charli XCX",
-            "360",
+        results = search_7digital("Charli XCX", "360", self.driver)
+        found_urls = [result["url"] for result in results]
+        self.assertIn(
             "https://us.7digital.com/artist/charli-xcx/release/brat-explicit-42231205",
+            found_urls,
         )
 
     def test_charli_xcx_brat_album(self):
-        """Test searching for an album directly (BRAT album)"""
-        self._assert_url_in_results(
-            "Charli XCX",
-            "BRAT",
+        results = search_7digital("Charli XCX", "BRAT", self.driver)
+        found_urls = [result["url"] for result in results]
+        self.assertIn(
             "https://us.7digital.com/artist/charli-xcx/release/brat-explicit-42231205",
+            found_urls,
         )
 
     def test_one_direction_little_white_lies(self):
-        """Test fallback search when initial search returns no results"""
-        self._assert_url_in_results(
-            "One Direction",
-            "Little White Lies",
+        results = search_7digital("One Direction", "Little White Lies", self.driver)
+        found_urls = [result["url"] for result in results]
+        self.assertIn(
             "https://us.7digital.com/artist/one-direction-1/release/midnight-memories-deluxe-3081541",
+            found_urls,
         )
 
     def test_martin_garrix_dont_look_down(self):
-        """Test fallback search for a single track that doesn't appear in initial search"""
-        self._assert_url_in_results(
-            "Martin Garrix",
-            "Don't Look Down",
+        results = search_7digital("Martin Garrix", "Don't Look Down", self.driver)
+        found_urls = [result["url"] for result in results]
+        self.assertIn(
             "https://us.7digital.com/artist/martin-garrix-feat-usher/release/dont-look-down-4265082",
+            found_urls,
         )
 
-
-if __name__ == "__main__":
-    unittest.main()
+    def test_rl_grime_ucla(self):
+        results = search_7digital("RL Grime", "UCLA", self.driver)
+        found_urls = [result["url"] for result in results]
+        self.assertIn(
+            "https://us.7digital.com/artist/rl-grime/release/nova-45573752", found_urls
+        )

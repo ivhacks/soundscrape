@@ -274,3 +274,18 @@ def check_release_for_track(driver, release: Dict, artist: str, title: str) -> b
         return False
 
     return False
+
+
+if __name__ == "__main__":
+    import sys
+
+    if len(sys.argv) != 3:
+        print("Usage: python3 ./sevendigital_search.py artist title")
+        sys.exit(1)
+
+    artist = sys.argv[1]
+    title = sys.argv[2]
+
+    results = search_7digital(artist, title)
+    for result in results:
+        print(result["url"])

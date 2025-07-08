@@ -122,10 +122,25 @@ def search_7digital(artist: str, title: str, driver=None) -> List[Dict]:
         if string_match(album["title"], title):
             return [album]
 
-    # Search top 3 albums for the track
-    for album in unique_albums[:3]:
+    # Search top 10 albums for the track, preferring non-explicit versions
+    found_albums = []
+    for album in unique_albums[:10]:
         if search_album_for_track(driver, album["url"], title):
-            return [album]
+            found_albums.append(album)
+
+    if found_albums:
+        # Prefer non-explicit versions if multiple are found
+        non_explicit = []
+        for album in found_albums:
+            title_has_explicit = "explicit" in album["title"].lower()
+            url_has_explicit = "explicit" in album["url"].lower()
+            if not title_has_explicit and not url_has_explicit:
+                non_explicit.append(album)
+
+        if non_explicit:
+            return [non_explicit[0]]
+        else:
+            return [found_albums[0]]
 
     # If no album contains the track, return track results or any results
     if tracks:

@@ -108,7 +108,7 @@ def search_google_images(
 
                     # Extract link from the parent element
                     link_element = element.find_element("xpath", "..")
-                    link = link_element.get_attribute("href")
+                    link = str(link_element.get_attribute("href"))
 
                     results.append(
                         ImageResult(link=link, x_dimension=x_dim, y_dimension=y_dim)

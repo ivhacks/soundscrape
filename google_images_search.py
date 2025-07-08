@@ -120,17 +120,23 @@ def search_google_images(
     return results
 
 
-def download_images(results: List[ImageResult], driver=None) -> List[bytes]:
+def download_images(
+    results: List[ImageResult], driver=None, fast_dl: bool = True
+) -> List[bytes]:
     images = []
     created_driver = False
 
     if driver is None:
         driver = create_stealth_driver(headless=HEADLESS)
         created_driver = True
-
+    highest_res = 0
     try:
         for result in results:
             print(f"Attempting to download {result.link}", end="", flush=True)
+            if fast_dl:
+                if result.x_dimension * result.y_dimension <= highest_res:
+                    print(" - too small, skipping")
+                    continue
             try:
                 if "bandcamp.com" in result.link:
                     image_data = get_image_bandcamp(result.link)
@@ -157,6 +163,10 @@ def download_images(results: List[ImageResult], driver=None) -> List[bytes]:
                     print(" - incompatible site")
                     continue
                 print(" - success")
+                if fast_dl:
+                    current_res = result.x_dimension * result.y_dimension
+                    if current_res > highest_res:
+                        highest_res = current_res
             except (
                 requests.exceptions.RequestException,
                 WebDriverException,

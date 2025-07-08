@@ -1,10 +1,13 @@
 from dataclasses import dataclass
 import hashlib
+from io import BytesIO
 import os
 import shutil
 import sys
 import tempfile
 from typing import Dict, List
+
+from PIL import Image
 
 from art_search import search_cover_art_by_text
 from art_selector import CoverArtSelector
@@ -14,6 +17,7 @@ from file_metadata import (
     get_artist,
     get_cover_art,
     get_song_title,
+    set_album_artist,
     set_artist,
     set_cover_art,
     set_song_title,
@@ -62,7 +66,7 @@ class Album:
         return output
 
 
-def process_dir(output_dir: str):
+def process_dir(output_dir: str, no_art_select: bool = False, fast_search: bool = True):
     albums: Dict[str, Album] = {}
 
     # Loop thru all files, group into albums
@@ -143,7 +147,7 @@ def process_dir(output_dir: str):
                 results = search_google_images(temp_path, driver, min_size=500)
 
                 # Download images from supported sites
-                downloaded_images = download_images(results, driver)
+                downloaded_images = download_images(results, driver, fast_search)
 
                 # Combine existing art choices with downloaded images
                 all_images = album.art_choices + downloaded_images
@@ -162,8 +166,20 @@ def process_dir(output_dir: str):
 
     # Apply cover art for each album
     for album in albums.values():
-        selector = CoverArtSelector(album.art_choices)
-        chosen_art = album.art_choices[selector.show_selection_window()]
+        if no_art_select:
+            # Pick the highest resolution artwork
+            highest_resolution = 0
+            chosen_art = album.art_choices[0]
+            for artwork_bytes in album.art_choices:
+                image = Image.open(BytesIO(artwork_bytes))
+                resolution = image.width * image.height
+                if resolution > highest_resolution:
+                    highest_resolution = resolution
+                    chosen_art = artwork_bytes
+        else:
+            selector = CoverArtSelector(album.art_choices)
+            chosen_art = album.art_choices[selector.show_selection_window()]
+
         for track in album.tracks:
             if track.features:
                 new_filename_base = f"{track.title} (feat. {', '.join(track.features)})"
@@ -178,6 +194,7 @@ def process_dir(output_dir: str):
 
             artist_string = "; ".join(track.artists)
             set_artist(new_filepath, artist_string)
+            set_album_artist(new_filepath, "; ".join(album.artists))
 
             set_song_title(new_filepath, new_filename_base)
 
@@ -185,7 +202,13 @@ def process_dir(output_dir: str):
             set_cover_art(new_filepath, chosen_art)
 
 
-def main(input_path: str, output_path: str, no_processing: bool = False):
+def main(
+    input_path: str,
+    output_path: str,
+    no_processing: bool = False,
+    no_art_select: bool = False,
+    fast_search: bool = True,
+):
     if not os.path.exists(input_path):
         raise FileNotFoundError(f"Input path '{input_path}' does not exist")
 
@@ -214,7 +237,7 @@ def main(input_path: str, output_path: str, no_processing: bool = False):
         shutil.copy2(filename, output_filename)
 
     if not no_processing:
-        process_dir(output_path)
+        process_dir(output_path, no_art_select, fast_search)
 
 
 if __name__ == "__main__":

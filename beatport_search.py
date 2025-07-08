@@ -89,3 +89,18 @@ def search_beatport(query: str) -> List[Dict]:
     except Exception as e:
         print(f"Error searching Beatport: {e}")
         return []
+
+
+if __name__ == "__main__":
+    import sys
+
+    if len(sys.argv) != 3:
+        print("Usage: python3 ./beatport_search.py artist title")
+        sys.exit(1)
+
+    artist = sys.argv[1]
+    title = sys.argv[2]
+
+    results = search_beatport(artist + " " + title)
+    for result in results:
+        print(result["url"])

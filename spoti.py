@@ -80,9 +80,7 @@ def search_for_artist(token, artist_name):
     return json_result
 
 
-def get_cover_art_url(
-    token, title: str, artist: str, single: bool, is_album: bool
-) -> str:
+def get_art_url(token, title: str, artist: str, single: bool, is_album: bool) -> str:
     if single and is_album:
         raise ValueError("Cannot have both single_release and is_album set to True")
 

@@ -4,7 +4,7 @@ from typing import List
 from PIL import Image
 import requests
 
-from spoti import get_cover_art_url, get_token
+from spoti import get_art_url, get_token
 
 
 MAX_NUM_THUMBNAILS = 5
@@ -14,9 +14,17 @@ def search_cover_art_by_text(artist: str, title: str, album: bool = False) -> by
     token = get_token()
 
     if album:
-        art_url = get_cover_art_url(token, title, artist, single=False, is_album=False)
+        try:
+            art_url = get_art_url(token, title, artist, single=False, is_album=False)
+        except ValueError:
+            # Maybe it was actually a single
+            art_url = get_art_url(token, title, artist, single=True, is_album=False)
     else:
-        art_url = get_cover_art_url(token, title, artist, single=True, is_album=False)
+        try:
+            art_url = get_art_url(token, title, artist, single=True, is_album=False)
+        except ValueError:
+            # Maybe it was actually an album
+            art_url = get_art_url(token, title, artist, single=False, is_album=False)
 
     response = requests.get(art_url)
     response.raise_for_status()

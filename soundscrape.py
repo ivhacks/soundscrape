@@ -120,7 +120,7 @@ def process_dir(output_dir: str, no_art_select: bool = False, fast_search: bool 
             album.artists = ["Various Artists"]
 
         searched_art = search_cover_art_by_text(
-            ", ".join(album.artists), album.title, True
+            ", ".join(album.artists), clean_title(album.title), True
         )
         hash = hashlib.sha256(searched_art).digest()
         album.art_choices.append(searched_art)

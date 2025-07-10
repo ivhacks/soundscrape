@@ -138,25 +138,25 @@ def download_images(
                     print(" - too small, skipping")
                     continue
             try:
-                if "bandcamp.com" in result.link:
+                if "://bandcamp.com" in result.link:
                     image_data = get_image_bandcamp(result.link)
                     images.append(image_data)
-                elif "facebook.com" in result.link:
+                elif "://facebook.com" in result.link:
                     image_data = get_image_facebook(result.link, driver)
                     images.append(image_data)
-                elif "genius.com" in result.link:
+                elif "://genius.com" in result.link:
                     image_data = get_image_genius(result.link)
                     images.append(image_data)
-                elif "instagram.com" in result.link:
+                elif "://instagram.com" in result.link:
                     image_data = get_image_instagram(result.link, driver)
                     images.append(image_data)
-                elif "soundcloud.com" in result.link:
+                elif "://soundcloud.com" in result.link:
                     image_data = get_image_soundcloud(result.link)
                     images.append(image_data)
-                elif "threads.net" in result.link or "threads.com" in result.link:
+                elif "://threads.net" in result.link or "threads.com" in result.link:
                     image_data = get_image_threads(result.link, driver)
                     images.append(image_data)
-                elif "x.com" in result.link or "twitter.com" in result.link:
+                elif "://x.com" in result.link or "twitter.com" in result.link:
                     image_data = get_image_x(result.link)
                     images.append(image_data)
                 else:

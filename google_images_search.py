@@ -138,6 +138,8 @@ def download_images(
                     print(" - too small, skipping")
                     continue
             try:
+                # Don't match :// for bandcamp because it has subdomains, e.g.
+                # https://handsomeharlow.bandcamp.com/album/jackman
                 if "bandcamp.com" in result.link:
                     image_data = get_image_bandcamp(result.link)
                     images.append(image_data)

@@ -50,8 +50,8 @@ def parse_features(input: str) -> List[str]:
 def parse_artists(input: str) -> List[str]:
     artists = []
 
-    # Split on comma, semicolon, or ampersand
-    artist_parts = re.split(r"[,;&]", input)
+    # Split on comma, semicolon, ampersand, or " and "
+    artist_parts = re.split(r"[,;&]|\s+and\s+", input, flags=re.IGNORECASE)
 
     for artist in artist_parts:
         clean_artist = artist.strip()

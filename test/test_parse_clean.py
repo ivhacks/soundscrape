@@ -177,3 +177,8 @@ class ParseArtistsTests(TestCase):
         input = "Virtual Riot; Skrillex"
         expected_output = ["Virtual Riot", "Skrillex"]
         self.assertEqual(parse_artists(input), expected_output)
+
+    def test_and(self):
+        input = "Martin Garrix and Zedd"
+        expected_output = ["Martin Garrix", "Zedd"]
+        self.assertEqual(parse_artists(input), expected_output)

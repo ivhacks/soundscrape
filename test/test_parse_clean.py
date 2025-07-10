@@ -182,3 +182,28 @@ class ParseArtistsTests(TestCase):
         input = "Martin Garrix and Zedd"
         expected_output = ["Martin Garrix", "Zedd"]
         self.assertEqual(parse_artists(input), expected_output)
+
+    def test_and_with_exception_ampersand(self):
+        input = "Martin Garrix and Matisse & Sadko"
+        expected_output = ["Martin Garrix", "Matisse & Sadko"]
+        self.assertEqual(parse_artists(input), expected_output)
+
+    def test_and_with_exception_and(self):
+        input = "Martin Garrix and Matisse and Sadko"
+        expected_output = ["Martin Garrix", "Matisse and Sadko"]
+        self.assertEqual(parse_artists(input), expected_output)
+
+    def test_ampersand_with_exception_ampersand(self):
+        input = "Martin Garrix & Matisse & Sadko"
+        expected_output = ["Martin Garrix", "Matisse & Sadko"]
+        self.assertEqual(parse_artists(input), expected_output)
+
+    def test_ampersand_with_exception_and(self):
+        input = "Martin Garrix & Matisse and Sadko"
+        expected_output = ["Martin Garrix", "Matisse and Sadko"]
+        self.assertEqual(parse_artists(input), expected_output)
+
+    def test_exception_solo(self):
+        input = "Matisse and Sadko"
+        expected_output = ["Matisse and Sadko"]
+        self.assertEqual(parse_artists(input), expected_output)

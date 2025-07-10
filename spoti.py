@@ -5,6 +5,8 @@ from urllib.parse import urlencode
 import requests
 import yaml
 
+from album_search import most_famous_artist
+
 
 PRINT_CURL_COMMANDS = False
 
@@ -87,56 +89,74 @@ def get_cover_art_url(
     url = "https://api.spotify.com/v1/search"
     headers = {"Authorization": f"Bearer {token}"}
 
-    if is_album:  # Title refers to an album
-        query_url = f"{url}?q={title} artist:{artist}&type=album&limit=10"
-        optinally_print_curl_command(query_url, headers)
-        result = requests.get(query_url, headers=headers)
-        json_result = json.loads(result.content)
+    current_artist = artist
 
-        albums = json_result.get("albums").get("items")
+    for attempt in range(2):
+        try:
+            if is_album:  # Title refers to an album
+                query_url = (
+                    f"{url}?q={title} artist:{current_artist}&type=album&limit=10"
+                )
+                optinally_print_curl_command(query_url, headers)
+                result = requests.get(query_url, headers=headers)
+                json_result = json.loads(result.content)
 
-        for album in albums:
-            if album.get("album_type") == "album":
-                return album.get("images")[0]["url"]
+                albums = json_result.get("albums").get("items")
 
-        raise ValueError(f"Couldn't find an album by '{artist}' entitled '{title}'")
+                for album in albums:
+                    if album.get("album_type") == "album":
+                        return album.get("images")[0]["url"]
 
-    else:  # Title refers to a track
-        query_url = f"{url}?q={title} artist:{artist}&type=track&limit=50"
-        optinally_print_curl_command(query_url, headers)
-        result = requests.get(query_url, headers=headers)
-        json_result = json.loads(result.content)
-
-        tracks = json_result.get("tracks").get("items")
-        if not tracks:
-            raise ValueError(f"No track found for '{title}' by '{artist}'")
-
-        found = False
-
-        if single:  # We're looking for the single cover art
-            for track in tracks:
-                album = track.get("album")
-                if album.get("album_type") == "single":
-                    selected_album = album
-                    found = True
-                    break
-            if not found:
                 raise ValueError(
-                    f"Couldn't find a single by '{artist}' called '{title}'"
+                    f"Couldn't find an album by '{current_artist}' entitled '{title}'"
                 )
 
-        else:  # We're looking for the cover art of the album containing this track
-            for track in tracks:
-                album = track.get("album")
-                if album.get("album_type") == "album":
-                    selected_album = album
-                    found = True
-                    break
+            else:  # Title refers to a track
+                query_url = (
+                    f"{url}?q={title} artist:{current_artist}&type=track&limit=50"
+                )
+                optinally_print_curl_command(query_url, headers)
+                result = requests.get(query_url, headers=headers)
+                json_result = json.loads(result.content)
 
-        if not found:
-            raise ValueError(
-                f"Couldn't find an album by '{artist}' containing track '{title}'"
-            )
-        else:
-            images = selected_album.get("images")
-            return images[0]["url"]
+                tracks = json_result.get("tracks").get("items")
+                if not tracks:
+                    raise ValueError(
+                        f"No track found for '{title}' by '{current_artist}'"
+                    )
+
+                found = False
+
+                if single:  # We're looking for the single cover art
+                    for track in tracks:
+                        album = track.get("album")
+                        if album.get("album_type") == "single":
+                            selected_album = album
+                            found = True
+                            break
+                    if not found:
+                        raise ValueError(
+                            f"Couldn't find a single by '{current_artist}' called '{title}'"
+                        )
+
+                else:  # We're looking for the cover art of the album containing this track
+                    for track in tracks:
+                        album = track.get("album")
+                        if album.get("album_type") == "album":
+                            selected_album = album
+                            found = True
+                            break
+
+                if not found:
+                    raise ValueError(
+                        f"Couldn't find an album by '{current_artist}' containing track '{title}'"
+                    )
+                else:
+                    images = selected_album.get("images")
+                    return images[0]["url"]
+
+        except ValueError:
+            if attempt == 0:
+                current_artist = most_famous_artist(artist)
+            else:
+                raise

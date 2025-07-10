@@ -54,3 +54,16 @@ class SpotifyTests(TestCase):
         self.assertEqual(
             url, "https://i.scdn.co/image/ab67616d0000b273182bce790811337a5b37c8af"
         )
+
+    def test_push(self):
+        # Do get single art, should get hold my hand specific art
+        url = get_cover_art_url(
+            self.token,
+            "Push",
+            "Hamdi, Taichu, OFFAIAH, Skrillex",
+            single=True,
+            is_album=False,
+        )
+        self.assertEqual(
+            url, "https://i.scdn.co/image/ab67616d0000b273f239a45be61917fd61898241"
+        )

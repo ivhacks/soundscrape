@@ -55,6 +55,11 @@ class CleanTitleTests(TestCase):
         expected_output = "Downfall"
         self.assertEqual(clean_title(input_title), expected_output)
 
+    def test_clean_title_push(self):
+        input_title = "Push (feat. OFFAIAH)"
+        expected_output = "Push"
+        self.assertEqual(clean_title(input_title), expected_output)
+
 
 class CleanArtistTests(TestCase):
     def test_clean_artist_semicolons_and_commas(self):

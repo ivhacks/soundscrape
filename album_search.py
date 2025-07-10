@@ -91,5 +91,25 @@ def identify_album(artist: str, song_title: str) -> str | None:
     return Album(song_title, single, year)
 
 
+def most_famous_artist(artists: str) -> str:
+    with open("secrets.yaml", "r") as f:
+        config = yaml.safe_load(f)
+        gemini_api_key = config["gemini_api_key"]
+
+    client = genai.Client(api_key=gemini_api_key)
+
+    prompt = f"""From this list of music artists: {artists}
+    
+    Which artist is the most famous and well-known globally? 
+    Respond with only the artist name, nothing else."""
+
+    response = client.models.generate_content(
+        model="gemini-2.0-flash",
+        contents=prompt,
+    )
+
+    return response.text.strip()
+
+
 if __name__ == "__main__":
     print(identify_album("Kevin Gates", "2 Phones"))

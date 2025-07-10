@@ -5,7 +5,13 @@ from google import genai
 from google.genai import types
 import yaml
 
-from album_search import AlbumTemplate, identify_album, search_prompt, structure_prompt
+from album_search import (
+    AlbumTemplate,
+    identify_album,
+    most_famous_artist,
+    search_prompt,
+    structure_prompt,
+)
 
 
 class AlbumSearchTests(TestCase):
@@ -26,6 +32,11 @@ class AlbumSearchTests(TestCase):
         self.assertEqual(album.title, "Islah")
         self.assertEqual(album.single, False)
         self.assertEqual(album.year, 2016)
+
+    def test_most_famous_artist_skrillex(self):
+        # Test the exact scenario from test_push - Skrillex should be identified as most famous
+        artist = most_famous_artist("Hamdi, Taichu, OFFAIAH, Skrillex")
+        self.assertEqual(artist, "Skrillex")
 
 
 class PromptTests(TestCase):

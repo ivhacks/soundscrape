@@ -138,7 +138,7 @@ def download_images(
                     print(" - too small, skipping")
                     continue
             try:
-                if "://bandcamp.com" in result.link:
+                if "bandcamp.com" in result.link:
                     image_data = get_image_bandcamp(result.link)
                     images.append(image_data)
                 elif "://facebook.com" in result.link:

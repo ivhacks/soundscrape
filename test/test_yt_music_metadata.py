@@ -64,7 +64,7 @@ class YTMusicMetadataTests(TestCase):
             title="Ghosts 'n' Stuff (Extended Mix)",
             artists=["deadmau5"],
             featured_artists=["Rob Swire"],
-            album="For Lack of A Better Name (The Extended Mixes)",
+            album="Ghosts n Stuff",
             year=2009,
         )
         self._assert_metadata_matches(link, expected_metadata)

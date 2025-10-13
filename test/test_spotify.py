@@ -101,7 +101,9 @@ class SpotifyTests(TestCase):
         self.assertEqual(first_result["name"], "Worlds")
 
     def test_cli_search_title_and_artist(self):
-        results = tool_search_spotify(self.token, title="higher love", artist="jason ross")
+        results = tool_search_spotify(
+            self.token, title="higher love", artist="jason ross"
+        )
 
         self.assertGreater(len(results), 0)
 
@@ -113,7 +115,9 @@ class SpotifyTests(TestCase):
         self.assertIn("higher", first_result["name"].lower())
 
     def test_cli_search_title_and_album(self):
-        results = tool_search_spotify(self.token, title="fellow feeling", album="worlds")
+        results = tool_search_spotify(
+            self.token, title="fellow feeling", album="worlds"
+        )
 
         self.assertGreater(len(results), 0)
 

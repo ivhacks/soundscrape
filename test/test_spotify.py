@@ -56,7 +56,6 @@ class SpotifyTests(TestCase):
         )
 
     def test_push(self):
-        # Do get single art, should get hold my hand specific art
         url = get_art_url(
             self.token,
             "Push",

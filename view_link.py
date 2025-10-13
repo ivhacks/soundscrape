@@ -5,11 +5,24 @@
 import sys
 from urllib.parse import urlparse
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Comment
 import requests
 from selenium.webdriver.support.ui import WebDriverWait
 
 from stealth_driver import create_stealth_driver
+
+
+def _get_html_selenium(url):
+    driver = create_stealth_driver()
+    driver.get(url)
+    WebDriverWait(driver, 20).until(
+        lambda d: d.execute_script("return document.readyState") == "complete"
+    )
+
+    html = driver.page_source
+    driver.quit()
+    soup = BeautifulSoup(html, "html.parser")
+    return soup
 
 
 def _normalize_url(url):
@@ -90,6 +103,48 @@ def _strip_youtube_noise(head):
     return head
 
 
+def _strip_7digital_noise(head):
+    noise_patterns = [
+        ("http-equiv", "X-UA-Compatible"),
+        ("http-equiv", "cleartype"),
+        ("name", "HandheldFriendly"),
+        ("name", "MobileOptimized"),
+        ("name", "apple-mobile-web-app-capable"),
+        ("name", "apple-mobile-web-app-status-bar-style"),
+        ("name", "viewport"),
+        ("name", "msvalidate.01"),
+        ("name", "application-name"),
+        ("name", "msapplication-TileColor"),
+        ("name", "theme-color"),
+        ("name", "robots"),
+        ("property", "og:site_name"),
+        ("property", "fb:app_id"),
+        ("property", "7d:page-type"),
+        ("property", "twitter:card"),
+        ("property", "twitter:image"),
+        ("property", "twitter:url"),
+        ("property", "twitter:title"),
+        ("property", "twitter:description"),
+        ("property", "twitter:app:url:googleplay"),
+        ("property", "twitter:app:name:iphone"),
+        ("property", "twitter:app:name:ipad"),
+        ("property", "twitter:app:name:googleplay"),
+        ("property", "twitter:app:id:iphone"),
+        ("property", "twitter:app:id:ipad"),
+        ("property", "twitter:app:id:googleplay"),
+        ("property", "twitter:site"),
+    ]
+
+    for attr, value in noise_patterns:
+        for meta in head.find_all("meta", {attr: value}):
+            meta.decompose()
+
+    for comment in head.find_all(string=lambda text: isinstance(text, Comment)):
+        comment.extract()
+
+    return head
+
+
 def view_link(url):
     normalized = _normalize_url(url)
     base = normalized.split("/")[0]
@@ -112,24 +167,14 @@ def view_link(url):
         return return_string
 
     elif "beatport.com" in base:
-        # Proper JS rendered YouTube music is like 4K lines
-        # Using the no-JS version for now and seeing how it goes
-        driver = create_stealth_driver()
-        driver.get(url)
-        WebDriverWait(driver, 20).until(
-            lambda d: d.execute_script("return document.readyState") == "complete"
-        )
-
-        html = driver.page_source
-        driver.quit()
-        soup = BeautifulSoup(html, "html.parser")
-
-        response = requests.get(url)
-        response.raise_for_status()
-        soup = BeautifulSoup(response.text, "html.parser")
-
+        soup = _get_html_selenium(url)
         head = _strip_unneeded_elements(soup.head)
+        return head.prettify().strip()
 
+    elif "7digital.com" in base:
+        soup = _get_html_selenium(url)
+        head = _strip_unneeded_elements(soup.head)
+        head = _strip_7digital_noise(head)
         return head.prettify().strip()
 
     elif "bandcamp.com" in base:

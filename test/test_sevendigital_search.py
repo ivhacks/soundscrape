@@ -38,7 +38,7 @@ class TestSevendigitalSearch(unittest.TestCase):
         results = search_7digital("Charli XCX", "360", self.driver)
         found_urls = [result["url"] for result in results]
         self.assertIn(
-            "https://us.7digital.com/artist/charli-xcx/release/brat-explicit-42231205",
+            "https://us.7digital.com/artist/charli-xcx/release/360-44761123",
             found_urls,
         )
 

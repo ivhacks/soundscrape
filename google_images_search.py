@@ -1,8 +1,11 @@
 from dataclasses import dataclass
 from io import BytesIO
+import os
+import sys
 import time
 from typing import List
 
+from bs4 import BeautifulSoup
 from PIL import Image
 import requests
 from selenium.common.exceptions import TimeoutException, WebDriverException
@@ -20,8 +23,27 @@ from img_diff import image_difference
 from stealth_driver import create_stealth_driver
 
 
-HEADLESS = True
+HEADLESS = False
 WAIT_TIME = 15
+
+
+def _detect_captcha(soup: BeautifulSoup) -> bool:
+    page_text = soup.get_text()
+
+    captcha_indicators = [
+        "Our systems have detected unusual traffic",
+        "not a robot",
+        "solving the above CAPTCHA",
+    ]
+
+    for indicator in captcha_indicators:
+        if indicator in page_text:
+            return True
+
+    if soup.find(class_="g-recaptcha"):
+        return True
+
+    return False
 
 
 @dataclass
@@ -35,7 +57,7 @@ def search_google_images(
     image_path: str, driver=None, min_size: int = 800
 ) -> List[ImageResult]:
     if driver is None:
-        driver = create_stealth_driver()
+        driver = create_stealth_driver(headless=HEADLESS)
 
     for i in range(3):
         try:
@@ -83,7 +105,7 @@ def search_google_images(
         except TimeoutException:
             print("driver timed out, creating new driver...")
             driver.quit()
-            driver = create_stealth_driver()
+            driver = create_stealth_driver(headless=HEADLESS)
 
     # Extract image results
     result_elements = driver.find_elements("css selector", ".B2VR9.CJHX3e")[:30]
@@ -231,12 +253,16 @@ def downselect_images(all_images: List[bytes], original: None | bytes) -> List[b
 
 
 if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("usage: google_images_search.py <image_path>")
+        sys.exit(1)
+
+    image_path = os.path.abspath(sys.argv[1])
+
     driver = create_stealth_driver(headless=HEADLESS)
 
     try:
-        results = search_google_images(
-            "/Users/iv/nolimit/knock2_nolimit.jpg", driver, min_size=500
-        )
+        results = search_google_images(image_path, driver, min_size=500)
         print(f"Found {len(results)} image results:")
         for i, result in enumerate(results, 1):
             print(f"{i}. {result.x_dimension}x{result.y_dimension} - {result.link}")
@@ -244,11 +270,9 @@ if __name__ == "__main__":
         images = download_images(results, driver)
         print(f"Downloaded {len(images)} images")
 
-        # Load original image for comparison
-        with open("/Users/iv/nolimit/knock2_nolimit.jpg", "rb") as f:
+        with open(image_path, "rb") as f:
             original_image = f.read()
 
-        # Downselect to best 5 images
         selected_images = downselect_images(images, original_image)
         print(f"Selected {len(selected_images)} images for display")
 

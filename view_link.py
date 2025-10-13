@@ -177,11 +177,10 @@ def view_link(url):
         head = _strip_7digital_noise(head)
         return head.prettify().strip()
 
-    elif "bandcamp.com" in base:
-        print(f"bandcamp: {url}")
-
-    elif "soundcloud.com" in base:
-        print(f"soundcloud: {url}")
+    elif "google.com" in base:
+        soup = _get_html_selenium(url)
+        head = _strip_unneeded_elements(soup)
+        return soup.prettify().strip()
 
     else:
         response = requests.get(url)

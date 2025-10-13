@@ -158,3 +158,101 @@ def get_art_url(token, title: str, artist: str, single: bool, is_album: bool) ->
                 current_artist = most_famous_artist(artist)
             else:
                 raise
+
+
+def _remove_available_markets(obj):
+    if isinstance(obj, dict):
+        obj.pop("available_markets", None)
+        for value in obj.values():
+            _remove_available_markets(value)
+    elif isinstance(obj, list):
+        for item in obj:
+            _remove_available_markets(item)
+
+
+def tool_search_spotify(token, artist=None, album=None, title=None, limit=2):
+    query_parts = []
+    if title:
+        query_parts.append(title)
+    if album:
+        query_parts.append(album)
+    if artist:
+        query_parts.append(f"artist:{artist}")
+
+    q = " ".join(query_parts)
+
+    if album and not title:
+        search_type = "album"
+    elif title:
+        search_type = "track"
+    elif artist:
+        search_type = "artist"
+    else:
+        raise ValueError("Must specify at least one of: artist, album, title")
+
+    url = "https://api.spotify.com/v1/search"
+    headers = {"Authorization": f"Bearer {token}"}
+    query = f"q={q}&type={search_type}&limit={limit}"
+    query_url = f"{url}?{query}"
+
+    optinally_print_curl_command(query_url, headers)
+    result = requests.get(query_url, headers=headers)
+    data = json.loads(result.content)
+
+    _remove_available_markets(data)
+
+    items = data.get(f"{search_type}s", {}).get("items", [])
+    return items
+
+
+def format_compact(items):
+    if not items:
+        return "No results found"
+
+    output = []
+    for item in items:
+        lines = []
+        lines.append(f"ID: {item.get('id', 'N/A')}")
+        lines.append(f"Name: {item.get('name', 'N/A')}")
+
+        if "artists" in item:
+            if isinstance(item["artists"], list):
+                artist_names = ", ".join([a.get("name", "") for a in item["artists"]])
+                lines.append(f"Artists: {artist_names}")
+
+        if "album" in item:
+            album = item["album"]
+            album_name = album.get("name", "N/A")
+            album_id = album.get("id", "N/A")
+            lines.append(f"Album: {album_name} ({album_id})")
+
+        if "genres" in item and item["genres"]:
+            genres = ", ".join(item["genres"])
+            lines.append(f"Genres: {genres}")
+
+        output.append("\n".join(lines))
+
+    return "\n---\n".join(output)
+
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Search Spotify")
+    parser.add_argument("--artist", help="Artist name")
+    parser.add_argument("--album", help="Album name")
+    parser.add_argument("--title", help="Track title")
+    parser.add_argument("--compact", action="store_true", help="Show compact output")
+    args = parser.parse_args()
+
+    if not (args.artist or args.album or args.title):
+        print("Must specify at least one of: --artist, --album, --title")
+        exit(1)
+
+    token = get_token()
+    items = tool_search_spotify(token, args.artist, args.album, args.title, limit=2)
+
+    if args.compact:
+        print(format_compact(items))
+    else:
+        print(json.dumps(items, indent=2))

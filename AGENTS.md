@@ -36,34 +36,56 @@ sudo dnf install -y google-chrome-stable
 
 ## Useful tools and commands
 
-list all tests:
+**list all tests:**
 ```bash
 PYTHONPATH=. pytest --collect-only -q
 ```
 
-run all tests:
+**run all tests:**
 ```bash
 PYTHONPATH=. pytest
 ```
 
-run all tests in a file:
+**run all tests in a file:**
 ```bash
 PYTHONPATH=. pytest test/test_beatport_search.py
 ```
 
-run a specific test function:
+**run a specific test function:**
 ```bash
 PYTHONPATH=. pytest test/test_beatport_search.py::TestBeatportSearch::test_zedd_martin_garrix_follow
 ```
 
-run tests with output (shows prints):
+**run tests with output (shows prints):**
 ```bash
 PYTHONPATH=. pytest -s
 ```
 
-format code using ruff
+**format code using ruff**
 ```bash
 ./format.sh
+```
+
+**View a website:**
+```bash
+./view_link.sh <url>
+```
+For example:
+```bash
+./view_link.sh https://music.youtube.com/watch?v=3W_EfEDbTec
+```
+This outputs a nicely-formatted HTML rendering of important parts of the site, meant for AI agents. There's bespoke per-site logic in the script to let you view sites like YouTube, Google Images, SoundCloud without becoming overwhelemed with noise in the HTML, or blocked by needing JavaScript. You should be using this script frequently, whenever a human would open a site in a browser. If there's something wrong with this script, try to fix it or alert the user.
+
+**Debugging Spotify:**
+`spoti.py` can be run as a CLI tool to search Spotify and see what results come back. This is useful for debugging search queries and understanding what data Spotify returns. Usage:
+```bash
+# Search with any combination of --artist, --album, --title (at least one required)
+python spoti.py --artist "illenium" --album "ascend"
+python spoti.py --title "shelter" --artist "porter robinson"
+python spoti.py --album "worlds"
+
+# Add --compact for readable output instead of full JSON
+python spoti.py --title "fellow feeling" --album "worlds" --compact
 ```
 
 ## Agent vibes
@@ -116,3 +138,6 @@ format code using ruff
 - DO NOT add comments that say "what" you're doing, even in tests. Unless it's very much not obvious from reading the code.
 - You LOVE deleting code. You will delete or refactor code to be simpler at every opportunity. Your code, my code, anyone's code. If you can do it without breaking anything, you will.
 - Favor exceptions over returning None or blank strings. We want to always ensure that functions can only return one kind of thing, and if there wasn't an exception we won't silently propagate a wrong value.
+- If you want to run a command, you probably don't need to `cd` first. you're already in the soundscrape working dir.
+- Run tests sparingly. Just beause you CAN doesn't mean you SHOULD. Run one or a few specific ones when you're all done with your changes to confirm they work.
+- Don't just run tons of tests to be extra safe, let the user do that. Tests take a long time to run and some of the API/Web ones are subject to rate limits.

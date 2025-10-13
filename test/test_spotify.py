@@ -1,6 +1,7 @@
+import json
 from unittest import TestCase
 
-from spoti import get_art_url, get_token
+from spoti import format_compact, get_art_url, get_token, tool_search_spotify
 
 
 class SpotifyTests(TestCase):
@@ -46,8 +47,8 @@ class SpotifyTests(TestCase):
         # Format of the title is a little different on Spotify so this tests the fuzzy matching
         url = get_art_url(
             self.token,
-            "Ryan Tedder, Sebastian Ingrosso, Alesso",
             "Calling (Lose My Mind) (Extended Club Mix)",
+            "Ryan Tedder, Sebastian Ingrosso, Alesso",
             single=False,
             is_album=True,
         )
@@ -67,3 +68,100 @@ class SpotifyTests(TestCase):
         self.assertEqual(
             url, "https://i.scdn.co/image/ab67616d0000b273f239a45be61917fd61898241"
         )
+
+    def test_cli_search_title_only(self):
+        results = tool_search_spotify(self.token, title="shelter")
+
+        self.assertGreater(len(results), 0)
+
+        first_result = results[0]
+        self.assertIn("name", first_result)
+        self.assertIn("id", first_result)
+        self.assertIn("artists", first_result)
+        self.assertIn("album", first_result)
+
+    def test_cli_search_artist_only(self):
+        results = tool_search_spotify(self.token, artist="seven lions")
+
+        self.assertGreater(len(results), 0)
+
+        first_result = results[0]
+        self.assertIn("name", first_result)
+        self.assertIn("id", first_result)
+        self.assertEqual(first_result["id"], "6fcTRFpz0yH79qSKfof7lp")
+
+    def test_cli_search_album_only(self):
+        results = tool_search_spotify(self.token, album="worlds")
+
+        self.assertGreater(len(results), 0)
+
+        first_result = results[0]
+        self.assertIn("name", first_result)
+        self.assertIn("id", first_result)
+        self.assertIn("artists", first_result)
+        self.assertEqual(first_result["name"], "Worlds")
+
+    def test_cli_search_title_and_artist(self):
+        results = tool_search_spotify(self.token, title="higher love", artist="jason ross")
+
+        self.assertGreater(len(results), 0)
+
+        first_result = results[0]
+        self.assertIn("name", first_result)
+        self.assertIn("id", first_result)
+        self.assertIn("artists", first_result)
+        self.assertIn("album", first_result)
+        self.assertIn("higher", first_result["name"].lower())
+
+    def test_cli_search_title_and_album(self):
+        results = tool_search_spotify(self.token, title="fellow feeling", album="worlds")
+
+        self.assertGreater(len(results), 0)
+
+        first_result = results[0]
+        self.assertIn("name", first_result)
+        self.assertIn("id", first_result)
+        self.assertIn("artists", first_result)
+        self.assertIn("album", first_result)
+        self.assertEqual(first_result["name"], "Fellow Feeling")
+        self.assertEqual(first_result["id"], "2JgbGCxtzRp6wL5H1DgxV7")
+
+    def test_cli_search_artist_and_album(self):
+        results = tool_search_spotify(self.token, artist="illenium", album="ascend")
+
+        self.assertGreater(len(results), 0)
+
+        first_result = results[0]
+        self.assertIn("name", first_result)
+        self.assertIn("id", first_result)
+        self.assertIn("artists", first_result)
+        self.assertEqual(first_result["name"], "ASCEND")
+        self.assertEqual(first_result["id"], "60xcVwuQJAOyu11xf9mObS")
+
+    def test_cli_search_all_params(self):
+        results = tool_search_spotify(
+            self.token, artist="madeon", title="finale", album="adventure"
+        )
+
+        self.assertGreater(len(results), 0)
+
+        first_result = results[0]
+        self.assertIn("name", first_result)
+        self.assertIn("id", first_result)
+        self.assertIn("artists", first_result)
+        self.assertIn("album", first_result)
+        self.assertIn("finale", first_result["name"].lower())
+
+        artist_names = [artist["name"].lower() for artist in first_result["artists"]]
+        self.assertTrue(any("madeon" in name for name in artist_names))
+
+    def test_compact_output(self):
+        results = tool_search_spotify(self.token, artist="illenium", album="ascend")
+
+        compact_output = format_compact(results)
+        json_output = json.dumps(results, indent=2)
+
+        self.assertLess(len(compact_output), len(json_output))
+        self.assertIn("ID:", compact_output)
+        self.assertIn("Name:", compact_output)
+        self.assertIn("ASCEND", compact_output)

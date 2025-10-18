@@ -10,8 +10,8 @@ from PIL import Image
 import requests
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException, WebDriverException
-from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
+from twocaptcha import TwoCaptcha
 import yaml
 
 from art_selector import CoverArtSelector
@@ -55,71 +55,25 @@ def _detect_captcha(soup: BeautifulSoup) -> bool:
 
 def do_captcha(driver: webdriver.Chrome):
     soup = BeautifulSoup(driver.page_source, "html.parser")
-
     recaptcha_element = soup.find(class_="g-recaptcha")
-    if not recaptcha_element:
-        raise ValueError("No reCAPTCHA element found on page")
 
-    site_key = recaptcha_element.get("data-sitekey")
-    if not site_key:
-        raise ValueError("Could not extract site key from reCAPTCHA element")
-
+    data_sitekey = recaptcha_element.get("data-sitekey")
     page_url = driver.current_url
 
-    submit_url = "http://2captcha.com/in.php"
-    params = {
-        "key": TWOCAPTCHA_API_KEY,
-        "method": "userrecaptcha",
-        "googlekey": site_key,
-        "pageurl": page_url,
-        "json": 1,
-    }
+    solver = TwoCaptcha(TWOCAPTCHA_API_KEY)
+    try:
+        result = solver.recaptcha(sitekey=data_sitekey, url=page_url)
 
-    response = requests.post(submit_url, data=params)
-    result = response.json()
+    except Exception:
+        print("failed to solve captcha")
 
-    if result.get("status") != 1:
-        raise ValueError(f"Failed to submit captcha: {result}")
+    code = result["code"]
 
-    print("Submitted to 2Captcha")
-
-    task_id = result.get("request")
-
-    check_url = "http://2captcha.com/res.php"
-
-    for attempt in range(60):
-        time.sleep(5)
-
-        check_params = {
-            "key": TWOCAPTCHA_API_KEY,
-            "action": "get",
-            "id": task_id,
-            "json": 1,
-        }
-
-        response = requests.get(check_url, params=check_params)
-        result = response.json()
-
-        if result.get("status") == 1:
-            solution = result.get("request")
-            print("Got solution!")
-
-            driver.execute_script(
-                f'document.getElementById("g-recaptcha-response").value = "{solution}";'
-            )
-
-            form = driver.find_element(By.ID, "captcha-form")
-            form.submit()
-
-            time.sleep(3)
-            return
-        else:
-            print("Still waiting for solution")
-
-        if result.get("request") != "CAPCHA_NOT_READY":
-            raise ValueError(f"Captcha solving failed: {result}")
-
-    raise ValueError("Captcha solving timed out after 5 minutes")
+    driver.execute_script(
+        "document.getElementById('g-recaptcha-response').innerHTML = arguments[0];",
+        str(code),
+    )
+    driver.execute_script("document.getElementById('captcha-form').submit();")
 
 
 @dataclass

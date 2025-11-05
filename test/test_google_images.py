@@ -2,8 +2,15 @@ import os
 from unittest import TestCase
 
 from bs4 import BeautifulSoup
+import requests
 
-from google_images_search import ImageResult, _detect_captcha, search_google_images
+from google_images_search import (
+    ImageResult,
+    _detect_captcha,
+    litterbox_upload,
+    search_google_images,
+)
+from img_diff import image_difference
 
 
 class GoogleImagesTests(TestCase):
@@ -40,3 +47,22 @@ class GoogleImagesTests(TestCase):
         soup = BeautifulSoup(html, "html.parser")
         result = _detect_captcha(soup)
         self.assertFalse(result)
+
+    def test_litterbox_upload(self):
+        image_path = os.path.join(os.path.dirname(__file__), "image.jpg")
+
+        url = litterbox_upload(image_path)
+
+        self.assertIsInstance(url, str)
+        self.assertTrue(url.startswith("https://"))
+
+        response = requests.get(url)
+        self.assertEqual(response.status_code, 200)
+
+        downloaded_image = response.content
+
+        with open(image_path, "rb") as f:
+            original_image = f.read()
+
+        diff = image_difference(original_image, downloaded_image)
+        self.assertEqual(diff, 0)

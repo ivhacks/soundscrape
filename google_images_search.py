@@ -34,6 +34,24 @@ HEADLESS = False
 WAIT_TIME = 15
 
 
+def litterbox_upload(image_path: str) -> str:
+    with open(image_path, "rb") as f:
+        files = {"fileToUpload": f}
+        data = {"reqtype": "fileupload", "time": "1h"}
+        response = requests.post(
+            "https://litterbox.catbox.moe/resources/internals/api.php",
+            files=files,
+            data=data,
+        )
+
+    if response.status_code != 200:
+        raise Exception(
+            f"Failed to upload image: {response.status_code} - {response.text}"
+        )
+
+    return response.text.strip()
+
+
 def _detect_captcha(soup: BeautifulSoup) -> bool:
     page_text = soup.get_text()
 

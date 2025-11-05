@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from io import BytesIO
 import os
 import sys
@@ -52,25 +51,38 @@ def litterbox_upload(image_path: str) -> str:
     return response.text.strip()
 
 
-def serpapi_reverse_image(url: str) -> List[str]:
-    params = {
-        "api_key": SERPAPI_API_KEY,
-        "engine": "google_reverse_image",
-        "google_domain": "google.com",
-        "image_url": url,
-    }
-
-    search = GoogleSearch(params)
-    results = search.get_dict()
-
-    image_results = results.get("image_results", [])
+def serpapi_reverse_image(url: str, num_results: int = 10) -> List[str]:
     urls = []
-    for result in image_results:
-        link = result.get("link")
-        if link:
-            urls.append(link)
+    page = 0
 
-    return urls
+    while len(urls) < num_results:
+        params = {
+            "api_key": SERPAPI_API_KEY,
+            "engine": "google_reverse_image",
+            "google_domain": "google.com",
+            "image_url": url,
+            "start": str(page),
+        }
+
+        search = GoogleSearch(params)
+        results = search.get_dict()
+
+        image_results = results.get("image_results", [])
+        if not image_results:
+            break
+
+        for result in image_results:
+            link = result.get("link")
+            if link and link not in urls:
+                urls.append(link)
+                if len(urls) >= num_results:
+                    break
+
+        page += 1
+        if page > 10:
+            break
+
+    return urls[:num_results]
 
 
 def _detect_captcha(soup: BeautifulSoup) -> bool:
@@ -115,54 +127,22 @@ def do_captcha(driver: webdriver.Chrome):
     driver.execute_script("document.getElementById('captcha-form').submit();")
 
 
-@dataclass
-class ImageResult:
-    link: str
-    x_dimension: int
-    y_dimension: int
-
-
-def search_google_images(
-    image_path: str, driver=None, min_size: int = 800
-) -> List[ImageResult]:
+def search_google_images(image_path: str) -> List[str]:
     uploaded_url = litterbox_upload(image_path)
     urls = serpapi_reverse_image(uploaded_url)
-
-    results = []
-    for url in urls:
-        results.append(
-            ImageResult(link=url, x_dimension=min_size, y_dimension=min_size)
-        )
-
-    return results
+    return urls
 
 
-def download_images(
-    results: List[ImageResult] | List[str], driver=None, fast_dl: bool = True
-) -> List[bytes]:
+def download_images(results: List[str], driver=None) -> List[bytes]:
     images = []
     created_driver = False
 
     if driver is None:
         driver = create_stealth_driver(headless=HEADLESS)
         created_driver = True
-    highest_res = 0
     try:
-        for result in results:
-            if isinstance(result, str):
-                link = result
-                x_dimension = 0
-                y_dimension = 0
-            else:
-                link = result.link
-                x_dimension = result.x_dimension
-                y_dimension = result.y_dimension
-
+        for link in results:
             print(f"Attempting to download {link}", end="", flush=True)
-            if fast_dl and x_dimension > 0 and y_dimension > 0:
-                if x_dimension * y_dimension <= highest_res:
-                    print(" - too small, skipping")
-                    continue
             try:
                 if "bandcamp.com" in link:
                     image_data = get_image_bandcamp(link)
@@ -189,10 +169,6 @@ def download_images(
                     print(" - incompatible site")
                     continue
                 print(" - success")
-                if fast_dl and x_dimension > 0 and y_dimension > 0:
-                    current_res = x_dimension * y_dimension
-                    if current_res > highest_res:
-                        highest_res = current_res
             except (
                 requests.exceptions.RequestException,
                 WebDriverException,

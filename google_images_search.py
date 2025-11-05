@@ -2,15 +2,13 @@ from dataclasses import dataclass
 from io import BytesIO
 import os
 import sys
-import time
 from typing import List
 
 from bs4 import BeautifulSoup
 from PIL import Image
 import requests
 from selenium import webdriver
-from selenium.common.exceptions import TimeoutException, WebDriverException
-from selenium.webdriver.support.ui import WebDriverWait
+from selenium.common.exceptions import WebDriverException
 from serpapi import GoogleSearch
 from twocaptcha import TwoCaptcha
 import yaml
@@ -127,101 +125,14 @@ class ImageResult:
 def search_google_images(
     image_path: str, driver=None, min_size: int = 800
 ) -> List[ImageResult]:
-    if driver is None:
-        driver = create_stealth_driver(headless=HEADLESS)
+    uploaded_url = litterbox_upload(image_path)
+    urls = serpapi_reverse_image(uploaded_url)
 
-    for i in range(3):
-        try:
-            driver.get("https://images.google.com/")
-
-            # Wait for page to load and bot protection to complete with longer timeout
-            try:
-                WebDriverWait(driver, 30).until(
-                    lambda d: "Client Challenge" not in d.page_source
-                )
-            except WebDriverException:
-                # If timeout, try clicking somewhere on the page to trigger challenge completion
-                try:
-                    driver.execute_script("document.body.click()")
-                    time.sleep(5)
-                    # Continue anyway - sometimes the page works even after timeout
-                except WebDriverException:
-                    pass
-
-            # Find and click the search by image button using aria-label (most future-proof)
-            camera_button = WebDriverWait(driver, WAIT_TIME).until(
-                lambda d: d.find_element(
-                    "css selector", '[aria-label="Search by image"]'
-                )
-            )
-            camera_button.click()
-
-            # Find file input and upload image directly
-            file_input = WebDriverWait(driver, WAIT_TIME).until(
-                lambda d: d.find_element("css selector", 'input[type="file"]')
-            )
-            file_input.send_keys(image_path)
-
-            # Check for captcha
-            time.sleep(2)
-            captcha = True
-            while captcha:
-                soup = BeautifulSoup(driver.page_source, "html.parser")
-                captcha = _detect_captcha(soup)
-                if captcha:
-                    print("captcha detected, solving...")
-                    do_captcha(driver)
-                    time.sleep(2)
-
-            soup = BeautifulSoup(driver.page_source, "html.parser")
-
-            # Click "Exact matches"
-            exact_matches = WebDriverWait(driver, WAIT_TIME).until(
-                lambda d: d.find_element("xpath", "//div[text()='Exact matches']")
-            )
-            exact_matches.click()
-
-            # Wait for results to load
-            WebDriverWait(driver, WAIT_TIME).until(
-                lambda d: d.find_elements("css selector", ".B2VR9.CJHX3e")
-            )
-            break
-        except TimeoutException:
-            print("driver timed out, creating new driver...")
-            driver.quit()
-            driver = create_stealth_driver(headless=HEADLESS)
-
-    # Extract image results
-    result_elements = driver.find_elements("css selector", ".B2VR9.CJHX3e")[:30]
     results = []
-
-    for _, element in enumerate(result_elements):
-        try:
-            # Extract dimensions from text like "500x500"
-            dimension_elements = element.find_elements(
-                "css selector", ".cyspcb.DH9lqb.VBZLA"
-            )
-
-            for dim_elem in dimension_elements:
-                dimension_text = dim_elem.text
-                if "x" in dimension_text:
-                    x_dim, y_dim = map(
-                        lambda x: int(x.replace(",", "")), dimension_text.split("x")
-                    )
-
-                    if x_dim < min_size or y_dim < min_size:
-                        continue
-
-                    # Extract link from the parent element
-                    link_element = element.find_element("xpath", "..")
-                    link = str(link_element.get_attribute("href"))
-
-                    results.append(
-                        ImageResult(link=link, x_dimension=x_dim, y_dimension=y_dim)
-                    )
-                    break
-        except Exception:
-            continue
+    for url in urls:
+        results.append(
+            ImageResult(link=url, x_dimension=min_size, y_dimension=min_size)
+        )
 
     return results
 

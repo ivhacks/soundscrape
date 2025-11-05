@@ -129,16 +129,19 @@ class SpotifyTests(TestCase):
         self.assertEqual(first_result["id"], "2JgbGCxtzRp6wL5H1DgxV7")
 
     def test_cli_search_artist_and_album(self):
-        results = tool_search_spotify(self.token, artist="illenium", album="ascend")
+        results = tool_search_spotify(
+            self.token, artist="illenium", album="ascend", limit=3
+        )
 
-        self.assertGreater(len(results), 0)
+        self.assertGreaterEqual(len(results), 3)
 
-        first_result = results[0]
-        self.assertIn("name", first_result)
-        self.assertIn("id", first_result)
-        self.assertIn("artists", first_result)
-        self.assertEqual(first_result["name"], "ASCEND")
-        self.assertEqual(first_result["id"], "60xcVwuQJAOyu11xf9mObS")
+        album_names = [result["name"] for result in results]
+        self.assertIn("ASCEND", album_names)
+
+        ascend_result = next(r for r in results if r["name"] == "ASCEND")
+        self.assertIn("id", ascend_result)
+        self.assertIn("artists", ascend_result)
+        self.assertEqual(ascend_result["id"], "60xcVwuQJAOyu11xf9mObS")
 
     def test_cli_search_all_params(self):
         results = tool_search_spotify(

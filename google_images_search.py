@@ -240,10 +240,10 @@ if __name__ == "__main__":
     driver = create_stealth_driver(headless=HEADLESS)
 
     try:
-        results = search_google_images(image_path, driver, min_size=500)
+        results = search_google_images(image_path)
         print(f"Found {len(results)} image results:")
         for i, result in enumerate(results, 1):
-            print(f"{i}. {result.x_dimension}x{result.y_dimension} - {result.link}")
+            print(f"{i}. {result}")
 
         images = download_images(results, driver)
         print(f"Downloaded {len(images)} images")

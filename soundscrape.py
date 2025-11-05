@@ -144,10 +144,10 @@ def process_dir(output_dir: str, no_art_select: bool = False, fast_search: bool 
             try:
                 # Search for visually similar images
                 print(f"Searching for similar images for {album.title}...")
-                results = search_google_images(temp_path, driver, min_size=500)
+                results = search_google_images(temp_path)
 
                 # Download images from supported sites
-                downloaded_images = download_images(results, driver, fast_search)
+                downloaded_images = download_images(results, driver)
 
                 # Combine existing art choices with downloaded images
                 all_images = album.art_choices + downloaded_images

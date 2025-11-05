@@ -11,6 +11,7 @@ import requests
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException, WebDriverException
 from selenium.webdriver.support.ui import WebDriverWait
+from serpapi import GoogleSearch
 from twocaptcha import TwoCaptcha
 import yaml
 
@@ -29,8 +30,9 @@ from stealth_driver import create_stealth_driver
 with open("secrets.yaml", "r") as f:
     config = yaml.safe_load(f)
     TWOCAPTCHA_API_KEY = config["twocaptcha_api_key"]
+    SERPAPI_API_KEY = config["serpapi_api_key"]
 
-HEADLESS = False
+HEADLESS = True
 WAIT_TIME = 15
 
 
@@ -50,6 +52,27 @@ def litterbox_upload(image_path: str) -> str:
         )
 
     return response.text.strip()
+
+
+def serpapi_reverse_image(url: str) -> List[str]:
+    params = {
+        "api_key": SERPAPI_API_KEY,
+        "engine": "google_reverse_image",
+        "google_domain": "google.com",
+        "image_url": url,
+    }
+
+    search = GoogleSearch(params)
+    results = search.get_dict()
+
+    image_results = results.get("image_results", [])
+    urls = []
+    for result in image_results:
+        link = result.get("link")
+        if link:
+            urls.append(link)
+
+    return urls
 
 
 def _detect_captcha(soup: BeautifulSoup) -> bool:
@@ -204,7 +227,7 @@ def search_google_images(
 
 
 def download_images(
-    results: List[ImageResult], driver=None, fast_dl: bool = True
+    results: List[ImageResult] | List[str], driver=None, fast_dl: bool = True
 ) -> List[bytes]:
     images = []
     created_driver = False
@@ -215,41 +238,48 @@ def download_images(
     highest_res = 0
     try:
         for result in results:
-            print(f"Attempting to download {result.link}", end="", flush=True)
-            if fast_dl:
-                if result.x_dimension * result.y_dimension <= highest_res:
+            if isinstance(result, str):
+                link = result
+                x_dimension = 0
+                y_dimension = 0
+            else:
+                link = result.link
+                x_dimension = result.x_dimension
+                y_dimension = result.y_dimension
+
+            print(f"Attempting to download {link}", end="", flush=True)
+            if fast_dl and x_dimension > 0 and y_dimension > 0:
+                if x_dimension * y_dimension <= highest_res:
                     print(" - too small, skipping")
                     continue
             try:
-                # Don't match :// for bandcamp because it has subdomains, e.g.
-                # https://handsomeharlow.bandcamp.com/album/jackman
-                if "bandcamp.com" in result.link:
-                    image_data = get_image_bandcamp(result.link)
+                if "bandcamp.com" in link:
+                    image_data = get_image_bandcamp(link)
                     images.append(image_data)
-                elif "://facebook.com" in result.link:
-                    image_data = get_image_facebook(result.link, driver)
+                elif "://facebook.com" in link:
+                    image_data = get_image_facebook(link, driver)
                     images.append(image_data)
-                elif "://genius.com" in result.link:
-                    image_data = get_image_genius(result.link)
+                elif "://genius.com" in link:
+                    image_data = get_image_genius(link)
                     images.append(image_data)
-                elif "://instagram.com" in result.link:
-                    image_data = get_image_instagram(result.link, driver)
+                elif "://instagram.com" in link:
+                    image_data = get_image_instagram(link, driver)
                     images.append(image_data)
-                elif "://soundcloud.com" in result.link:
-                    image_data = get_image_soundcloud(result.link)
+                elif "://soundcloud.com" in link:
+                    image_data = get_image_soundcloud(link)
                     images.append(image_data)
-                elif "://threads.net" in result.link or "threads.com" in result.link:
-                    image_data = get_image_threads(result.link, driver)
+                elif "://threads.net" in link or "threads.com" in link:
+                    image_data = get_image_threads(link, driver)
                     images.append(image_data)
-                elif "://x.com" in result.link or "twitter.com" in result.link:
-                    image_data = get_image_x(result.link)
+                elif "://x.com" in link or "twitter.com" in link:
+                    image_data = get_image_x(link)
                     images.append(image_data)
                 else:
                     print(" - incompatible site")
                     continue
                 print(" - success")
-                if fast_dl:
-                    current_res = result.x_dimension * result.y_dimension
+                if fast_dl and x_dimension > 0 and y_dimension > 0:
+                    current_res = x_dimension * y_dimension
                     if current_res > highest_res:
                         highest_res = current_res
             except (

@@ -9,6 +9,7 @@ from google_images_search import (
     _detect_captcha,
     litterbox_upload,
     search_google_images,
+    serpapi_reverse_image,
 )
 from img_diff import image_difference
 
@@ -66,3 +67,33 @@ class GoogleImagesTests(TestCase):
 
         diff = image_difference(original_image, downloaded_image)
         self.assertEqual(diff, 0)
+
+    def test_serpapi_reverse_image(self):
+        from google_images_search import download_images
+
+        image_path = os.path.join(os.path.dirname(__file__), "image.jpg")
+
+        url = litterbox_upload(image_path)
+        urls = serpapi_reverse_image(url)
+
+        self.assertIsInstance(urls, list)
+        self.assertGreater(len(urls), 0)
+
+        for result_url in urls:
+            self.assertIsInstance(result_url, str)
+            self.assertTrue(result_url.startswith("http"))
+
+        downloaded_image = None
+        for result_url in urls:
+            images = download_images([result_url], driver=None, fast_dl=False)
+            if images:
+                downloaded_image = images[0]
+                break
+
+        self.assertIsNotNone(downloaded_image)
+
+        with open(image_path, "rb") as f:
+            original_image = f.read()
+
+        diff = image_difference(original_image, downloaded_image)
+        self.assertLessEqual(diff, 5)

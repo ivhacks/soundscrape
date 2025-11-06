@@ -27,8 +27,7 @@ from google_images_search import (
     downselect_images,
     search_google_images,
 )
-from lyrics import clean_title
-from parse_and_clean import parse_artists, parse_features
+from parse_and_clean import clean_title, parse_artists, parse_features
 from stealth_driver import create_stealth_driver
 
 

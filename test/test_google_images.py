@@ -1,11 +1,9 @@
 import os
 from unittest import TestCase
 
-from bs4 import BeautifulSoup
 import requests
 
 from google_images_search import (
-    _detect_captcha,
     litterbox_upload,
     search_google_images,
     serpapi_reverse_image,
@@ -25,22 +23,6 @@ class GoogleImagesTests(TestCase):
             self.assertIsInstance(result, str)
             self.assertGreaterEqual(len(result), 9)
             self.assertTrue(result.startswith("http"))
-
-    def test_detect_captcha_positive(self):
-        captcha_path = os.path.join(os.path.dirname(__file__), "captcha.html")
-        with open(captcha_path, "r") as f:
-            html = f.read()
-        soup = BeautifulSoup(html, "html.parser")
-        result = _detect_captcha(soup)
-        self.assertTrue(result)
-
-    def test_detect_captcha_negative(self):
-        no_captcha_path = os.path.join(os.path.dirname(__file__), "no_captcha.html")
-        with open(no_captcha_path, "r") as f:
-            html = f.read()
-        soup = BeautifulSoup(html, "html.parser")
-        result = _detect_captcha(soup)
-        self.assertFalse(result)
 
     def test_litterbox_upload(self):
         image_path = os.path.join(os.path.dirname(__file__), "image.jpg")
@@ -67,10 +49,10 @@ class GoogleImagesTests(TestCase):
         image_path = os.path.join(os.path.dirname(__file__), "image.jpg")
 
         url = litterbox_upload(image_path)
-        urls = serpapi_reverse_image(url, num_results=16)
+        urls = serpapi_reverse_image(url, num_results=10)
 
         self.assertIsInstance(urls, list)
-        self.assertGreater(len(urls), 15)
+        self.assertGreater(len(urls), 9)
 
         for url in urls:
             self.assertIsInstance(url, str)

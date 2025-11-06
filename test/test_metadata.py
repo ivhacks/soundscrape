@@ -64,12 +64,12 @@ class TestReadMetadata(TestCase):
         set_year("test/yeet.mp3", 2025)
 
     def test_read_artist_mp3(self):
-        # test/test_files_read_metadata/2025.mp3
-        self.assertEqual(2025, 2025)
+        artist = get_artist("test/test_files_read_metadata/2025.mp3")
+        self.assertEqual(artist, "ivhacks")
 
     def test_read_album_artist_mp3(self):
-        # test/test_files_read_metadata/2025.mp3
-        self.assertEqual(2025, 2025)
+        album_artist = get_album_artist("test/test_files_read_metadata/2025.mp3")
+        self.assertEqual(album_artist, "ivhacks")
 
     def test_get_album_title_mp3(self):
         set_album_title("test/yeet.mp3", "Test Album")
@@ -214,12 +214,12 @@ class TestReadMetadata(TestCase):
         set_year("test/yeet.flac", 2025)
 
     def test_read_artist_flac(self):
-        # test/test_files_read_metadata/2025.flac
-        self.assertEqual(2025, 2025)
+        artist = get_artist("test/nolimit.flac")
+        self.assertEqual(artist, "Knock2, Lauren LaRue")
 
     def test_read_album_artist_flac(self):
-        # test/test_files_read_metadata/2025.flac
-        self.assertEqual(2025, 2025)
+        album_artist = get_album_artist("test/nolimit.flac")
+        self.assertEqual(album_artist, "Knock2")
 
     def test_get_album_title_flac(self):
         set_album_title("test/yeet.flac", "Test Album")

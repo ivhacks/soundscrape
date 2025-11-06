@@ -7,24 +7,6 @@ class NoTagError(Exception):
     pass
 
 
-def get_title_and_artist_from_filename(filename):
-    audiofile = File(filename)
-    if audiofile is None:
-        raise NoTagError("No tag found")
-
-    if isinstance(audiofile, MP3):
-        title = audiofile["TIT2"].text[0]
-        artist = audiofile["TPE1"].text[0]
-    else:
-        title = audiofile.get("TITLE", [None])[0]
-        artist = audiofile.get("ARTIST", [None])[0]
-
-    if title is None or artist is None:
-        raise NoTagError("Title or artist not found")
-
-    return (title, artist)
-
-
 def _read_or_create_tag(filename: str):
     try:
         audiofile = File(filename)
@@ -337,15 +319,3 @@ def clear_cover_art(filename: str):
         if hasattr(audiofile, "clear_pictures"):
             audiofile.clear_pictures()
     audiofile.save()
-
-
-if __name__ == "__main__":
-    import sys
-
-    if len(sys.argv) < 2:
-        print("Please specify a file.")
-        exit()
-
-    filename = sys.argv[1]
-    data = get_title_and_artist_from_filename(filename)
-    print(f"This file contains the song {data[0]} by {data[1]}.")

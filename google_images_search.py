@@ -3,13 +3,10 @@ import os
 import sys
 from typing import List
 
-from bs4 import BeautifulSoup
 from PIL import Image
 import requests
-from selenium import webdriver
 from selenium.common.exceptions import WebDriverException
 from serpapi import GoogleSearch
-from twocaptcha import TwoCaptcha
 import yaml
 
 from art_selector import CoverArtSelector
@@ -30,7 +27,6 @@ with open("secrets.yaml", "r") as f:
     SERPAPI_API_KEY = config["serpapi_api_key"]
 
 HEADLESS = True
-WAIT_TIME = 15
 
 
 def litterbox_upload(image_path: str) -> str:
@@ -83,48 +79,6 @@ def serpapi_reverse_image(url: str, num_results: int = 10) -> List[str]:
             break
 
     return urls[:num_results]
-
-
-def _detect_captcha(soup: BeautifulSoup) -> bool:
-    page_text = soup.get_text()
-
-    captcha_indicators = [
-        "Our systems have detected unusual traffic",
-        "not a robot",
-        "solving the above CAPTCHA",
-    ]
-
-    for indicator in captcha_indicators:
-        if indicator in page_text:
-            return True
-
-    if soup.find(class_="g-recaptcha"):
-        return True
-
-    return False
-
-
-def do_captcha(driver: webdriver.Chrome):
-    soup = BeautifulSoup(driver.page_source, "html.parser")
-    recaptcha_element = soup.find(class_="g-recaptcha")
-
-    data_sitekey = recaptcha_element.get("data-sitekey")
-    page_url = driver.current_url
-
-    solver = TwoCaptcha(TWOCAPTCHA_API_KEY)
-    try:
-        result = solver.recaptcha(sitekey=data_sitekey, url=page_url)
-
-    except Exception:
-        print("failed to solve captcha")
-
-    code = result["code"]
-
-    driver.execute_script(
-        "document.getElementById('g-recaptcha-response').innerHTML = arguments[0];",
-        str(code),
-    )
-    driver.execute_script("document.getElementById('captcha-form').submit();")
 
 
 def search_google_images(image_path: str) -> List[str]:

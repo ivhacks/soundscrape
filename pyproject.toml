@@ -26,4 +26,4 @@ section-order = [
 
 # Formatting preferences
 lines-after-imports = 2
-split-on-trailing-comma = true 
+split-on-trailing-comma = true

@@ -57,7 +57,7 @@ class Album:
             return f"{self.title} ({self.year})"
 
 
-def identify_album(artist: str, song_title: str) -> str | None:
+def identify_album(artist: str, song_title: str) -> Album:
     with open("secrets.yaml", "r") as f:
         config = yaml.safe_load(f)
         gemini_api_key = config["gemini_api_key"]
@@ -73,8 +73,11 @@ def identify_album(artist: str, song_title: str) -> str | None:
         contents=prompt,
         config=config,
     )
-    print(response.text)
-    prompt = structure_prompt(artist, song_title, response.text)
+    response_text = response.text
+    if response_text is None:
+        raise ValueError("No response from Gemini API")
+    print(response_text)
+    prompt = structure_prompt(artist, song_title, response_text)
 
     response = client.models.generate_content(
         model="gemini-2.0-flash",
@@ -84,11 +87,11 @@ def identify_album(artist: str, song_title: str) -> str | None:
         ),
     )
 
-    song_title = response.parsed.title
-    single = response.parsed.single
-    year = response.parsed.year
+    parsed = response.parsed
+    if not isinstance(parsed, AlbumTemplate):
+        raise ValueError("Invalid response format from Gemini API")
 
-    return Album(song_title, single, year)
+    return Album(parsed.title, parsed.single, parsed.year)
 
 
 def most_famous_artist(artists: str) -> str:
@@ -108,7 +111,10 @@ def most_famous_artist(artists: str) -> str:
         contents=prompt,
     )
 
-    return response.text.strip()
+    response_text = response.text
+    if response_text is None:
+        raise ValueError("No response from Gemini API")
+    return response_text.strip()
 
 
 if __name__ == "__main__":

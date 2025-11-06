@@ -66,6 +66,7 @@ class GoogleImagesTests(TestCase):
                 break
 
         self.assertIsNotNone(downloaded_image)
+        assert downloaded_image is not None
 
         with open(image_path, "rb") as f:
             original_image = f.read()

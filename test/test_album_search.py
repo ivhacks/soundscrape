@@ -61,8 +61,11 @@ class PromptTests(TestCase):
                 config=config,
             )
 
-            self.assertNotIn("first love", response.text.lower())
-            self.assertNotIn("harmony", response.text.lower())
+            response_text = response.text
+            self.assertIsNotNone(response_text)
+            assert response_text is not None
+            self.assertNotIn("first love", response_text.lower())
+            self.assertNotIn("harmony", response_text.lower())
 
             time.sleep(2)  # too many requests too quickly will make gemini get tired
 
@@ -88,8 +91,11 @@ class PromptTests(TestCase):
                 ),
             )
 
-            self.assertEqual(response.parsed.title, "Bittersweet")
-            self.assertEqual(response.parsed.single, True)
-            self.assertEqual(response.parsed.year, 2025)
+            parsed = response.parsed
+            self.assertIsInstance(parsed, AlbumTemplate)
+            assert isinstance(parsed, AlbumTemplate)
+            self.assertEqual(parsed.title, "Bittersweet")
+            self.assertEqual(parsed.single, True)
+            self.assertEqual(parsed.year, 2025)
 
             time.sleep(2)  # too many requests too quickly will make gemini get tired

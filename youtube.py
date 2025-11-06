@@ -40,6 +40,7 @@ def get_yt_music_metadata(
     if driver_created:
         driver = create_stealth_driver(headless=HEADLESS)
 
+    assert driver is not None
     driver.get(link)
 
     # Wait for content to load

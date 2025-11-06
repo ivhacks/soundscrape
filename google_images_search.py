@@ -5,6 +5,7 @@ from typing import List
 
 from PIL import Image
 import requests
+from requests.exceptions import RequestException
 from selenium.common.exceptions import WebDriverException
 from serpapi import GoogleSearch
 import yaml
@@ -124,7 +125,7 @@ def download_images(results: List[str], driver=None) -> List[bytes]:
                     continue
                 print(" - success")
             except (
-                requests.exceptions.RequestException,
+                RequestException,
                 WebDriverException,
                 ValueError,
             ):

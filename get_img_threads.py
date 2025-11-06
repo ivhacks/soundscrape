@@ -25,10 +25,16 @@ def get_image_threads(link: str, driver=None) -> bytes:
 
     # Look for the main post image (1440x1440)
     main_image_pattern = r'<img[^>]*height="1440"[^>]*width="1440"[^>]*srcset="([^"]*)"'
-    main_match = re.search(main_image_pattern, html_content).group(1)
+    main_match_result = re.search(main_image_pattern, html_content)
+    if main_match_result is None:
+        raise ValueError("Could not find main image in Threads page")
+    main_match = main_match_result.group(1)
 
     # Get filename, e.g. 474587474_3939486272971106_3474843056868060500_n.jpg
-    filename = re.search(r"(\d+_\d+_\d+_n\.jpg)", main_match).group(1)
+    filename_match = re.search(r"(\d+_\d+_\d+_n\.jpg)", main_match)
+    if filename_match is None:
+        raise ValueError("Could not find filename in Threads image URL")
+    filename = filename_match.group(1)
 
     # Find image URL containing filename and special magic string indicating it's hi-res
     image_url = re.findall(

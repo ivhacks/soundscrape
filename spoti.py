@@ -159,6 +159,8 @@ def get_art_url(token, title: str, artist: str, single: bool, is_album: bool) ->
             else:
                 raise
 
+    raise ValueError(f"Could not find art URL for '{title}' by '{artist}'")
+
 
 def _remove_available_markets(obj):
     if isinstance(obj, dict):

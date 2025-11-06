@@ -1,8 +1,11 @@
 import unittest
 
+import pytest
+
 from beatport_search import search_beatport
 
 
+@pytest.mark.xdist_group(name="beatport_search")
 class TestBeatportSearch(unittest.TestCase):
     def _assert_url_in_results(self, search_term: str, expected_url: str):
         results = search_beatport(search_term)

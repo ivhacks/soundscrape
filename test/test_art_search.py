@@ -1,9 +1,12 @@
 from unittest import TestCase
 
+import pytest
+
 from art_search import search_cover_art_by_text
 from img_diff import image_difference
 
 
+@pytest.mark.xdist_group(name="art_search")
 class ArtSearchTests(TestCase):
     def test_knock2_feel_u_luv_me_single(self):
         with open("test/test_art/knock2_feel_u_luv_me.jpg", "rb") as f:

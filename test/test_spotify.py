@@ -1,9 +1,12 @@
 import json
 from unittest import TestCase
 
+import pytest
+
 from spoti import format_compact, get_art_url, get_token, tool_search_spotify
 
 
+@pytest.mark.xdist_group(name="spotify")
 class SpotifyTests(TestCase):
     token = None
 

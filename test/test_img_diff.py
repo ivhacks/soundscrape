@@ -6,9 +6,12 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from unittest import TestCase
 
+import pytest
+
 from img_diff import image_difference
 
 
+@pytest.mark.xdist_group(name="img_diff")
 class SameImageTests(TestCase):
     def test_1_vs_1_original(self):
         """Test 1.png vs itself - should return 0 (identical)"""
@@ -74,6 +77,7 @@ class SameImageTests(TestCase):
         self.assertLessEqual(result, 1, f"Expected <= 1, got {result}")
 
 
+@pytest.mark.xdist_group(name="img_diff")
 class DifferentImageTests(TestCase):
     def test_1_vs_2_original(self):
         """Test 1.png vs 2.png - should return 26 (different images)"""

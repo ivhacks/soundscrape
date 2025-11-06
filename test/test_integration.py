@@ -2,11 +2,14 @@ import os
 import shutil
 from unittest import TestCase
 
+import pytest
+
 from file_metadata import get_album_artist, get_artist, get_cover_art, get_song_title
 from img_diff import image_difference
 from soundscrape import main
 
 
+@pytest.mark.xdist_group(name="serial_metadata_tests")
 class IntegrationTests(TestCase):
     def tearDown(self):
         shutil.rmtree("test/temp_output")

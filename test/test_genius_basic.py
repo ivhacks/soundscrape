@@ -1,6 +1,8 @@
 import os
 from unittest import TestCase
 
+import pytest
+
 from lyrics import extract_lyrics_from_html_genius, remove_newlines
 
 
@@ -50,6 +52,7 @@ def basic_test(tester: TestCase, name):
     )
 
 
+@pytest.mark.xdist_group(name="genius_basic")
 class RemoveNewlineTests(TestCase):
     def test_remove_newlines_basic(self):
         remove_newlines_test(self, "remove_newlines_basic")
@@ -58,6 +61,7 @@ class RemoveNewlineTests(TestCase):
         remove_newlines_test(self, "remove_newlines_basic")
 
 
+@pytest.mark.xdist_group(name="genius_basic")
 class BasicTests(TestCase):
     def test_text(self):
         basic_test(self, "text")

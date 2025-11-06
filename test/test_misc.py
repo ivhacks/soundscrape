@@ -2,10 +2,13 @@ import os
 import shutil
 from unittest import TestCase
 
+import pytest
+
 from file_metadata import get_lyrics, set_lyrics
 from lyrics import generate_lyrics_filename, search_term_preprocessing
 
 
+@pytest.mark.xdist_group(name="serial_metadata_tests")
 class MiscTests(TestCase):
     def test_predownloaded_html(self):
         input = "cool & good"

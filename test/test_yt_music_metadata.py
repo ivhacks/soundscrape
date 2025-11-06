@@ -9,6 +9,7 @@ from youtube import TrackMetadata, get_yt_music_metadata
 HEADLESS = True
 
 
+@pytest.mark.xdist_group(name="yt_music_metadata")
 class YTMusicMetadataTests(TestCase):
     driver = None
 

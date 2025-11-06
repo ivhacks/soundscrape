@@ -4,6 +4,8 @@ import sys
 import tempfile
 from unittest import TestCase
 
+import pytest
+
 
 # Add parent directory to path to import soundscrape
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -11,6 +13,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from soundscrape import main
 
 
+@pytest.mark.xdist_group(name="serial_metadata_tests")
 class SoundScrapeFileIOTests(TestCase):
     def setUp(self):
         # Create a temporary directory for test files

@@ -1,5 +1,7 @@
 from unittest import TestCase
 
+import pytest
+
 from parse_and_clean import (
     clean_artist,
     clean_title,
@@ -9,6 +11,7 @@ from parse_and_clean import (
 )
 
 
+@pytest.mark.xdist_group(name="parse_clean")
 class CleanTitleTests(TestCase):
     def test_clean_title_parens(self):
         input_title = "Downfall (feat. Lexi Norton)"
@@ -61,6 +64,7 @@ class CleanTitleTests(TestCase):
         self.assertEqual(clean_title(input_title), expected_output)
 
 
+@pytest.mark.xdist_group(name="parse_clean")
 class CleanArtistTests(TestCase):
     def test_clean_artist_semicolons_and_commas(self):
         input_artist = "Virual Riot; Submatik, Holly Drummond"
@@ -88,6 +92,7 @@ class CleanArtistTests(TestCase):
         self.assertEqual(clean_artist(input_artist), expected_output)
 
 
+@pytest.mark.xdist_group(name="parse_clean")
 class RemoveExplicitTests(TestCase):
     def test_parens(self):
         input_title = "Downfall (explicit)"
@@ -115,6 +120,7 @@ class RemoveExplicitTests(TestCase):
         self.assertEqual(remove_explicit(input_title), expected_output)
 
 
+@pytest.mark.xdist_group(name="parse_clean")
 class FindFeaturesTests(TestCase):
     def test_parens(self):
         input_title = "Downfall (feat. Lexi Norton)"
@@ -162,6 +168,7 @@ class FindFeaturesTests(TestCase):
         self.assertEqual(parse_features(input_title), expected_output)
 
 
+@pytest.mark.xdist_group(name="parse_clean")
 class ParseArtistsTests(TestCase):
     def test_ampersand(self):
         input = "Essgener & knock tuah"

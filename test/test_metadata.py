@@ -2,6 +2,8 @@ import os
 import shutil
 from unittest import TestCase
 
+import pytest
+
 from file_metadata import (
     NoTagError,
     clear_album_artist,
@@ -28,19 +30,30 @@ from file_metadata import (
 )
 
 
+@pytest.mark.xdist_group(name="serial_metadata_tests")
 class TestReadMetadata(TestCase):
     NOLIMIT_FLAC_BACKUP = "test/nolimit_backup.flac"
+    YEET_MP3_BACKUP = "test/yeet_backup.mp3"
+    YEET_FLAC_BACKUP = "test/yeet_backup.flac"
 
     def setUp(self):
-        # Create backup of nolimit.flac before each test
         if os.path.exists("test/nolimit.flac"):
             shutil.copy2("test/nolimit.flac", self.NOLIMIT_FLAC_BACKUP)
+        if os.path.exists("test/yeet.mp3"):
+            shutil.copy2("test/yeet.mp3", self.YEET_MP3_BACKUP)
+        if os.path.exists("test/yeet.flac"):
+            shutil.copy2("test/yeet.flac", self.YEET_FLAC_BACKUP)
 
     def tearDown(self):
-        # Restore original nolimit.flac after each test
         if os.path.exists(self.NOLIMIT_FLAC_BACKUP):
             shutil.copy2(self.NOLIMIT_FLAC_BACKUP, "test/nolimit.flac")
             os.remove(self.NOLIMIT_FLAC_BACKUP)
+        if os.path.exists(self.YEET_MP3_BACKUP):
+            shutil.copy2(self.YEET_MP3_BACKUP, "test/yeet.mp3")
+            os.remove(self.YEET_MP3_BACKUP)
+        if os.path.exists(self.YEET_FLAC_BACKUP):
+            shutil.copy2(self.YEET_FLAC_BACKUP, "test/yeet.flac")
+            os.remove(self.YEET_FLAC_BACKUP)
 
     # MP3 Tests
     def test_get_year_mp3(self):

@@ -1,5 +1,7 @@
 import unittest
 
+import pytest
+
 from sevendigital_search import search_7digital
 from stealth_driver import create_stealth_driver
 
@@ -7,6 +9,7 @@ from stealth_driver import create_stealth_driver
 HEADLESS = True
 
 
+@pytest.mark.xdist_group(name="sevendigital_search")
 class TestSevendigitalSearch(unittest.TestCase):
     driver = None
 

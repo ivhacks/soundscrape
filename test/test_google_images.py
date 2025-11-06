@@ -1,6 +1,7 @@
 import os
 from unittest import TestCase
 
+import pytest
 import requests
 
 from google_images_search import (
@@ -11,6 +12,7 @@ from google_images_search import (
 from img_diff import image_difference
 
 
+@pytest.mark.xdist_group(name="google_images")
 class GoogleImagesTests(TestCase):
     def test_google_images(self):
         image_path = os.path.join(os.path.dirname(__file__), "image.jpg")

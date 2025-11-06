@@ -1,5 +1,7 @@
 from unittest import TestCase
 
+import pytest
+
 from get_img_bandcamp import get_image_bandcamp
 from get_img_facebook import get_image_facebook
 from get_img_genius import get_image_genius
@@ -11,6 +13,7 @@ from img_diff import image_difference
 from stealth_driver import create_stealth_driver
 
 
+@pytest.mark.xdist_group(name="get_img")
 class GetImageTests(TestCase):
     @classmethod
     def setUpClass(cls):

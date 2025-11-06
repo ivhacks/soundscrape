@@ -2,6 +2,7 @@ from unittest import TestCase
 
 import anthropic
 from anthropic.types import TextBlock
+import pytest
 import yaml
 
 
@@ -10,6 +11,7 @@ with open("secrets.yaml", "r") as f:
     anthropic_api_key = config["anthropic_api_key"]
 
 
+@pytest.mark.xdist_group(name="anthropic_api")
 class AnthropicApiTests(TestCase):
     def test_basic(self):
         client = anthropic.Anthropic(api_key=anthropic_api_key)

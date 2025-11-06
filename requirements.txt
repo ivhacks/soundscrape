@@ -57,6 +57,7 @@ Pygments==2.19.1
 PySocks==1.7.1
 pytest==8.4.0
 pytest-timeout==2.4.0
+pytest-xdist==3.6.1
 python-dotenv==1.1.1
 python-Levenshtein==0.27.1
 PyWavelets==1.8.0

@@ -1,8 +1,11 @@
 import unittest
 
+import pytest
+
 from view_link import _normalize_url, view_link
 
 
+@pytest.mark.xdist_group(name="view_link")
 class TestNormalizeUrl(unittest.TestCase):
     def test_full_url(self):
         result = _normalize_url("https://music.youtube.com/watch?v=3W_EfEDbTec")
@@ -29,6 +32,7 @@ class TestNormalizeUrl(unittest.TestCase):
         self.assertEqual(result, "soundcloud.com/track")
 
 
+@pytest.mark.xdist_group(name="view_link")
 class TestViewLink(unittest.TestCase):
     def test_unknown_site(self):
         result = view_link("https://example.com/")

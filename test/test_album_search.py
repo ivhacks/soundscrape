@@ -3,6 +3,7 @@ from unittest import TestCase
 
 from google import genai
 from google.genai import types
+import pytest
 import yaml
 
 from album_search import (
@@ -14,6 +15,7 @@ from album_search import (
 )
 
 
+@pytest.mark.xdist_group(name="album_search")
 class AlbumSearchTests(TestCase):
     def test_knock2_fast_n_slow(self):
         album = identify_album("knock2", "fast n slow")
@@ -39,6 +41,7 @@ class AlbumSearchTests(TestCase):
         self.assertEqual(artist, "Skrillex")
 
 
+@pytest.mark.xdist_group(name="album_search")
 class PromptTests(TestCase):
     def test_ignores_unreleased_albums_first_response(self):
         """

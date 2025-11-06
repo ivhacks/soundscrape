@@ -1,6 +1,8 @@
 import os
 from unittest import TestCase
 
+import pytest
+
 from lyrics import extract_lyrics_from_html_genius
 
 
@@ -34,6 +36,7 @@ def real_song_test(tester: TestCase, name):
     tester.assertEqual(actual_output, expected_output)
 
 
+@pytest.mark.xdist_group(name="genius_real_songs")
 class RealSongTests(TestCase):
     def test_chase_atlantic_beauty_in_death(self):
         real_song_test(self, "beauty_in_death")

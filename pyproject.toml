@@ -27,3 +27,7 @@ section-order = [
 # Formatting preferences
 lines-after-imports = 2
 split-on-trailing-comma = true
+
+[tool.pytest.ini_options]
+# Parallel test execution - each test class stays on same worker
+addopts = "-n auto --dist loadgroup"

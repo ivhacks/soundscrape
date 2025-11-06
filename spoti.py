@@ -123,16 +123,15 @@ def get_art_url(token, title: str, artist: str, single: bool, is_album: bool) ->
                         f"No track found for '{title}' by '{current_artist}'"
                     )
 
-                found = False
+                selected_album = None
 
                 if single:  # We're looking for the single cover art
                     for track in tracks:
                         album = track.get("album")
                         if album.get("album_type") == "single":
                             selected_album = album
-                            found = True
                             break
-                    if not found:
+                    if selected_album is None:
                         raise ValueError(
                             f"Couldn't find a single by '{current_artist}' called '{title}'"
                         )
@@ -142,16 +141,15 @@ def get_art_url(token, title: str, artist: str, single: bool, is_album: bool) ->
                         album = track.get("album")
                         if album.get("album_type") == "album":
                             selected_album = album
-                            found = True
                             break
 
-                if not found:
-                    raise ValueError(
-                        f"Couldn't find an album by '{current_artist}' containing track '{title}'"
-                    )
-                else:
-                    images = selected_album.get("images")
-                    return images[0]["url"]
+                    if selected_album is None:
+                        raise ValueError(
+                            f"Couldn't find an album by '{current_artist}' containing track '{title}'"
+                        )
+
+                images = selected_album.get("images")
+                return images[0]["url"]
 
         except ValueError:
             if attempt == 0:

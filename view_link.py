@@ -156,8 +156,10 @@ def view_link(url):
         response.raise_for_status()
         soup = BeautifulSoup(response.text, "html.parser")
         head = _strip_unneeded_elements(soup.head)
+        if head is None:
+            return "No head element found"
         head = _strip_youtube_noise(head)
-        return_string = head.prettify().strip()
+        return_string = str(head.prettify().strip())
         return_string += "\n\nNOTE TO AI: This isn't the real page.\n"
         return_string += (
             "The actual page rendered with JavaScript is thousands of lines.\n"
@@ -169,11 +171,15 @@ def view_link(url):
     elif "beatport.com" in base:
         soup = _get_html_selenium(url)
         head = _strip_unneeded_elements(soup.head)
+        if head is None:
+            return "No head element found"
         return head.prettify().strip()
 
     elif "7digital.com" in base:
         soup = _get_html_selenium(url)
         head = _strip_unneeded_elements(soup.head)
+        if head is None:
+            return "No head element found"
         head = _strip_7digital_noise(head)
         return head.prettify().strip()
 

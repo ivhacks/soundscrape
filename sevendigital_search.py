@@ -85,6 +85,8 @@ def search_7digital(artist: str, title: str, driver=None) -> List[Dict]:
 
     for link in links:
         href = link.get("href", "")
+        if not href or not isinstance(href, str):
+            continue
         if any(path in href for path in ["/artist/", "/album/", "/track/"]):
             if href.startswith("/"):
                 full_url = f"https://us.7digital.com{href}"
@@ -171,6 +173,8 @@ def search_artist_albums_for_track(driver, artist: str, title: str) -> List[Dict
 
         for link in links:
             href = link.get("href", "")
+            if not href or not isinstance(href, str):
+                continue
             if "/release/" in href:
                 if href.startswith("/"):
                     full_url = f"https://us.7digital.com{href}"
@@ -264,7 +268,12 @@ def check_release_for_track(driver, release: Dict, artist: str, title: str) -> b
         # Look for artist links or mentions
         artist_links = soup.find_all("a", href=True)
         for artist_link in artist_links:
-            if "/artist/" in artist_link.get("href", ""):
+            artist_href = artist_link.get("href", "")
+            if (
+                artist_href
+                and isinstance(artist_href, str)
+                and "/artist/" in artist_href
+            ):
                 artist_text = artist_link.get_text(strip=True)
                 if string_match(artist_text, artist):
                     artist_found = True

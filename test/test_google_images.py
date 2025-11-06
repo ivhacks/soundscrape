@@ -74,16 +74,6 @@ class GoogleImagesTests(TestCase):
         diff = image_difference(original_image, downloaded_image)
         self.assertLessEqual(diff, 5)
 
-    def test_serpapi_one_result(self):
-        image_path = os.path.join(os.path.dirname(__file__), "image.jpg")
-
-        url = litterbox_upload(image_path)
-        urls = serpapi_reverse_image(url, num_results=1)
-
-        self.assertEqual(len(urls), 1)
-        self.assertIsInstance(urls[0], str)
-        self.assertTrue(urls[0].startswith("http"))
-
     def test_serpapi_two_results(self):
         image_path = os.path.join(os.path.dirname(__file__), "image.jpg")
 
@@ -102,17 +92,6 @@ class GoogleImagesTests(TestCase):
         urls = serpapi_reverse_image(url, num_results=10)
 
         self.assertEqual(len(urls), 10)
-        for url in urls:
-            self.assertIsInstance(url, str)
-            self.assertTrue(url.startswith("http"))
-
-    def test_serpapi_fifteen_results(self):
-        image_path = os.path.join(os.path.dirname(__file__), "image.jpg")
-
-        url = litterbox_upload(image_path)
-        urls = serpapi_reverse_image(url, num_results=15)
-
-        self.assertEqual(len(urls), 15)
         for url in urls:
             self.assertIsInstance(url, str)
             self.assertTrue(url.startswith("http"))

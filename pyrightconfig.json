@@ -1,0 +1,18 @@
+{
+  "typeCheckingMode": "standard",
+  "reportPrivateImportUsage": false,
+  "reportAttributeAccessIssue": false,
+  "reportCallIssue": false,
+  "reportIndexIssue": false,
+  "reportArgumentType": false,
+  "reportPossiblyUnboundVariable": "warning",
+  "reportOptionalMemberAccess": "warning",
+  "reportOperatorIssue": "warning",
+  "exclude": [
+    "**/node_modules",
+    "**/__pycache__",
+    "venv",
+    ".venv"
+  ]
+}
+

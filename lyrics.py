@@ -87,6 +87,7 @@ def get_html_genius(artist, title, cache=False):
             (By.CLASS_NAME, "search_results_label")
         )
     )
+    song_results_section_html = None
     for item in result_sections:
         try:
             result_label = item.find_element(By.CLASS_NAME, "search_results_label")
@@ -97,12 +98,16 @@ def get_html_genius(artist, title, cache=False):
             # This page is weird and not all the results sections have this label
             continue
 
+    if song_results_section_html is None:
+        raise ValueError("Could not find Songs section on Genius search page")
+
     search_soup = BeautifulSoup(song_results_section_html, "html.parser")
 
     anchors = search_soup.find_all(class_="mini_card")
 
     found_result = False
     best_confidence = 0
+    best_url = None
 
     for anchor in anchors:
         a_title = anchor.find_all(class_="mini_card-title")[0].text.strip().lower()
@@ -119,7 +124,7 @@ def get_html_genius(artist, title, cache=False):
     if not found_result:
         return None
 
-    if best_confidence == 0:
+    if best_confidence == 0 or best_url is None:
         # None of the results were even close
         return None
 
@@ -206,12 +211,13 @@ def genius_parser(input_soup):
         if item.name == "a":
             # This is an annotated section, comprised of a span wrapped in an anchor tag
             # Get inside the anchor, find and recurse into the span (there might be \n, <br>, or other junk to skip)
+            processed = None
             for sub_item in item.contents:
                 if sub_item.name == "span":
                     processed = genius_parser(sub_item)
                     break
 
-            if len(processed.strip()) == 0:
+            if processed is None or len(processed.strip()) == 0:
                 # If this is a dud, skip resetting break counter
                 continue
 
@@ -328,13 +334,16 @@ def get_lyrics_azlyrics(artist, title):
     # Find bold tags
     bolds = search_soup.find_all("b")
 
+    song_results_pane = None
     for bold in bolds:
         # Song results pane is labelled by a b tag with this text
         if bold.text == "Song results:":
-            song_results_pane = bold.parent.parent
+            parent = bold.parent
+            if parent is not None:
+                song_results_pane = parent.parent
             break
 
-    if "song_results_pane" not in locals():
+    if song_results_pane is None:
         # Couldn't find this song
         return None
 
@@ -343,6 +352,7 @@ def get_lyrics_azlyrics(artist, title):
 
     found_result = False
     best_confidence = 0
+    best_url = None
 
     for anchor in anchors:
         # Valid links to lyrics pages have format like '1. "Breathe" - Mako'. All other a tags don't have periods.
@@ -362,7 +372,7 @@ def get_lyrics_azlyrics(artist, title):
     if not found_result:
         return None
 
-    if best_confidence == 0:
+    if best_confidence == 0 or best_url is None:
         # None of the results were even close
         return None
 

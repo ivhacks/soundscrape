@@ -24,7 +24,6 @@ from stealth_driver import create_stealth_driver
 
 with open("secrets.yaml", "r") as f:
     config = yaml.safe_load(f)
-    TWOCAPTCHA_API_KEY = config["twocaptcha_api_key"]
     SERPAPI_API_KEY = config["serpapi_api_key"]
 
 HEADLESS = True

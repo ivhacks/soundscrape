@@ -61,6 +61,13 @@ PYTHONPATH=. pytest test/test_beatport_search.py::TestBeatportSearch::test_zedd_
 PYTHONPATH=. pytest -s
 ```
 
+**run all tests with parallelization:**
+```bash
+PYTHONPATH=. pytest -n auto --dist loadgroup
+```
+parallelization uses pytest-xdist to run tests across multiple CPU cores. `--dist loadgroup` ensures tests with the same `@pytest.mark.xdist_group` decorator run on the same worker (needed for tests that modify shared state). by default tests run serially so VS Code test explorer works properly (there's a bug with xdist that breaks result reporting in the UI).
+We paralellize tests because running them all sequentially takes like 6 minutes (as opposed to <2)
+
 **format code using ruff**
 ```bash
 ./format.sh

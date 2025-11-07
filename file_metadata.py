@@ -319,3 +319,29 @@ def clear_cover_art(filename: str):
         if hasattr(audiofile, "clear_pictures"):
             audiofile.clear_pictures()
     audiofile.save()
+
+
+def copy_all_tags(source_filename: str, dest_filename: str):
+    source = File(source_filename)
+    if source is None:
+        raise NoTagError("Source file has no tags")
+
+    dest = File(dest_filename)
+    if dest is None:
+        dest = MP3(dest_filename)
+        dest.add_tags()
+
+    if isinstance(source, MP3) and isinstance(dest, MP3):
+        for key in source.keys():
+            dest[key] = source[key]
+    elif not isinstance(source, MP3) and not isinstance(dest, MP3):
+        for key in source.keys():
+            dest[key] = source[key]
+        if hasattr(source, "pictures") and source.pictures:
+            dest.clear_pictures()
+            for picture in source.pictures:
+                dest.add_picture(picture)
+    else:
+        raise ValueError("Source and destination must be the same format")
+
+    dest.save()

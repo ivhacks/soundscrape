@@ -13,6 +13,7 @@ from art_search import search_cover_art_by_text
 from art_selector import CoverArtSelector
 from file_metadata import (
     clear_cover_art,
+    copy_all_tags,
     get_album_title,
     get_artist,
     get_cover_art,
@@ -201,6 +202,32 @@ def process_dir(output_dir: str, no_art_select: bool = False, fast_search: bool 
             set_cover_art(new_filepath, chosen_art)
 
 
+def create_noaudio_files(input_path: str, output_path: str):
+    if not os.path.exists(input_path):
+        raise FileNotFoundError(f"Input path '{input_path}' does not exist")
+
+    if not os.path.isdir(input_path):
+        raise ValueError(f"Input path '{input_path}' must be a directory")
+
+    if os.path.exists(output_path):
+        shutil.rmtree(output_path)
+    os.makedirs(output_path)
+
+    for filename in os.listdir(input_path):
+        if filename.lower().endswith((".mp3", ".flac")):
+            source_filepath = os.path.join(input_path, filename)
+            dest_filepath = os.path.join(output_path, filename)
+
+            if filename.lower().endswith(".mp3"):
+                template_file = os.path.join("test", "nothing.mp3")
+            else:
+                template_file = os.path.join("test", "nothing.flac")
+
+            shutil.copy2(template_file, dest_filepath)
+            copy_all_tags(source_filepath, dest_filepath)
+            print(f"Created {dest_filepath}")
+
+
 def main(
     input_path: str,
     output_path: str,
@@ -243,8 +270,18 @@ if __name__ == "__main__":
     if len(sys.argv) < 3:
         print("Please specify input file/folder and output file/folder.")
         print("Usage: python soundscrape.py <input> <output>")
+        print("       python soundscrape.py --noaudio <input> <output>")
         sys.exit(1)
 
-    input_path = sys.argv[1]
-    output_path = sys.argv[2]
-    main(input_path, output_path)
+    if sys.argv[1] == "--noaudio":
+        if len(sys.argv) < 4:
+            print("Please specify input and output directories for --noaudio.")
+            print("Usage: python soundscrape.py --noaudio <input> <output>")
+            sys.exit(1)
+        input_path = sys.argv[2]
+        output_path = sys.argv[3]
+        create_noaudio_files(input_path, output_path)
+    else:
+        input_path = sys.argv[1]
+        output_path = sys.argv[2]
+        main(input_path, output_path)

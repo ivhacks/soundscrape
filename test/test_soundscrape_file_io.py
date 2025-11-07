@@ -10,7 +10,14 @@ import pytest
 # Add parent directory to path to import soundscrape
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from soundscrape import main
+from file_metadata import (
+    get_album_artist,
+    get_album_title,
+    get_artist,
+    get_cover_art,
+    get_song_title,
+)
+from soundscrape import create_noaudio_files, main
 
 
 @pytest.mark.xdist_group(name="serial_metadata_tests")
@@ -31,7 +38,7 @@ class SoundScrapeFileIOTests(TestCase):
 
         # Copy test files to input directory
         shutil.copy2("test/yeet.mp3", os.path.join(self.test_input_dir, "song1.mp3"))
-        shutil.copy2("test/yeet.mp3", os.path.join(self.test_input_dir, "song2.flac"))
+        shutil.copy2("test/yeet.flac", os.path.join(self.test_input_dir, "song2.flac"))
 
     def tearDown(self):
         # Clean up temporary directory
@@ -93,3 +100,78 @@ class SoundScrapeFileIOTests(TestCase):
             main(self.test_input_file, output_dir, no_processing=True)
 
         self.assertFalse(os.path.exists(output_dir))
+
+    def test_noaudio_basic(self):
+        """Test creating noaudio files with basic tag copying"""
+        output_dir = os.path.join(self.test_dir, "noaudio_output")
+
+        create_noaudio_files(self.test_input_dir, output_dir)
+
+        output1 = os.path.join(output_dir, "song1.mp3")
+        output2 = os.path.join(output_dir, "song2.flac")
+
+        self.assertTrue(os.path.exists(output1))
+        self.assertTrue(os.path.exists(output2))
+
+        original1 = os.path.join(self.test_input_dir, "song1.mp3")
+        original2 = os.path.join(self.test_input_dir, "song2.flac")
+        self.assertLess(os.path.getsize(output1), os.path.getsize(original1))
+        self.assertLess(os.path.getsize(output2), os.path.getsize(original2))
+
+    def test_noaudio_preserves_all_tags(self):
+        """Test that all metadata is preserved when creating noaudio files"""
+        input_dir = os.path.join(self.test_dir, "tagged_input")
+        output_dir = os.path.join(self.test_dir, "noaudio_tagged_output")
+        os.makedirs(input_dir)
+
+        shutil.copy2("test/nolimit.flac", os.path.join(input_dir, "test_song.flac"))
+
+        create_noaudio_files(input_dir, output_dir)
+
+        output_file = os.path.join(output_dir, "test_song.flac")
+        self.assertTrue(os.path.exists(output_file))
+
+        self.assertEqual(get_artist(output_file), get_artist("test/nolimit.flac"))
+        self.assertEqual(
+            get_song_title(output_file), get_song_title("test/nolimit.flac")
+        )
+        self.assertEqual(
+            get_album_title(output_file), get_album_title("test/nolimit.flac")
+        )
+        self.assertEqual(
+            get_album_artist(output_file), get_album_artist("test/nolimit.flac")
+        )
+        self.assertEqual(get_cover_art(output_file), get_cover_art("test/nolimit.flac"))
+
+        self.assertLess(
+            os.path.getsize(output_file), os.path.getsize("test/nolimit.flac")
+        )
+
+    def test_noaudio_multiple_files(self):
+        """Test creating noaudio files for multiple songs"""
+        input_dir = os.path.join(self.test_dir, "multi_input")
+        output_dir = os.path.join(self.test_dir, "noaudio_multi_output")
+        os.makedirs(input_dir)
+
+        input_files = [
+            ("test/nolimit.flac", "song1.flac"),
+            ("test/nolimit.mp3", "song2.mp3"),
+            ("test/yeet.flac", "song3.flac"),
+        ]
+
+        for src, dest in input_files:
+            shutil.copy2(src, os.path.join(input_dir, dest))
+
+        create_noaudio_files(input_dir, output_dir)
+
+        output1 = os.path.join(output_dir, "song1.flac")
+        output2 = os.path.join(output_dir, "song2.mp3")
+        output3 = os.path.join(output_dir, "song3.flac")
+
+        self.assertTrue(os.path.exists(output1))
+        self.assertTrue(os.path.exists(output2))
+        self.assertTrue(os.path.exists(output3))
+
+        self.assertLess(os.path.getsize(output1), os.path.getsize("test/nolimit.flac"))
+        self.assertLess(os.path.getsize(output2), os.path.getsize("test/nolimit.mp3"))
+        self.assertLess(os.path.getsize(output3), os.path.getsize("test/yeet.flac"))

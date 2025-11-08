@@ -1,4 +1,3 @@
-import time
 from unittest import TestCase
 
 from google import genai
@@ -44,6 +43,7 @@ class AlbumSearchTests(TestCase):
 @pytest.mark.xdist_group(name="album_search")
 class PromptTests(TestCase):
     def test_ignores_unreleased_albums_first_response(self):
+        # We're exercising the prompts in album_search.py
         """
         The song bittersweet is on the album first love, which is not yet released.
         The prompt should not mention first love.
@@ -70,9 +70,8 @@ class PromptTests(TestCase):
             self.assertNotIn("first love", response_text.lower())
             self.assertNotIn("harmony", response_text.lower())
 
-            time.sleep(2)  # too many requests too quickly will make gemini get tired
-
     def test_ignores_unreleased_albums_second_response(self):
+        # We're exercising the prompts in album_search.py
         prompt = structure_prompt(
             "audien, shallou, rosie darling",
             "bittersweet",
@@ -100,5 +99,3 @@ class PromptTests(TestCase):
             self.assertEqual(parsed.title, "Bittersweet")
             self.assertEqual(parsed.single, True)
             self.assertEqual(parsed.year, 2025)
-
-            time.sleep(2)  # too many requests too quickly will make gemini get tired

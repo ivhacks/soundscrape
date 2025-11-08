@@ -2,6 +2,7 @@ from unittest import TestCase
 
 from google import genai
 from google.genai import types
+from pydantic import BaseModel
 import pytest
 import yaml
 
@@ -12,6 +13,37 @@ from album_search import (
     search_prompt,
     structure_prompt,
 )
+
+
+def _get_gemini_client():
+    with open("secrets.yaml", "r") as f:
+        config = yaml.safe_load(f)
+        gemini_api_key = config["gemini_api_key"]
+    return genai.Client(api_key=gemini_api_key)
+
+
+def _call_gemini_search(client: genai.Client, prompt: str):
+    grounding_tool = types.Tool(google_search=types.GoogleSearch())
+    config = types.GenerateContentConfig(tools=[grounding_tool])
+    response = client.models.generate_content(
+        model="gemini-2.0-flash",
+        contents=prompt,
+        config=config,
+    )
+    assert response.text is not None
+    return response
+
+
+def _call_gemini_structure(client: genai.Client, prompt: str, schema: type[BaseModel]):
+    response = client.models.generate_content(
+        model="gemini-2.0-flash",
+        contents=prompt,
+        config=types.GenerateContentConfig(
+            response_mime_type="application/json",
+            response_schema=schema,
+        ),
+    )
+    return response
 
 
 @pytest.mark.xdist_group(name="album_search")
@@ -42,28 +74,17 @@ class AlbumSearchTests(TestCase):
 
 @pytest.mark.xdist_group(name="album_search")
 class PromptTests(TestCase):
+    def setUp(self):
+        self.client = _get_gemini_client()
+
     def test_ignores_unreleased_albums_first_response(self):
-        # We're exercising the prompts in album_search.py
         """
         The song bittersweet is on the album first love, which is not yet released.
         The prompt should not mention first love.
         """
         prompt = search_prompt("audien, shallou, rosie darling", "bittersweet")
-
-        with open("secrets.yaml", "r") as f:
-            config = yaml.safe_load(f)
-            gemini_api_key = config["gemini_api_key"]
-
-        client = genai.Client(api_key=gemini_api_key)
-        grounding_tool = types.Tool(google_search=types.GoogleSearch())
-        config = types.GenerateContentConfig(tools=[grounding_tool])
         for _ in range(5):
-            response = client.models.generate_content(
-                model="gemini-2.0-flash",
-                contents=prompt,
-                config=config,
-            )
-
+            response = _call_gemini_search(self.client, prompt)
             response_text = response.text
             self.assertIsNotNone(response_text)
             assert response_text is not None
@@ -71,28 +92,13 @@ class PromptTests(TestCase):
             self.assertNotIn("harmony", response_text.lower())
 
     def test_ignores_unreleased_albums_second_response(self):
-        # We're exercising the prompts in album_search.py
         prompt = structure_prompt(
             "audien, shallou, rosie darling",
             "bittersweet",
             "Bittersweet was released as a single in 2025 and will be on Audien's upcoming album, Harmony.",
         )
-
-        with open("secrets.yaml", "r") as f:
-            config = yaml.safe_load(f)
-            gemini_api_key = config["gemini_api_key"]
-
-        client = genai.Client(api_key=gemini_api_key)
-
         for _ in range(5):
-            response = client.models.generate_content(
-                model="gemini-2.0-flash",
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json", response_schema=AlbumTemplate
-                ),
-            )
-
+            response = _call_gemini_structure(self.client, prompt, AlbumTemplate)
             parsed = response.parsed
             self.assertIsInstance(parsed, AlbumTemplate)
             assert isinstance(parsed, AlbumTemplate)

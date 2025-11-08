@@ -2,6 +2,7 @@ from unittest import TestCase
 
 from google import genai
 from google.genai import types
+from pydantic import BaseModel
 import pytest
 import yaml
 
@@ -13,6 +14,37 @@ from artists_features import (
 )
 
 
+def _get_gemini_client():
+    with open("secrets.yaml", "r") as f:
+        config = yaml.safe_load(f)
+        gemini_api_key = config["gemini_api_key"]
+    return genai.Client(api_key=gemini_api_key)
+
+
+def _call_gemini_search(client: genai.Client, prompt: str):
+    grounding_tool = types.Tool(google_search=types.GoogleSearch())
+    config = types.GenerateContentConfig(tools=[grounding_tool])
+    response = client.models.generate_content(
+        model="gemini-2.0-flash",
+        contents=prompt,
+        config=config,
+    )
+    assert response.text is not None
+    return response
+
+
+def _call_gemini_structure(client: genai.Client, prompt: str, schema: type[BaseModel]):
+    response = client.models.generate_content(
+        model="gemini-2.0-flash",
+        contents=prompt,
+        config=types.GenerateContentConfig(
+            response_mime_type="application/json",
+            response_schema=schema,
+        ),
+    )
+    return response
+
+
 @pytest.mark.xdist_group(name="artists_and_features")
 class ArtistsAndFeaturesTest(TestCase):
     pass
@@ -20,23 +52,12 @@ class ArtistsAndFeaturesTest(TestCase):
 
 @pytest.mark.xdist_group(name="artists_and_features")
 class PromptTests(TestCase):
-    # We're exercising the prompts in album_search.py
+    def setUp(self):
+        self.client = _get_gemini_client()
+
     def test_one_artist_one_feature(self):
         prompt = search_prompt("Zedd", "Spectrum (feat. Matthew Koma)")
-
-        with open("secrets.yaml", "r") as f:
-            config = yaml.safe_load(f)
-            gemini_api_key = config["gemini_api_key"]
-
-        client = genai.Client(api_key=gemini_api_key)
-        grounding_tool = types.Tool(google_search=types.GoogleSearch())
-        config = types.GenerateContentConfig(tools=[grounding_tool])
-        response = client.models.generate_content(
-            model="gemini-2.0-flash",
-            contents=prompt,
-            config=config,
-        )
-
+        response = _call_gemini_search(self.client, prompt)
         assert response.text is not None
         self.assertIn("zedd", response.text.lower())
         self.assertIn("matthew koma", response.text.lower())
@@ -45,21 +66,8 @@ class PromptTests(TestCase):
 
     def test_no_features(self):
         prompt = search_prompt("Ninajirachi", "Battery Death")
-
-        with open("secrets.yaml", "r") as f:
-            config = yaml.safe_load(f)
-            gemini_api_key = config["gemini_api_key"]
-
-        client = genai.Client(api_key=gemini_api_key)
-        grounding_tool = types.Tool(google_search=types.GoogleSearch())
-        config = types.GenerateContentConfig(tools=[grounding_tool])
         for _ in range(5):
-            response = client.models.generate_content(
-                model="gemini-2.0-flash",
-                contents=prompt,
-                config=config,
-            )
-
+            response = _call_gemini_search(self.client, prompt)
             assert response.text is not None
             self.assertIn("ninajirachi", response.text.lower())
             self.assertNotIn("battery death", response.text.lower())
@@ -97,23 +105,10 @@ class PromptTests(TestCase):
             "Get Lucky",
             "Artists: Daft Punk. Features: Pharrell Williams, Nile Rodgers",
         )
-
-        with open("secrets.yaml", "r") as f:
-            config = yaml.safe_load(f)
-            gemini_api_key = config["gemini_api_key"]
-
-        client = genai.Client(api_key=gemini_api_key)
-
         for _ in range(5):
-            response = client.models.generate_content(
-                model="gemini-2.0-flash",
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json",
-                    response_schema=ArtistsAndFeaturesTemplate,
-                ),
+            response = _call_gemini_structure(
+                self.client, prompt, ArtistsAndFeaturesTemplate
             )
-
             parsed = response.parsed
             self.assertIsInstance(parsed, ArtistsAndFeaturesTemplate)
             assert isinstance(parsed, ArtistsAndFeaturesTemplate)
@@ -125,23 +120,10 @@ class PromptTests(TestCase):
         prompt = structure_prompt(
             "Porter Robinson", "Shelter", "Artists: Porter Robinson, Madeon"
         )
-
-        with open("secrets.yaml", "r") as f:
-            config = yaml.safe_load(f)
-            gemini_api_key = config["gemini_api_key"]
-
-        client = genai.Client(api_key=gemini_api_key)
-
         for _ in range(5):
-            response = client.models.generate_content(
-                model="gemini-2.0-flash",
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json",
-                    response_schema=ArtistsAndFeaturesTemplate,
-                ),
+            response = _call_gemini_structure(
+                self.client, prompt, ArtistsAndFeaturesTemplate
             )
-
             parsed = response.parsed
             self.assertIsInstance(parsed, ArtistsAndFeaturesTemplate)
             assert isinstance(parsed, ArtistsAndFeaturesTemplate)
@@ -152,23 +134,10 @@ class PromptTests(TestCase):
 
     def test_single_artist_no_features(self):
         prompt = structure_prompt("Deadmau5", "Strobe", "Artists: Deadmau5")
-
-        with open("secrets.yaml", "r") as f:
-            config = yaml.safe_load(f)
-            gemini_api_key = config["gemini_api_key"]
-
-        client = genai.Client(api_key=gemini_api_key)
-
         for _ in range(5):
-            response = client.models.generate_content(
-                model="gemini-2.0-flash",
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json",
-                    response_schema=ArtistsAndFeaturesTemplate,
-                ),
+            response = _call_gemini_structure(
+                self.client, prompt, ArtistsAndFeaturesTemplate
             )
-
             parsed = response.parsed
             self.assertIsInstance(parsed, ArtistsAndFeaturesTemplate)
             assert isinstance(parsed, ArtistsAndFeaturesTemplate)
@@ -179,23 +148,10 @@ class PromptTests(TestCase):
         prompt = structure_prompt(
             "Major Lazer", "Lean On", "Artists: Major Lazer, DJ Snake. Features: MØ"
         )
-
-        with open("secrets.yaml", "r") as f:
-            config = yaml.safe_load(f)
-            gemini_api_key = config["gemini_api_key"]
-
-        client = genai.Client(api_key=gemini_api_key)
-
         for _ in range(5):
-            response = client.models.generate_content(
-                model="gemini-2.0-flash",
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json",
-                    response_schema=ArtistsAndFeaturesTemplate,
-                ),
+            response = _call_gemini_structure(
+                self.client, prompt, ArtistsAndFeaturesTemplate
             )
-
             parsed = response.parsed
             self.assertIsInstance(parsed, ArtistsAndFeaturesTemplate)
             assert isinstance(parsed, ArtistsAndFeaturesTemplate)
@@ -203,3 +159,4 @@ class PromptTests(TestCase):
             self.assertIn("DJ Snake", parsed.artists)
             self.assertEqual(len(parsed.artists), 2)
             self.assertEqual(parsed.features, ["MØ"])
+            self.assertEqual(len(parsed.artists), 1)

@@ -148,6 +148,7 @@ def get_art_url(token, title: str, artist: str, single: bool, is_album: bool) ->
                             f"Couldn't find an album by '{current_artist}' containing track '{title}'"
                         )
 
+                assert selected_album is not None
                 images = selected_album.get("images")
                 return images[0]["url"]
 

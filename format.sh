@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Type checking. prob don't need both but not much downside
+pyright --level warning
+uvx ty check
+
 # Clean up imports and fix other issues
 python -m ruff check --select I --fix *.py
 python -m ruff check --select I --fix test/*.py

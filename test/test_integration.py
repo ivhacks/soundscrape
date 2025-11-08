@@ -15,7 +15,7 @@ class IntegrationTests(TestCase):
         shutil.rmtree("test/temp_output")
 
     def test_knock2_nolimit_purchased(self):
-        main("test/noaudio", "test/temp_output", no_art_select=True)
+        main("test/noaudio/Knock2_nolimit", "test/temp_output", no_art_select=True)
 
         with open("test/image.jpg", "rb") as f:
             expected_art = f.read()

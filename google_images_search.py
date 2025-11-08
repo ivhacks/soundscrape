@@ -29,15 +29,29 @@ with open("secrets.yaml", "r") as f:
 HEADLESS = True
 
 
+def scale_down_image(image_bytes: bytes) -> bytes:
+    img = Image.open(BytesIO(image_bytes))
+    if img.mode in ("RGBA", "LA", "P"):
+        img = img.convert("RGB")
+    img = img.resize((300, 300), Image.Resampling.LANCZOS)
+    output = BytesIO()
+    img.save(output, format="JPEG", quality=85)
+    return output.getvalue()
+
+
 def litterbox_upload(image_path: str) -> str:
     with open(image_path, "rb") as f:
-        files = {"fileToUpload": f}
-        data = {"reqtype": "fileupload", "time": "1h"}
-        response = requests.post(
-            "https://litterbox.catbox.moe/resources/internals/api.php",
-            files=files,
-            data=data,
-        )
+        image_bytes = f.read()
+
+    scaled_bytes = scale_down_image(image_bytes)
+
+    files = {"fileToUpload": ("image.jpg", BytesIO(scaled_bytes), "image/jpeg")}
+    data = {"reqtype": "fileupload", "time": "1h"}
+    response = requests.post(
+        "https://litterbox.catbox.moe/resources/internals/api.php",
+        files=files,
+        data=data,
+    )
 
     if response.status_code != 200:
         raise Exception(

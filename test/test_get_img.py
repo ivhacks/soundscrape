@@ -29,7 +29,7 @@ class GetImageTests(TestCase):
             "https://soundcloud.com/knock2music/knock2-lauren-larue-nolimit-1"
         )
 
-        with open("test/image.jpg", "rb") as f:
+        with open("test/test_art/knock2_nolimit.jpg", "rb") as f:
             expected = f.read()
         self.assertLessEqual(image_difference(result, expected), 2)
 
@@ -45,7 +45,7 @@ class GetImageTests(TestCase):
     def test_x_nolimit(self):
         result = get_image_x("https://x.com/Knock2Music/status/1867292451918295158")
 
-        with open("test/image.jpg", "rb") as f:
+        with open("test/test_art/knock2_nolimit.jpg", "rb") as f:
             expected = f.read()
 
         self.assertLessEqual(image_difference(result, expected), 2)
@@ -55,7 +55,7 @@ class GetImageTests(TestCase):
             "https://www.instagram.com/p/DDiBXLkTXds/", driver=self.driver
         )
 
-        with open("test/image.jpg", "rb") as f:
+        with open("test/test_art/knock2_nolimit.jpg", "rb") as f:
             expected = f.read()
         self.assertLessEqual(image_difference(result, expected), 2)
 
@@ -65,14 +65,14 @@ class GetImageTests(TestCase):
             driver=self.driver,
         )
 
-        with open("test/image.jpg", "rb") as f:
+        with open("test/test_art/knock2_nolimit.jpg", "rb") as f:
             expected = f.read()
         self.assertLessEqual(image_difference(result, expected), 2)
 
     def test_genius_nolimit_album(self):
         result = get_image_genius("https://genius.com/albums/Knock2/Nolimit")
 
-        with open("test/image.jpg", "rb") as f:
+        with open("test/test_art/knock2_nolimit.jpg", "rb") as f:
             expected = f.read()
         self.assertLessEqual(image_difference(result, expected), 2)
 
@@ -81,7 +81,7 @@ class GetImageTests(TestCase):
             "https://genius.com/Knock2-and-milli-dance-or-dead-lyrics"
         )
 
-        with open("test/image.jpg", "rb") as f:
+        with open("test/test_art/knock2_nolimit.jpg", "rb") as f:
             expected = f.read()
         self.assertLessEqual(image_difference(result, expected), 2)
 
@@ -91,6 +91,6 @@ class GetImageTests(TestCase):
             driver=self.driver,
         )
 
-        with open("test/image.jpg", "rb") as f:
+        with open("test/test_art/knock2_nolimit.jpg", "rb") as f:
             expected = f.read()
         self.assertLessEqual(image_difference(result, expected), 2)

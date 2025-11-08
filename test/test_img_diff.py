@@ -68,10 +68,10 @@ class SameImageTests(TestCase):
         self.assertLessEqual(result, 1, f"Expected <= 1, got {result}")
 
     def test_x_image_vs_reference_image(self):
-        """Test x_image.jpg vs image.jpg - both should be knock2 nolimit artwork, return 0 (identical)"""
+        """Test x_image.jpg vs knock2_nolimit.jpg - both should be knock2 nolimit artwork, return 0 (identical)"""
         with open("test/x_image.jpg", "rb") as f:
             x_image_bytes = f.read()
-        with open("test/image.jpg", "rb") as f:
+        with open("test/test_art/knock2_nolimit.jpg", "rb") as f:
             reference_image_bytes = f.read()
         result = image_difference(x_image_bytes, reference_image_bytes)
         self.assertLessEqual(result, 1, f"Expected <= 1, got {result}")

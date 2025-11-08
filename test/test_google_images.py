@@ -1,11 +1,13 @@
-import os
+from io import BytesIO
 from unittest import TestCase
 
+from PIL import Image
 import pytest
 import requests
 
 from google_images_search import (
     litterbox_upload,
+    scale_down_image,
     search_google_images,
     serpapi_reverse_image,
 )
@@ -15,7 +17,7 @@ from img_diff import image_difference
 @pytest.mark.xdist_group(name="google_images")
 class GoogleImagesTests(TestCase):
     def test_google_images(self):
-        image_path = os.path.join(os.path.dirname(__file__), "image.jpg")
+        image_path = "test/test_art/knock2_nolimit.jpg"
 
         results = search_google_images(image_path)
 
@@ -27,7 +29,7 @@ class GoogleImagesTests(TestCase):
             self.assertTrue(result.startswith("http"))
 
     def test_litterbox_upload(self):
-        image_path = os.path.join(os.path.dirname(__file__), "image.jpg")
+        image_path = "test/test_art/knock2_nolimit.jpg"
 
         url = litterbox_upload(image_path)
 
@@ -43,12 +45,12 @@ class GoogleImagesTests(TestCase):
             original_image = f.read()
 
         diff = image_difference(original_image, downloaded_image)
-        self.assertEqual(diff, 0)
+        self.assertLessEqual(diff, 2)
 
     def test_serpapi_reverse_image(self):
         from google_images_search import download_images
 
-        image_path = os.path.join(os.path.dirname(__file__), "image.jpg")
+        image_path = "test/test_art/knock2_nolimit.jpg"
 
         url = litterbox_upload(image_path)
         urls = serpapi_reverse_image(url, num_results=10)
@@ -77,7 +79,7 @@ class GoogleImagesTests(TestCase):
         self.assertLessEqual(diff, 5)
 
     def test_serpapi_two_results(self):
-        image_path = os.path.join(os.path.dirname(__file__), "image.jpg")
+        image_path = "test/test_art/knock2_nolimit.jpg"
 
         url = litterbox_upload(image_path)
         urls = serpapi_reverse_image(url, num_results=2)
@@ -88,7 +90,7 @@ class GoogleImagesTests(TestCase):
             self.assertTrue(url.startswith("http"))
 
     def test_serpapi_ten_results(self):
-        image_path = os.path.join(os.path.dirname(__file__), "image.jpg")
+        image_path = "test/test_art/knock2_nolimit.jpg"
 
         url = litterbox_upload(image_path)
         urls = serpapi_reverse_image(url, num_results=10)
@@ -97,3 +99,31 @@ class GoogleImagesTests(TestCase):
         for url in urls:
             self.assertIsInstance(url, str)
             self.assertTrue(url.startswith("http"))
+
+    def test_scale_down_image_1(self):
+        with open("test/images/1.png", "rb") as f:
+            original_bytes = f.read()
+
+        scaled_bytes = scale_down_image(original_bytes)
+
+        scaled_img = Image.open(BytesIO(scaled_bytes))
+        width, height = scaled_img.size
+        self.assertEqual(width, 300)
+        self.assertEqual(height, 300)
+
+        diff = image_difference(original_bytes, scaled_bytes)
+        self.assertLessEqual(diff, 2)
+
+    def test_scale_down_image_2(self):
+        with open("test/images/2.png", "rb") as f:
+            original_bytes = f.read()
+
+        scaled_bytes = scale_down_image(original_bytes)
+
+        scaled_img = Image.open(BytesIO(scaled_bytes))
+        width, height = scaled_img.size
+        self.assertEqual(width, 300)
+        self.assertEqual(height, 300)
+
+        diff = image_difference(original_bytes, scaled_bytes)
+        self.assertLessEqual(diff, 2)

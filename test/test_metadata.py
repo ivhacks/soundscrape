@@ -181,13 +181,13 @@ class TestReadMetadata(TestCase):
 
     def test_get_cover_art_mp3(self):
         extracted_image = get_cover_art("test/nolimit.mp3")
-        with open("test/image.jpg", "rb") as f:
+        with open("test/test_art/knock2_nolimit.jpg", "rb") as f:
             expected_image = f.read()
 
         self.assertEqual(extracted_image, expected_image)
 
     def test_set_cover_art_mp3(self):
-        with open("test/image.jpg", "rb") as f:
+        with open("test/test_art/knock2_nolimit.jpg", "rb") as f:
             image_data = f.read()
 
         set_cover_art("test/yeet.mp3", image_data)
@@ -200,7 +200,7 @@ class TestReadMetadata(TestCase):
         with self.assertRaises(NoTagError):
             get_cover_art("test/yeet.mp3")
 
-        with open("test/image.jpg", "rb") as f:
+        with open("test/test_art/knock2_nolimit.jpg", "rb") as f:
             image_data = f.read()
         set_cover_art("test/yeet.mp3", image_data)
 
@@ -330,7 +330,7 @@ class TestReadMetadata(TestCase):
         set_lyrics("test/yeet.flac", "Test lyrics")
 
     def test_get_cover_art_flac(self):
-        with open("test/image.jpg", "rb") as f:
+        with open("test/test_art/knock2_nolimit.jpg", "rb") as f:
             image_data = f.read()
         set_cover_art("test/nolimit.flac", image_data)
 
@@ -339,7 +339,7 @@ class TestReadMetadata(TestCase):
         self.assertEqual(extracted_bytes, image_data)
 
     def test_set_cover_art_flac(self):
-        with open("test/image.jpg", "rb") as f:
+        with open("test/test_art/knock2_nolimit.jpg", "rb") as f:
             image_data = f.read()
 
         set_cover_art("test/yeet.flac", image_data)
@@ -352,6 +352,6 @@ class TestReadMetadata(TestCase):
         with self.assertRaises(NoTagError):
             get_cover_art("test/yeet.flac")
 
-        with open("test/image.jpg", "rb") as f:
+        with open("test/test_art/knock2_nolimit.jpg", "rb") as f:
             image_data = f.read()
         set_cover_art("test/yeet.flac", image_data)

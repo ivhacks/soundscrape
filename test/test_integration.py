@@ -12,12 +12,15 @@ from soundscrape import main
 @pytest.mark.xdist_group(name="serial_metadata_tests")
 class IntegrationTests(TestCase):
     def tearDown(self):
-        shutil.rmtree("test/temp_output")
+        try:
+            shutil.rmtree("test/temp_output")
+        except FileNotFoundError:
+            pass
 
     def test_knock2_nolimit_purchased(self):
         main("test/noaudio/Knock2_nolimit", "test/temp_output", no_art_select=True)
 
-        with open("test/image.jpg", "rb") as f:
+        with open("test/test_art/knock2_nolimit.jpg", "rb") as f:
             expected_art = f.read()
 
         for filename in os.listdir("test/temp_output"):
@@ -97,3 +100,101 @@ class IntegrationTests(TestCase):
             get_artist("test/temp_output/shyne 4 me (feat. PIAO).flac"),
             "Knock2; Warren Hue; HOLLY",
         )
+        shutil.rmtree("test/temp_output")
+
+    def test_porter_robinson_worlds_purchased(self):
+        main(
+            "test/noaudio/Porter_Robinson_Worlds",
+            "test/temp_output",
+            no_art_select=True,
+        )
+
+        with open("test/test_art/porter_robinson_worlds.jpg", "rb") as f:
+            expected_art = f.read()
+
+        for filename in os.listdir("test/temp_output"):
+            if filename.lower().endswith((".mp3", ".flac")):
+                filepath = os.path.join("test/temp_output", filename)
+
+                album_artist = get_album_artist(filepath)
+                self.assertEqual(
+                    album_artist,
+                    "Porter Robinson",
+                    "Album artist not Porter Robinson! :(",
+                )
+
+                actual_art = get_cover_art(filepath)
+                diff = image_difference(expected_art, actual_art)
+                self.assertLessEqual(diff, 2, "Wrong cover art!")
+
+        # Check individual song titles and artists
+        self.assertEqual(
+            get_song_title("test/temp_output/Divinity.flac"),
+            "Divinity (feat. Amy Millan)",
+        )
+        self.assertEqual(get_artist("test/temp_output/Divinity.flac"), "Porter Robinson; Amy Millan")
+
+        self.assertEqual(get_song_title("test/temp_output/Sad Machine.flac"), "Sad Machine")
+        self.assertEqual(get_artist("test/temp_output/Sad Machine.flac"), "Porter Robinson")
+
+        self.assertEqual(
+            get_song_title("test/temp_output/Years of War (feat. Breanne Düren & Sean Caskey).flac"),
+            "Years of War (feat. Breanne Düren & Sean Caskey)",
+        )
+        self.assertEqual(
+            get_artist("test/temp_output/Years of War (feat. Breanne Düren & Sean Caskey).flac"),
+            "Porter Robinson",
+        )
+
+        self.assertEqual(get_song_title("test/temp_output/Flicker.flac"), "Flicker")
+        self.assertEqual(get_artist("test/temp_output/Flicker.flac"), "Porter Robinson")
+
+        self.assertEqual(
+            get_song_title("test/temp_output/Fresh Static Snow.flac"),
+            "Fresh Static Snow",
+        )
+        self.assertEqual(get_artist("test/temp_output/Fresh Static Snow.flac"), "Porter Robinson")
+
+        self.assertEqual(
+            get_song_title("test/temp_output/Polygon Dust (feat. Lemaitre).flac"),
+            "Polygon Dust (feat. Lemaitre)",
+        )
+        self.assertEqual(
+            get_artist("test/temp_output/Polygon Dust (feat. Lemaitre).flac"),
+            "Porter Robinson",
+        )
+
+        self.assertEqual(
+            get_song_title("test/temp_output/Hear the Bells (feat. Imaginary Cities).flac"),
+            "Hear the Bells (feat. Imaginary Cities)",
+        )
+        self.assertEqual(
+            get_artist("test/temp_output/Hear the Bells (feat. Imaginary Cities).flac"),
+            "Porter Robinson",
+        )
+
+        self.assertEqual(get_song_title("test/temp_output/Natural Light.flac"), "Natural Light")
+        self.assertEqual(get_artist("test/temp_output/Natural Light.flac"), "Porter Robinson")
+
+        self.assertEqual(
+            get_song_title("test/temp_output/Lionhearted (feat. Urban Cone).flac"),
+            "Lionhearted (feat. Urban Cone)",
+        )
+        self.assertEqual(
+            get_artist("test/temp_output/Lionhearted (feat. Urban Cone).flac"),
+            "Porter Robinson",
+        )
+
+        self.assertEqual(get_song_title("test/temp_output/Sea of Voices.flac"), "Sea of Voices")
+        self.assertEqual(get_artist("test/temp_output/Sea of Voices.flac"), "Porter Robinson")
+
+        self.assertEqual(get_song_title("test/temp_output/Fellow Feeling.flac"), "Fellow Feeling")
+        self.assertEqual(get_artist("test/temp_output/Fellow Feeling.flac"), "Porter Robinson")
+
+        self.assertEqual(
+            get_song_title("test/temp_output/Goodbye to a World.flac"),
+            "Goodbye to a World",
+        )
+        self.assertEqual(get_artist("test/temp_output/Goodbye to a World.flac"), "Porter Robinson")
+
+        shutil.rmtree("test/temp_output")

@@ -39,6 +39,7 @@ def search_prompt(artist: str, song_title: str) -> str:
 
             CRITICAL: 
             - If there are no features, your response ends after listing the artists
+            - Don't include a vocaloid in the feature list unless it's EXPLICITLY listed. Vocaloids are software used by the producer, they are not artists.
             - NEVER write the word "Features:" unless actual feature names follow it
             """
 

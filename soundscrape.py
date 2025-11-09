@@ -11,6 +11,7 @@ from PIL import Image
 
 from art_search import search_cover_art_by_text
 from art_selector import CoverArtSelector
+from artists_features import find_artists_and_features
 from file_metadata import (
     clear_cover_art,
     copy_all_tags,
@@ -28,7 +29,7 @@ from google_images_search import (
     downselect_images,
     search_google_images,
 )
-from parse_and_clean import clean_title, parse_artists, parse_features
+from parse_and_clean import clean_title
 from stealth_driver import create_stealth_driver
 
 
@@ -89,11 +90,12 @@ def process_dir(output_dir: str, no_art_select: bool = False, fast_search: bool 
                 )
 
             cleaned_title = clean_title(title)
+            artists_and_features = find_artists_and_features(artist, cleaned_title)
             albums[album_name].tracks.append(
                 Track(
-                    artists=parse_artists(artist),
+                    artists=artists_and_features.artists,
                     title=cleaned_title,
-                    features=parse_features(title),
+                    features=artists_and_features.features,
                     filepath=filepath,
                 )
             )
@@ -182,12 +184,14 @@ def process_dir(output_dir: str, no_art_select: bool = False, fast_search: bool 
 
         for track in album.tracks:
             if track.features:
-                new_filename_base = f"{track.title} (feat. {', '.join(track.features)})"
+                title_with_features = (
+                    f"{track.title} (feat. {', '.join(track.features)})"
+                )
             else:
-                new_filename_base = track.title
+                title_with_features = track.title
 
             original_extension = os.path.splitext(track.filepath)[1]
-            new_filename = f"{new_filename_base}{original_extension}"
+            new_filename = f"{title_with_features}{original_extension}"
             new_filepath = os.path.join(os.path.dirname(track.filepath), new_filename)
 
             os.rename(track.filepath, new_filepath)
@@ -196,7 +200,7 @@ def process_dir(output_dir: str, no_art_select: bool = False, fast_search: bool 
             set_artist(new_filepath, artist_string)
             set_album_artist(new_filepath, "; ".join(album.artists))
 
-            set_song_title(new_filepath, new_filename_base)
+            set_song_title(new_filepath, title_with_features)
 
             clear_cover_art(new_filepath)
             set_cover_art(new_filepath, chosen_art)

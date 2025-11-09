@@ -47,7 +47,75 @@ def _call_gemini_structure(client: genai.Client, prompt: str, schema: type[BaseM
 
 @pytest.mark.xdist_group(name="artists_and_features")
 class ArtistsAndFeaturesTest(TestCase):
-    pass
+    def test_porter_robinson_divinity(self):
+        result = find_artists_and_features(
+            "Porter Robinson", "Divinity (feat. Amy Millan)"
+        )
+        self.assertEqual(result.artists, ["Porter Robinson"])
+        self.assertEqual(result.features, ["Amy Millan"])
+
+    def test_porter_robinson_sad_machine(self):
+        result = find_artists_and_features("Porter Robinson", "Sad Machine")
+        self.assertEqual(result.artists, ["Porter Robinson"])
+        self.assertEqual(result.features, [])
+
+    def test_porter_robinson_years_of_war(self):
+        result = find_artists_and_features(
+            "Porter Robinson", "Years Of War (feat. Breanne Düren & Sean Caskey)"
+        )
+        self.assertEqual(result.artists, ["Porter Robinson"])
+        self.assertEqual(result.features, ["Breanne Düren", "Sean Caskey"])
+
+    def test_porter_robinson_flicker(self):
+        result = find_artists_and_features("Porter Robinson", "Flicker")
+        self.assertEqual(result.artists, ["Porter Robinson"])
+        self.assertEqual(result.features, [])
+
+    def test_porter_robinson_fresh_static_snow(self):
+        result = find_artists_and_features("Porter Robinson", "Fresh Static Snow")
+        self.assertEqual(result.artists, ["Porter Robinson"])
+        self.assertEqual(result.features, [])
+
+    def test_porter_robinson_polygon_dust(self):
+        result = find_artists_and_features(
+            "Porter Robinson", "Polygon Dust (feat. Lemaitre)"
+        )
+        self.assertEqual(result.artists, ["Porter Robinson"])
+        self.assertEqual(result.features, ["Lemaitre"])
+
+    def test_porter_robinson_hear_the_bells(self):
+        result = find_artists_and_features(
+            "Porter Robinson", "Hear the Bells (feat. Imaginary Cities)"
+        )
+        self.assertEqual(result.artists, ["Porter Robinson"])
+        self.assertEqual(result.features, ["Imaginary Cities"])
+
+    def test_porter_robinson_natural_light(self):
+        result = find_artists_and_features("Porter Robinson", "Natural Light")
+        self.assertEqual(result.artists, ["Porter Robinson"])
+        self.assertEqual(result.features, [])
+
+    def test_porter_robinson_lionhearted(self):
+        result = find_artists_and_features(
+            "Porter Robinson", "Lionhearted (feat. Urban Cone)"
+        )
+        self.assertEqual(result.artists, ["Porter Robinson"])
+        self.assertEqual(result.features, ["Urban Cone"])
+
+    def test_porter_robinson_sea_of_voices(self):
+        result = find_artists_and_features("Porter Robinson", "Sea of Voices")
+        self.assertEqual(result.artists, ["Porter Robinson"])
+        self.assertEqual(result.features, [])
+
+    def test_porter_robinson_fellow_feeling(self):
+        result = find_artists_and_features("Porter Robinson", "Fellow Feeling")
+        self.assertEqual(result.artists, ["Porter Robinson"])
+        self.assertEqual(result.features, [])
+
+    def test_porter_robinson_goodbye_to_a_world(self):
+        result = find_artists_and_features("Porter Robinson", "Goodbye to a World")
+        self.assertEqual(result.artists, ["Porter Robinson"])
+        self.assertEqual(result.features, [])
 
 
 @pytest.mark.xdist_group(name="artists_and_features")

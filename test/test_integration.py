@@ -129,20 +129,23 @@ class IntegrationTests(TestCase):
 
         # Check individual song titles and artists
         self.assertEqual(
-            get_song_title("test/temp_output/Divinity.flac"),
+            get_song_title("test/temp_output/Divinity (feat. Amy Millan).flac"),
             "Divinity (feat. Amy Millan)",
         )
-        self.assertEqual(get_artist("test/temp_output/Divinity.flac"), "Porter Robinson; Amy Millan")
+        self.assertEqual(
+            get_artist("test/temp_output/Divinity (feat. Amy Millan).flac"),
+            "Porter Robinson",
+        )
 
         self.assertEqual(get_song_title("test/temp_output/Sad Machine.flac"), "Sad Machine")
         self.assertEqual(get_artist("test/temp_output/Sad Machine.flac"), "Porter Robinson")
 
         self.assertEqual(
-            get_song_title("test/temp_output/Years of War (feat. Breanne Düren & Sean Caskey).flac"),
-            "Years of War (feat. Breanne Düren & Sean Caskey)",
+            get_song_title("test/temp_output/Years Of War (feat. Breanne Düren, Sean Caskey).flac"),
+            "Years Of War (feat. Breanne Düren, Sean Caskey)",
         )
         self.assertEqual(
-            get_artist("test/temp_output/Years of War (feat. Breanne Düren & Sean Caskey).flac"),
+            get_artist("test/temp_output/Years Of War (feat. Breanne Düren, Sean Caskey).flac"),
             "Porter Robinson",
         )
 
@@ -165,11 +168,11 @@ class IntegrationTests(TestCase):
         )
 
         self.assertEqual(
-            get_song_title("test/temp_output/Hear the Bells (feat. Imaginary Cities).flac"),
-            "Hear the Bells (feat. Imaginary Cities)",
+            get_song_title("test/temp_output/Hear The Bells (feat. Imaginary Cities).flac"),
+            "Hear The Bells (feat. Imaginary Cities)",
         )
         self.assertEqual(
-            get_artist("test/temp_output/Hear the Bells (feat. Imaginary Cities).flac"),
+            get_artist("test/temp_output/Hear The Bells (feat. Imaginary Cities).flac"),
             "Porter Robinson",
         )
 
@@ -185,16 +188,16 @@ class IntegrationTests(TestCase):
             "Porter Robinson",
         )
 
-        self.assertEqual(get_song_title("test/temp_output/Sea of Voices.flac"), "Sea of Voices")
-        self.assertEqual(get_artist("test/temp_output/Sea of Voices.flac"), "Porter Robinson")
+        self.assertEqual(get_song_title("test/temp_output/Sea Of Voices.flac"), "Sea Of Voices")
+        self.assertEqual(get_artist("test/temp_output/Sea Of Voices.flac"), "Porter Robinson")
 
         self.assertEqual(get_song_title("test/temp_output/Fellow Feeling.flac"), "Fellow Feeling")
         self.assertEqual(get_artist("test/temp_output/Fellow Feeling.flac"), "Porter Robinson")
 
         self.assertEqual(
-            get_song_title("test/temp_output/Goodbye to a World.flac"),
-            "Goodbye to a World",
+            get_song_title("test/temp_output/Goodbye To A World.flac"),
+            "Goodbye To A World",
         )
-        self.assertEqual(get_artist("test/temp_output/Goodbye to a World.flac"), "Porter Robinson")
+        self.assertEqual(get_artist("test/temp_output/Goodbye To A World.flac"), "Porter Robinson")
 
         shutil.rmtree("test/temp_output")

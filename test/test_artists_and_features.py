@@ -42,7 +42,11 @@ def _call_gemini_structure(client: genai.Client, prompt: str, schema: type[BaseM
             response_schema=schema,
         ),
     )
-    return response
+    parsed = response.parsed
+    assert isinstance(parsed, ArtistsAndFeaturesTemplate)
+    print(f"Artists: {parsed.artists}")
+    print(f"Features: {parsed.features}")
+    return parsed
 
 
 @pytest.mark.xdist_group(name="artists_and_features")
@@ -148,10 +152,7 @@ class PromptTests(TestCase):
 
     def test_isoknock_pain_multiple_artists(self):
         result = find_artists_and_features("ISOKNOCK", "PAIN")
-        self.assertIn("ISOKNOCK", result.artists)
-        self.assertIn("Knock2", result.artists)
-        self.assertIn("ISOxo", result.artists)
-        self.assertEqual(len(result.artists), 3)
+        self.assertEqual(result.artists, ["ISOKNOCK", "Knock2", "ISOxo"])
         self.assertEqual(result.features, [])
 
     def test_ninajirachi_battery_death_single_artist(self):
@@ -161,10 +162,7 @@ class PromptTests(TestCase):
 
     def test_skrillex_rumble_multiple_artists(self):
         result = find_artists_and_features("Skrillex", "Rumble")
-        self.assertIn("Skrillex", result.artists)
-        self.assertIn("Fred again..", result.artists)
-        self.assertIn("Flowdan", result.artists)
-        self.assertEqual(len(result.artists), 3)
+        self.assertEqual(result.artists, ["Skrillex", "Fred again..", "Flowdan"])
         self.assertEqual(result.features, [])
 
     def test_single_artist_with_feature(self):
@@ -177,12 +175,8 @@ class PromptTests(TestCase):
             response = _call_gemini_structure(
                 self.client, prompt, ArtistsAndFeaturesTemplate
             )
-            parsed = response.parsed
-            self.assertIsInstance(parsed, ArtistsAndFeaturesTemplate)
-            assert isinstance(parsed, ArtistsAndFeaturesTemplate)
-            self.assertEqual(parsed.artists, ["Daft Punk"])
-            self.assertIn("Pharrell Williams", parsed.features)
-            self.assertIn("Nile Rodgers", parsed.features)
+            self.assertEqual(response.artists, ["Daft Punk"])
+            self.assertEqual(response.features, ["Pharrell Williams", "Nile Rodgers"])
 
     def test_multiple_artists_no_features(self):
         prompt = structure_prompt(
@@ -192,13 +186,8 @@ class PromptTests(TestCase):
             response = _call_gemini_structure(
                 self.client, prompt, ArtistsAndFeaturesTemplate
             )
-            parsed = response.parsed
-            self.assertIsInstance(parsed, ArtistsAndFeaturesTemplate)
-            assert isinstance(parsed, ArtistsAndFeaturesTemplate)
-            self.assertIn("Porter Robinson", parsed.artists)
-            self.assertIn("Madeon", parsed.artists)
-            self.assertEqual(len(parsed.artists), 2)
-            self.assertEqual(parsed.features, [])
+            self.assertEqual(response.artists, ["Porter Robinson", "Madeon"])
+            self.assertEqual(response.features, [])
 
     def test_single_artist_no_features(self):
         prompt = structure_prompt("Deadmau5", "Strobe", "Artists: Deadmau5")
@@ -206,11 +195,8 @@ class PromptTests(TestCase):
             response = _call_gemini_structure(
                 self.client, prompt, ArtistsAndFeaturesTemplate
             )
-            parsed = response.parsed
-            self.assertIsInstance(parsed, ArtistsAndFeaturesTemplate)
-            assert isinstance(parsed, ArtistsAndFeaturesTemplate)
-            self.assertEqual(parsed.artists, ["Deadmau5"])
-            self.assertEqual(parsed.features, [])
+            self.assertEqual(response.artists, ["Deadmau5"])
+            self.assertEqual(response.features, [])
 
     def test_multiple_artists_with_features(self):
         prompt = structure_prompt(
@@ -220,11 +206,5 @@ class PromptTests(TestCase):
             response = _call_gemini_structure(
                 self.client, prompt, ArtistsAndFeaturesTemplate
             )
-            parsed = response.parsed
-            self.assertIsInstance(parsed, ArtistsAndFeaturesTemplate)
-            assert isinstance(parsed, ArtistsAndFeaturesTemplate)
-            self.assertIn("Major Lazer", parsed.artists)
-            self.assertIn("DJ Snake", parsed.artists)
-            self.assertEqual(len(parsed.artists), 2)
-            self.assertEqual(parsed.features, ["MØ"])
-            self.assertEqual(len(parsed.artists), 1)
+            self.assertEqual(response.artists, ["Major Lazer", "DJ Snake"])
+            self.assertEqual(response.features, ["MØ"])

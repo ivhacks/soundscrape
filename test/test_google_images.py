@@ -6,6 +6,7 @@ import pytest
 import requests
 
 from google_images_search import (
+    download_images,
     litterbox_upload,
     scale_down_image,
     search_google_images,
@@ -47,9 +48,15 @@ class GoogleImagesTests(TestCase):
         diff = image_difference(original_image, downloaded_image)
         self.assertLessEqual(diff, 2)
 
-    def test_serpapi_reverse_image(self):
-        from google_images_search import download_images
+        response_verified = requests.get(url, verify=True)
+        self.assertEqual(response_verified.status_code, 200)
 
+        downloaded_image_verified = response_verified.content
+
+        diff_verified = image_difference(original_image, downloaded_image_verified)
+        self.assertLessEqual(diff_verified, 2)
+
+    def test_serpapi_reverse_image(self):
         image_path = "test/test_art/knock2_nolimit.jpg"
 
         url = litterbox_upload(image_path)

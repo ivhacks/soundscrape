@@ -1,3 +1,43 @@
+[project]
+name = "soundscrape"
+version = "0.1.0"
+description = "Audio file metadata and cover art scraper"
+requires-python = ">=3.11"
+dependencies = [
+    "2captcha-python>=1.5",
+    "anthropic>=0.71",
+    "beautifulsoup4>=4.13",
+    "fuzzywuzzy>=0.18",
+    "google-genai>=1.22",
+    "google-search-results>=2.4",
+    "imagehash>=4.3",
+    "mutagen>=1.47",
+    "pillow>=11.2",
+    "playwright>=1.52",
+    "psycopg>=3.3.2",
+    "pydantic>=2.11",
+    "pytest>=9.0.2",
+    "pytest-xdist>=3.8.0",
+    "python-dotenv>=1.1",
+    "python-levenshtein>=0.27",
+    "pyyaml>=6.0",
+    "requests>=2.32",
+    "selenium>=4.33",
+    "tenacity>=8.5",
+    "webdriver-manager>=4.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ipdb>=0.13",
+    "ipython>=9.3",
+    "pytest>=8.4",
+    "pytest-timeout>=2.4",
+    "pytest-xdist>=3.6",
+    "pyright>=1.1",
+    "ruff>=0.12",
+]
+
 [tool.ruff]
 # Global ruff settings
 line-length = 88
@@ -29,3 +69,7 @@ lines-after-imports = 2
 split-on-trailing-comma = true
 
 [tool.pytest.ini_options]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

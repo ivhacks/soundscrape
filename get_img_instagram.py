@@ -1,5 +1,3 @@
-import re
-
 import requests
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
@@ -21,16 +19,18 @@ def get_image_instagram(link: str, driver=None) -> bytes:
         EC.presence_of_element_located((By.CSS_SELECTOR, 'img[src*="scontent"]'))
     )
 
-    html_content = driver.page_source
+    # Find the first large image (skip profile pictures which are 150x150)
+    imgs = driver.find_elements(By.CSS_SELECTOR, 'img[src*="scontent"]')
+    image_url = None
+    for img in imgs:
+        natural_width = int(img.get_property("naturalWidth"))
+        if natural_width > 200:
+            image_url = str(img.get_attribute("src"))
+            break
 
-    # Look for Instagram CDN images
-    pattern = r'src="(https://scontent[^"]*\.jpg[^"]*)"'
-    match = re.search(pattern, html_content)
-
-    if not match:
+    if not image_url:
         raise ValueError("Could not find Instagram image in page")
 
-    image_url = match.group(1)
     image_url = image_url.replace("&amp;", "&")
 
     image_response = requests.get(image_url)
@@ -40,6 +40,6 @@ def get_image_instagram(link: str, driver=None) -> bytes:
 
 
 if __name__ == "__main__":
-    result = get_image_instagram("https://www.instagram.com/p/DDiBXLkTXds/")
+    result = get_image_instagram("https://www.instagram.com/p/DDfmurKTFC5/")
     selector = CoverArtSelector([result])
     selected_index = selector.show_selection_window()

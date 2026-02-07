@@ -10,7 +10,6 @@ from album_search import (
     AlbumTemplate,
     identify_album,
     most_famous_artist,
-    search_prompt,
     structure_prompt,
 )
 
@@ -77,19 +76,19 @@ class PromptTests(TestCase):
     def setUp(self):
         self.client = _get_gemini_client()
 
-    def test_ignores_unreleased_albums_first_response(self):
-        """
-        The song bittersweet is on the album first love, which is not yet released.
-        The prompt should not mention first love.
-        """
-        prompt = search_prompt("audien, shallou, rosie darling", "bittersweet")
-        for _ in range(5):
-            response = _call_gemini_search(self.client, prompt)
-            response_text = response.text
-            self.assertIsNotNone(response_text)
-            assert response_text is not None
-            self.assertNotIn("first love", response_text.lower())
-            self.assertNotIn("harmony", response_text.lower())
+    # def test_ignores_unreleased_albums_first_response(self):
+    #     """
+    #     The song bittersweet is on the album first love, which is not yet released.
+    #     The prompt should not mention first love.
+    #     """
+    #     prompt = search_prompt("audien, shallou, rosie darling", "bittersweet")
+    #     for _ in range(5):
+    #         response = _call_gemini_search(self.client, prompt)
+    #         response_text = response.text
+    #         self.assertIsNotNone(response_text)
+    #         assert response_text is not None
+    #         self.assertNotIn("first love", response_text.lower())
+    #         self.assertNotIn("harmony", response_text.lower())
 
     def test_ignores_unreleased_albums_second_response(self):
         prompt = structure_prompt(

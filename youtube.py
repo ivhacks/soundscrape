@@ -31,9 +31,10 @@ def get_yt_music_metadata(
 ) -> TrackMetadata:
     import re
 
-    # XPaths for reliable element location
-    TITLE_XPATH = "/html/body/ytmusic-app/ytmusic-app-layout/ytmusic-player-bar/div[2]/div[2]/yt-formatted-string"
-    ARTIST_XPATH = "/html/body/ytmusic-app/ytmusic-app-layout/ytmusic-player-bar/div[2]/div[2]/span/span[2]/yt-formatted-string/a[1]"
+    # CSS selectors for the player bar metadata
+    TITLE_CSS = "ytmusic-player-bar yt-formatted-string.title"
+    BYLINE_LINK_CSS = "ytmusic-player-bar yt-formatted-string.byline a"
+    BYLINE_SPAN_CSS = "ytmusic-player-bar yt-formatted-string.byline span"
 
     # Use provided driver or create a new one
     driver_created = driver is None
@@ -43,21 +44,20 @@ def get_yt_music_metadata(
     assert driver is not None
     driver.get(link)
 
-    # Wait for content to load
-    wait = WebDriverWait(driver, 20)
+    # Wait for byline links to appear (waits out ads automatically)
+    wait = WebDriverWait(driver, 45)
     wait.until(
-        expected_conditions.presence_of_element_located((By.XPATH, ARTIST_XPATH))
+        expected_conditions.presence_of_element_located(
+            (By.CSS_SELECTOR, BYLINE_LINK_CSS)
+        )
     )
 
     # Get basic metadata
-    title_element = driver.find_element(By.XPATH, TITLE_XPATH)
+    title_element = driver.find_element(By.CSS_SELECTOR, TITLE_CSS)
     raw_title = str(title_element.get_attribute("innerHTML")).strip()
 
-    # Get all artist links to handle multiple main artists (like "deadmau5 & Kaskade")
-    all_links = driver.find_elements(
-        By.XPATH,
-        "/html/body/ytmusic-app/ytmusic-app-layout/ytmusic-player-bar/div[2]/div[2]/span/span[2]/yt-formatted-string/a",
-    )
+    # Get all artist/album links from the byline
+    all_links = driver.find_elements(By.CSS_SELECTOR, BYLINE_LINK_CSS)
 
     # Extract main artists - typically the first few links before the album
     raw_artists = []
@@ -73,10 +73,7 @@ def get_yt_music_metadata(
 
     # Get year (search all spans for 4-digit year)
     year = None
-    all_spans = driver.find_elements(
-        By.XPATH,
-        "/html/body/ytmusic-app/ytmusic-app-layout/ytmusic-player-bar/div[2]/div[2]/span/span[2]/yt-formatted-string/span",
-    )
+    all_spans = driver.find_elements(By.CSS_SELECTOR, BYLINE_SPAN_CSS)
     for span in all_spans:
         span_text = str(span.get_attribute("innerHTML")).strip()
         year_match = re.search(r"\b(\d{4})\b", span_text)

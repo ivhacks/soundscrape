@@ -52,7 +52,7 @@ class GetImageTests(TestCase):
 
     def test_instagram_nolimit_post(self):
         result = get_image_instagram(
-            "https://www.instagram.com/p/DDiBXLkTXds/", driver=self.driver
+            "https://www.instagram.com/p/DDfmurKTFC5/", driver=self.driver
         )
 
         with open("test/test_art/knock2_nolimit.jpg", "rb") as f:

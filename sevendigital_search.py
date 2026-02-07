@@ -26,6 +26,16 @@ def string_match(a: str, b: str) -> bool:
     return processed_a == processed_b
 
 
+def _is_junk_link_text(text: str) -> bool:
+    """Check if a link text is a format/price indicator rather than a content title."""
+    return (
+        "FLAC" in text
+        or "MP3" in text
+        or text.startswith("From $")
+        or text.startswith("From £")
+    )
+
+
 def search_album_for_track(driver, album_url: str, track_title: str) -> bool:
     """Search within an album page for a specific track title"""
     try:
@@ -35,7 +45,7 @@ def search_album_for_track(driver, album_url: str, track_title: str) -> bool:
         soup = BeautifulSoup(driver.page_source, "html.parser")
 
         # Look for track listings on the album page
-        track_elements = soup.find_all(["span", "div", "a"], string=True)
+        track_elements = soup.find_all(["span", "div", "a"])
 
         for element in track_elements:
             element_text = element.get_text(strip=True)
@@ -111,18 +121,32 @@ def search_7digital(artist: str, title: str, driver=None) -> List[Dict]:
                 else:
                     tracks.append(result)
 
-    # Remove duplicates from albums
-    seen_album_urls = set()
-    unique_albums = []
+    # Remove duplicates from albums, preferring meaningful titles over
+    # format/price indicators like "16-bit FLAC" or "From $1.49"
+    seen_album_urls: dict[str, dict] = {}
     for album in albums:
-        if album["url"] not in seen_album_urls:
-            seen_album_urls.add(album["url"])
-            unique_albums.append(album)
+        url = album["url"]
+        if url not in seen_album_urls:
+            seen_album_urls[url] = album
+        elif _is_junk_link_text(
+            seen_album_urls[url]["title"]
+        ) and not _is_junk_link_text(album["title"]):
+            seen_album_urls[url] = album
+    unique_albums = list(seen_album_urls.values())
 
     # Check if any album title matches the search title (user searching for album)
-    for album in unique_albums:
-        if string_match(album["title"], title):
-            return [album]
+    matching_albums = [a for a in unique_albums if string_match(a["title"], title)]
+    if matching_albums:
+        # Prefer non-explicit versions
+        non_explicit = [
+            a
+            for a in matching_albums
+            if "explicit" not in a["title"].lower()
+            and "explicit" not in a["url"].lower()
+        ]
+        if non_explicit:
+            return [non_explicit[0]]
+        return [matching_albums[0]]
 
     # Search top 10 albums for the track, preferring non-explicit versions
     found_albums = []

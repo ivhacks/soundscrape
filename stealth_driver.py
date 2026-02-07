@@ -8,9 +8,10 @@ def create_stealth_driver(headless: bool = True) -> webdriver.Chrome:
     chrome_options = Options()
     if headless:
         chrome_options.add_argument("--headless")
+        chrome_options.add_argument("--mute-audio")
 
     chrome_options.add_argument(
-        "--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36"
+        "--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
     )
     chrome_options.add_argument("--disable-blink-features=AutomationControlled")
     chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])

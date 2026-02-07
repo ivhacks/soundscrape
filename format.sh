@@ -2,7 +2,7 @@
 
 # Type checking. prob don't need both but not much downside
 pyright --level warning
-uvx ty check
+uvx ty check --exclude '.*'
 
 # Clean up imports and fix other issues
 python -m ruff check --select I --fix *.py

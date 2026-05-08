@@ -14,6 +14,7 @@ RUN git clone https://github.com/ivhacks/soundscrape.git /soundscrape
 WORKDIR /soundscrape
 COPY secrets.yaml .
 RUN uv sync --extra dev
+RUN git pull
 ENV PATH="/soundscrape/.venv/bin:$PATH"
 
 # fully passing

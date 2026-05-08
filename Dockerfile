@@ -10,8 +10,9 @@ RUN dnf install -y \
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 ENV PATH="/root/.local/bin:$PATH"
 
+RUN git clone https://github.com/ivhacks/soundscrape.git /soundscrape
 WORKDIR /soundscrape
-COPY . .
+COPY secrets.yaml .
 RUN uv sync --extra dev
 ENV PATH="/soundscrape/.venv/bin:$PATH"
 

@@ -2,7 +2,9 @@ import json
 from unittest import TestCase
 
 import pytest
+import requests
 
+from img_diff import image_difference
 from spoti import format_compact, get_art_url, get_token, tool_search_spotify
 
 
@@ -19,18 +21,22 @@ class SpotifyTests(TestCase):
         url = get_art_url(
             self.token, "hold my hand", "knock2", single=False, is_album=False
         )
-        self.assertEqual(
-            url, "https://i.scdn.co/image/ab67616d0000b2737b3e13a4e21a128c0d04c789"
-        )
+        with open("test/test_art/knock2_nolimit.jpg", "rb") as f:
+            expected = f.read()
+        actual = requests.get(url).content
+        delta = image_difference(expected, actual)
+        self.assertLessEqual(delta, 2, f"Expected <= 2, got {delta}")
 
     def test_hold_my_hand_single(self):
         # Do get single art, should get hold my hand specific art
         url = get_art_url(
             self.token, "hold my hand", "knock2", single=True, is_album=False
         )
-        self.assertEqual(
-            url, "https://i.scdn.co/image/ab67616d0000b2731861d1d1e0617c1e2d563278"
-        )
+        with open("test/test_art/knock2_hold_my_hand.jpg", "rb") as f:
+            expected = f.read()
+        actual = requests.get(url).content
+        delta = image_difference(expected, actual)
+        self.assertLessEqual(delta, 2, f"Expected <= 2, got {delta}")
 
     def test_single_and_album(self):
         # It makes no sense to request the single art for an album, this should raise an exception
@@ -54,9 +60,11 @@ class SpotifyTests(TestCase):
             single=True,
             is_album=False,
         )
-        self.assertEqual(
-            url, "https://i.scdn.co/image/ab67616d0000b273182bce790811337a5b37c8af"
-        )
+        with open("test/test_art/ingrosso_calling.jpg", "rb") as f:
+            expected = f.read()
+        actual = requests.get(url).content
+        delta = image_difference(expected, actual)
+        self.assertLessEqual(delta, 2, f"Expected <= 2, got {delta}")
 
     def test_push(self):
         url = get_art_url(
@@ -66,9 +74,11 @@ class SpotifyTests(TestCase):
             single=True,
             is_album=False,
         )
-        self.assertEqual(
-            url, "https://i.scdn.co/image/ab67616d0000b273f239a45be61917fd61898241"
-        )
+        with open("test/test_art/skrillex_push.jpg", "rb") as f:
+            expected = f.read()
+        actual = requests.get(url).content
+        delta = image_difference(expected, actual)
+        self.assertLessEqual(delta, 2, f"Expected <= 2, got {delta}")
 
     def test_cli_search_title_only(self):
         results = tool_search_spotify(self.token, title="shelter")
@@ -92,7 +102,7 @@ class SpotifyTests(TestCase):
         self.assertEqual(first_result["id"], "6fcTRFpz0yH79qSKfof7lp")
 
     def test_cli_search_album_only(self):
-        results = tool_search_spotify(self.token, album="worlds")
+        results = tool_search_spotify(self.token, album="Midnight Memories")
 
         self.assertGreater(len(results), 0)
 
@@ -100,7 +110,8 @@ class SpotifyTests(TestCase):
         self.assertIn("name", first_result)
         self.assertIn("id", first_result)
         self.assertIn("artists", first_result)
-        self.assertEqual(first_result["name"], "Worlds")
+        self.assertTrue(first_result["name"].startswith("Midnight Memories"))
+        self.assertEqual(first_result["artists"][0]["name"], "One Direction")
 
     def test_cli_search_title_and_artist(self):
         results = tool_search_spotify(

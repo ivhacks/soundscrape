@@ -1,5 +1,4 @@
-from google import genai
-from google.genai import types
+from openai import OpenAI
 from pydantic import BaseModel
 import yaml
 
@@ -27,9 +26,15 @@ def search_prompt(artist: str, song_title: str) -> str:
 def structure_prompt(artist: str, song_title: str, first_response: str) -> str:
     return f"""The following is a response to a query about what album the song {artist} - {song_title} is on.
             Provide the album title, year, and whether it's a standalone single in the expected format.
-            In the title field, only give the base album title. Omit features, "(single)", etc.
-            If there's anything in the given text about upcoming or unreleased albums/tracks, IGNORE IT.
-            Only base your response on music that has already been officially released.
+
+            RULES for the title field:
+            - If the song is on an album, title MUST be the ALBUM name (never the song name).
+              Example: song "fast n slow" on album "nolimit" → title="nolimit", single=false
+            - If the song is only a standalone single (not on any released album), title is the single/song name and single=true.
+              Example: "Bittersweet was released as a single in 2025" → title="Bittersweet", single=true
+            - Omit features, "(single)", deluxe, etc. from the title. Base title only.
+            - If there's anything about upcoming or unreleased albums/tracks, IGNORE IT.
+            - Only base your response on music that has already been officially released.
             --------------------------------------------------------------------------------------
             {first_response}"""
 
@@ -57,63 +62,60 @@ class Album:
             return f"{self.title} ({self.year})"
 
 
-def identify_album(artist: str, song_title: str) -> Album:
+def _get_grok_client() -> OpenAI:
     with open("secrets.yaml", "r") as f:
         config = yaml.safe_load(f)
-        gemini_api_key = config["gemini_api_key"]
+        xai_api_key = config["xai_api_key"]
 
-    client = genai.Client(api_key=gemini_api_key)
-    grounding_tool = types.Tool(google_search=types.GoogleSearch())
-    config = types.GenerateContentConfig(tools=[grounding_tool])
+    return OpenAI(api_key=xai_api_key, base_url="https://api.x.ai/v1")
+
+
+def identify_album(artist: str, song_title: str) -> Album:
+    client = _get_grok_client()
 
     prompt = search_prompt(artist, song_title)
 
-    response = client.models.generate_content(
-        model="gemini-2.0-flash",
-        contents=prompt,
-        config=config,
+    response = client.responses.create(
+        model="grok-4.5",
+        input=prompt,
+        tools=[{"type": "web_search"}],
     )
-    response_text = response.text
-    if response_text is None:
-        raise ValueError("No response from Gemini API")
+    response_text = response.output_text
+    if not response_text:
+        raise ValueError("No response from Grok API")
     print(response_text)
+
     prompt = structure_prompt(artist, song_title, response_text)
 
-    response = client.models.generate_content(
-        model="gemini-2.0-flash",
-        contents=prompt,
-        config=types.GenerateContentConfig(
-            response_mime_type="application/json", response_schema=AlbumTemplate
-        ),
+    completion = client.beta.chat.completions.parse(
+        model="grok-4.5",
+        messages=[{"role": "user", "content": prompt}],
+        response_format=AlbumTemplate,
     )
 
-    parsed = response.parsed
+    parsed = completion.choices[0].message.parsed
     if not isinstance(parsed, AlbumTemplate):
-        raise ValueError("Invalid response format from Gemini API")
+        raise ValueError("Invalid response format from Grok API")
 
     return Album(parsed.title, parsed.single, parsed.year)
 
 
 def most_famous_artist(artists: str) -> str:
-    with open("secrets.yaml", "r") as f:
-        config = yaml.safe_load(f)
-        gemini_api_key = config["gemini_api_key"]
-
-    client = genai.Client(api_key=gemini_api_key)
+    client = _get_grok_client()
 
     prompt = f"""From this list of music artists: {artists}
     
     Which artist is the most famous and well-known globally? 
     Respond with only the artist name, nothing else."""
 
-    response = client.models.generate_content(
-        model="gemini-2.0-flash",
-        contents=prompt,
+    response = client.responses.create(
+        model="grok-4.5",
+        input=prompt,
     )
 
-    response_text = response.text
-    if response_text is None:
-        raise ValueError("No response from Gemini API")
+    response_text = response.output_text
+    if not response_text:
+        raise ValueError("No response from Grok API")
     return response_text.strip()
 
 

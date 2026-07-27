@@ -25,15 +25,13 @@ def get_image_x(link: str) -> bytes:
 
     html_content = driver.page_source
 
-    pattern = r'(https://pbs\.twimg\.com/media/[^"\']*\?format=jpg&amp;name=small)'
-    match = re.search(pattern, html_content)
+    # X serves webp now; grab the media id and force large jpg
+    match = re.search(r"https://pbs\.twimg\.com/media/([A-Za-z0-9_-]+)", html_content)
 
     if not match:
         raise ValueError("Could not find X image in page")
 
-    image_url = match.group(1)
-    # Replace HTML-encoded ampersand and change to large size
-    image_url = image_url.replace("&amp;", "&").replace("name=small", "name=large")
+    image_url = f"https://pbs.twimg.com/media/{match.group(1)}?format=jpg&name=large"
 
     image_response = requests.get(image_url)
     image_response.raise_for_status()

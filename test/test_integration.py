@@ -9,6 +9,19 @@ from img_diff import image_difference
 from soundscrape import main
 
 
+def _find_output_track(needle: str) -> str:
+    matches = [
+        f
+        for f in os.listdir("test/temp_output")
+        if needle.lower() in f.lower() and f.lower().endswith((".mp3", ".flac"))
+    ]
+    if len(matches) != 1:
+        raise AssertionError(
+            f"expected exactly 1 file matching {needle!r}, got {matches!r}"
+        )
+    return os.path.join("test/temp_output", matches[0])
+
+
 @pytest.mark.xdist_group(name="serial_metadata_tests")
 class IntegrationTests(TestCase):
     def tearDown(self):
@@ -83,8 +96,9 @@ class IntegrationTests(TestCase):
         self.assertEqual(get_song_title("test/temp_output/ready 2.flac"), "ready 2")
         self.assertEqual(get_artist("test/temp_output/ready 2.flac"), "Knock2")
 
-        self.assertEqual(get_song_title("test/temp_output/rookie.flac"), "rookie")
-        self.assertEqual(get_artist("test/temp_output/rookie.flac"), "Knock2; Sayak Das")
+        rookie_path = _find_output_track("rookie")
+        self.assertEqual(get_song_title(rookie_path), "rookie")
+        self.assertEqual(get_artist(rookie_path), "Knock2; Sayak Das")
 
         self.assertEqual(get_song_title("test/temp_output/select@.flac"), "select@")
         self.assertEqual(get_artist("test/temp_output/select@.flac"), "Knock2")
@@ -140,14 +154,12 @@ class IntegrationTests(TestCase):
         self.assertEqual(get_song_title("test/temp_output/Sad Machine.flac"), "Sad Machine")
         self.assertEqual(get_artist("test/temp_output/Sad Machine.flac"), "Porter Robinson")
 
+        years_path = _find_output_track("years of war")
         self.assertEqual(
-            get_song_title("test/temp_output/Years Of War (feat. Breanne Düren, Sean Caskey).flac"),
+            get_song_title(years_path),
             "Years Of War (feat. Breanne Düren, Sean Caskey)",
         )
-        self.assertEqual(
-            get_artist("test/temp_output/Years Of War (feat. Breanne Düren, Sean Caskey).flac"),
-            "Porter Robinson",
-        )
+        self.assertEqual(get_artist(years_path), "Porter Robinson")
 
         self.assertEqual(get_song_title("test/temp_output/Flicker.flac"), "Flicker")
         self.assertEqual(get_artist("test/temp_output/Flicker.flac"), "Porter Robinson")

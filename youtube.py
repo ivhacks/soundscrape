@@ -59,17 +59,19 @@ def get_yt_music_metadata(
     # Get all artist/album links from the byline
     all_links = driver.find_elements(By.CSS_SELECTOR, BYLINE_LINK_CSS)
 
-    # Extract main artists - typically the first few links before the album
-    raw_artists = []
-    for artist_link in all_links[:-1]:  # Exclude last link (likely album)
-        artist_name = str(artist_link.get_attribute("innerHTML")).strip()
-        raw_artists.append(artist_name)
-
-    # Get album (last link in the player bar)
+    # When album is present, it's usually the last link. With only one link,
+    # youtube music often just shows the artist (views/likes, no album link).
     if len(all_links) >= 2:
+        artist_links = all_links[:-1]
         raw_album = str(all_links[-1].get_attribute("innerHTML")).strip()
     else:
+        artist_links = all_links
         raw_album = raw_title
+
+    raw_artists = []
+    for artist_link in artist_links:
+        artist_name = str(artist_link.get_attribute("innerHTML")).strip()
+        raw_artists.append(artist_name)
 
     # Get year (search all spans for 4-digit year)
     year = None

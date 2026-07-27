@@ -30,7 +30,7 @@ RUN pytest test/test_bandcamp_search.py -v --tb=short
 RUN pytest test/test_beatport_search.py -v --tb=short
 RUN pytest test/test_misc.py -v --tb=short
 RUN pytest test/test_art_search.py -v --tb=short
-RUN pytest test/test_anthropic_api.py -v --tb=short
+RUN pytest test/test_grok_api.py -v --tb=short
 
 # has failures — longest first
 RUN pytest test/test_artists_and_features.py -v --tb=short || true

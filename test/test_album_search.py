@@ -1,7 +1,6 @@
 from unittest import TestCase
 
-from google import genai
-from google.genai import types
+from openai import OpenAI
 from pydantic import BaseModel
 import pytest
 import yaml
@@ -14,35 +13,30 @@ from album_search import (
 )
 
 
-def _get_gemini_client():
+def _get_grok_client() -> OpenAI:
     with open("secrets.yaml", "r") as f:
         config = yaml.safe_load(f)
-        gemini_api_key = config["gemini_api_key"]
-    return genai.Client(api_key=gemini_api_key)
+        xai_api_key = config["xai_api_key"]
+    return OpenAI(api_key=xai_api_key, base_url="https://api.x.ai/v1")
 
 
-def _call_gemini_search(client: genai.Client, prompt: str):
-    grounding_tool = types.Tool(google_search=types.GoogleSearch())
-    config = types.GenerateContentConfig(tools=[grounding_tool])
-    response = client.models.generate_content(
-        model="gemini-2.0-flash",
-        contents=prompt,
-        config=config,
+def _call_grok_search(client: OpenAI, prompt: str) -> str:
+    response = client.responses.create(
+        model="grok-4.5",
+        input=prompt,
+        tools=[{"type": "web_search"}],
     )
-    assert response.text is not None
-    return response
+    assert response.output_text
+    return response.output_text
 
 
-def _call_gemini_structure(client: genai.Client, prompt: str, schema: type[BaseModel]):
-    response = client.models.generate_content(
-        model="gemini-2.0-flash",
-        contents=prompt,
-        config=types.GenerateContentConfig(
-            response_mime_type="application/json",
-            response_schema=schema,
-        ),
+def _call_grok_structure(client: OpenAI, prompt: str, schema: type[BaseModel]):
+    completion = client.beta.chat.completions.parse(
+        model="grok-4.5",
+        messages=[{"role": "user", "content": prompt}],
+        response_format=schema,
     )
-    return response
+    return completion.choices[0].message.parsed
 
 
 @pytest.mark.xdist_group(name="album_search")
@@ -54,9 +48,10 @@ class AlbumSearchTests(TestCase):
         self.assertEqual(album.year, 2025)
 
     def test_audien_bittersweet(self):
+        # was a 2025 single, then landed on First Love (released Oct 3 2025)
         album = identify_album("audien, shallou, rosie darling", "bittersweet")
-        self.assertEqual(album.title, "Bittersweet")
-        self.assertEqual(album.single, True)
+        self.assertEqual(album.title, "First Love")
+        self.assertEqual(album.single, False)
         self.assertEqual(album.year, 2025)
 
     def test_kevin_gates_2_phones(self):
@@ -74,7 +69,7 @@ class AlbumSearchTests(TestCase):
 @pytest.mark.xdist_group(name="album_search")
 class PromptTests(TestCase):
     def setUp(self):
-        self.client = _get_gemini_client()
+        self.client = _get_grok_client()
 
     # def test_ignores_unreleased_albums_first_response(self):
     #     """
@@ -83,12 +78,11 @@ class PromptTests(TestCase):
     #     """
     #     prompt = search_prompt("audien, shallou, rosie darling", "bittersweet")
     #     for _ in range(5):
-    #         response = _call_gemini_search(self.client, prompt)
-    #         response_text = response.text
-    #         self.assertIsNotNone(response_text)
-    #         assert response_text is not None
-    #         self.assertNotIn("first love", response_text.lower())
-    #         self.assertNotIn("harmony", response_text.lower())
+    #         response = _call_grok_search(self.client, prompt)
+    #         self.assertIsNotNone(response)
+    #         assert response is not None
+    #         self.assertNotIn("first love", response.lower())
+    #         self.assertNotIn("harmony", response.lower())
 
     def test_ignores_unreleased_albums_second_response(self):
         prompt = structure_prompt(
@@ -97,8 +91,7 @@ class PromptTests(TestCase):
             "Bittersweet was released as a single in 2025 and will be on Audien's upcoming album, Harmony.",
         )
         for _ in range(5):
-            response = _call_gemini_structure(self.client, prompt, AlbumTemplate)
-            parsed = response.parsed
+            parsed = _call_grok_structure(self.client, prompt, AlbumTemplate)
             self.assertIsInstance(parsed, AlbumTemplate)
             assert isinstance(parsed, AlbumTemplate)
             self.assertEqual(parsed.title, "Bittersweet")

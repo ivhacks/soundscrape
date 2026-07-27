@@ -1,5 +1,6 @@
 from io import BytesIO
 import os
+import re
 import sys
 from typing import List
 
@@ -40,17 +41,37 @@ def scale_down_image(image_bytes: bytes) -> bytes:
 
 
 def litterbox_upload(image_path: str) -> str:
+    # litterbox + catbox are dead (500 / "uploads paused"). kept for reference.
+    # with open(image_path, "rb") as f:
+    #     image_bytes = f.read()
+    # scaled_bytes = scale_down_image(image_bytes)
+    # files = {"fileToUpload": ("image.jpg", BytesIO(scaled_bytes), "image/jpeg")}
+    # data = {"reqtype": "fileupload", "time": "1h"}
+    # response = requests.post(
+    #     "https://litterbox.catbox.moe/resources/internals/api.php",
+    #     files=files,
+    #     data=data,
+    # )
+    # if response.status_code != 200:
+    #     raise Exception(
+    #         f"Failed to upload image: {response.status_code} - {response.text}"
+    #     )
+    # return response.text.strip()
+    #
+    # response = requests.post(
+    #     "https://catbox.moe/user/api.php",
+    #     files=files,
+    #     data={"reqtype": "fileupload"},
+    # )
+
     with open(image_path, "rb") as f:
         image_bytes = f.read()
 
     scaled_bytes = scale_down_image(image_bytes)
 
-    files = {"fileToUpload": ("image.jpg", BytesIO(scaled_bytes), "image/jpeg")}
-    data = {"reqtype": "fileupload", "time": "1h"}
     response = requests.post(
-        "https://litterbox.catbox.moe/resources/internals/api.php",
-        files=files,
-        data=data,
+        "https://tmpfiles.org/api/v1/upload",
+        files={"file": ("image.jpg", BytesIO(scaled_bytes), "image/jpeg")},
     )
 
     if response.status_code != 200:
@@ -58,41 +79,46 @@ def litterbox_upload(image_path: str) -> str:
             f"Failed to upload image: {response.status_code} - {response.text}"
         )
 
-    return response.text.strip()
+    # page url is https://tmpfiles.org/<id>/image.jpg
+    # real direct link is tokenized: https://tmpfiles.org/dl/<token>/<id>/image.jpg
+    page_url = response.json()["data"]["url"]
+    page = requests.get(page_url)
+    if page.status_code != 200:
+        raise Exception(
+            f"Failed to fetch upload page: {page.status_code} - {page.text}"
+        )
+
+    match = re.search(
+        r'https://tmpfiles\.org/dl/[^"\']+/image\.jpg',
+        page.text,
+    )
+    if not match:
+        raise Exception(f"No download link on upload page: {page_url}")
+
+    return match.group(0)
 
 
 def serpapi_reverse_image(url: str, num_results: int = 10) -> List[str]:
+    # google reverse image is dead/empty; lens exact matches is the replacement
+    params = {
+        "api_key": SERPAPI_API_KEY,
+        "engine": "google_lens",
+        "url": url,
+        "type": "exact_matches",
+    }
+
+    search = GoogleSearch(params)
+    results = search.get_dict()
+
     urls = []
-    page = 0
+    for result in results.get("exact_matches", []):
+        link = result.get("link")
+        if link and link not in urls:
+            urls.append(link)
+            if len(urls) >= num_results:
+                break
 
-    while len(urls) < num_results:
-        params = {
-            "api_key": SERPAPI_API_KEY,
-            "engine": "google_reverse_image",
-            "google_domain": "google.com",
-            "image_url": url,
-            "start": str(page),
-        }
-
-        search = GoogleSearch(params)
-        results = search.get_dict()
-
-        image_results = results.get("image_results", [])
-        if not image_results:
-            break
-
-        for result in image_results:
-            link = result.get("link")
-            if link and link not in urls:
-                urls.append(link)
-                if len(urls) >= num_results:
-                    break
-
-        page += 1
-        if page > 10:
-            break
-
-    return urls[:num_results]
+    return urls
 
 
 def search_google_images(image_path: str) -> List[str]:

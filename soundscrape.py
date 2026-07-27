@@ -270,22 +270,51 @@ def main(
         process_dir(output_path, no_art_select, fast_search)
 
 
-if __name__ == "__main__":
-    if len(sys.argv) < 3:
-        print("Please specify input file/folder and output file/folder.")
-        print("Usage: python soundscrape.py <input> <output>")
-        print("       python soundscrape.py --noaudio <input> <output>")
-        sys.exit(1)
+def process_file(file_path: str, no_art_select: bool = False, fast_search: bool = True):
+    file_path = os.path.abspath(file_path)
+    if not os.path.isfile(file_path):
+        raise FileNotFoundError(f"File '{file_path}' does not exist")
 
-    if sys.argv[1] == "--noaudio":
+    if not file_path.lower().endswith((".mp3", ".flac")):
+        raise ValueError(f"Not an mp3/flac file: {file_path}")
+
+    parent = os.path.dirname(file_path)
+    work = tempfile.mkdtemp(prefix="soundscrape_")
+    try:
+        shutil.copy2(file_path, os.path.join(work, os.path.basename(file_path)))
+        process_dir(work, no_art_select=no_art_select, fast_search=fast_search)
+
+        results = []
+        for name in os.listdir(work):
+            if name.lower().endswith((".mp3", ".flac")):
+                results.append(name)
+
+        if not results:
+            raise Exception(f"No output file produced for {file_path}")
+
+        for name in results:
+            dest = os.path.join(parent, name)
+            shutil.move(os.path.join(work, name), dest)
+
+        # original name may have changed after title cleanup
+        if os.path.basename(file_path) not in results and os.path.exists(file_path):
+            os.remove(file_path)
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
+
+
+if __name__ == "__main__":
+    if len(sys.argv) >= 2 and sys.argv[1] == "--noaudio":
         if len(sys.argv) < 4:
-            print("Please specify input and output directories for --noaudio.")
-            print("Usage: python soundscrape.py --noaudio <input> <output>")
+            print("Usage: soundscrape --noaudio <input_dir> <output_dir>")
             sys.exit(1)
-        input_path = sys.argv[2]
-        output_path = sys.argv[3]
-        create_noaudio_files(input_path, output_path)
+        create_noaudio_files(sys.argv[2], sys.argv[3])
+    elif len(sys.argv) == 2:
+        process_file(sys.argv[1])
+    elif len(sys.argv) >= 3:
+        main(sys.argv[1], sys.argv[2])
     else:
-        input_path = sys.argv[1]
-        output_path = sys.argv[2]
-        main(input_path, output_path)
+        print("Usage: soundscrape <file.mp3|file.flac>")
+        print("       soundscrape <input_dir> <output_dir>")
+        print("       soundscrape --noaudio <input_dir> <output_dir>")
+        sys.exit(1)

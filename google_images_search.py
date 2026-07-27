@@ -23,7 +23,7 @@ from img_diff import image_difference
 from stealth_driver import create_stealth_driver
 
 
-with open("secrets.yaml", "r") as f:
+with open(os.environ.get("SOUNDSCRAPE_SECRETS_PATH", "secrets.yaml"), "r") as f:
     config = yaml.safe_load(f)
     SERPAPI_API_KEY = config["serpapi_api_key"]
 

@@ -1,5 +1,6 @@
 from base64 import b64encode
 import json
+import os
 from urllib.parse import urlencode
 
 import requests
@@ -10,7 +11,7 @@ from album_search import most_famous_artist
 
 PRINT_CURL_COMMANDS = False
 
-with open("secrets.yaml", "r") as f:
+with open(os.environ.get("SOUNDSCRAPE_SECRETS_PATH", "secrets.yaml"), "r") as f:
     config = yaml.safe_load(f)
     client_id = config["spotify_client_id"]
     client_secret = config["spotify_client_secret"]

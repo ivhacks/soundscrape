@@ -1,3 +1,4 @@
+import os
 from unittest import TestCase
 
 from openai import OpenAI
@@ -15,7 +16,7 @@ from artists_features import (
 
 
 def _get_grok_client() -> OpenAI:
-    with open("secrets.yaml", "r") as f:
+    with open(os.environ.get("SOUNDSCRAPE_SECRETS_PATH", "secrets.yaml"), "r") as f:
         config = yaml.safe_load(f)
         xai_api_key = config["xai_api_key"]
     return OpenAI(api_key=xai_api_key, base_url="https://api.x.ai/v1")

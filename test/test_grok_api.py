@@ -1,4 +1,5 @@
 import base64
+import os
 from unittest import TestCase
 
 from openai import OpenAI
@@ -6,7 +7,7 @@ import pytest
 import yaml
 
 
-with open("secrets.yaml", "r") as f:
+with open(os.environ.get("SOUNDSCRAPE_SECRETS_PATH", "secrets.yaml"), "r") as f:
     config = yaml.safe_load(f)
     xai_api_key = config["xai_api_key"]
 

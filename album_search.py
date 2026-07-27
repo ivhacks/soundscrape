@@ -1,3 +1,5 @@
+import os
+
 from openai import OpenAI
 from pydantic import BaseModel
 import yaml
@@ -63,7 +65,7 @@ class Album:
 
 
 def _get_grok_client() -> OpenAI:
-    with open("secrets.yaml", "r") as f:
+    with open(os.environ.get("SOUNDSCRAPE_SECRETS_PATH", "secrets.yaml"), "r") as f:
         config = yaml.safe_load(f)
         xai_api_key = config["xai_api_key"]
 

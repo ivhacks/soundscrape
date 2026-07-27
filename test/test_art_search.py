@@ -25,3 +25,20 @@ class ArtSearchTests(TestCase):
 
         delta = image_difference(expected, result)
         self.assertLessEqual(delta, 2, f"Expected <= 2, got {delta}")
+
+    def test_jason_ross_one_more_day_single_path(self):
+        # regression: lone file should use single path with track title.
+        # festival album tag "EDC Las Vegas 2021" must not be the search query.
+        result = search_cover_art_by_text(
+            "Jason Ross, Blanke, Chandler Leighton",
+            "One More Day",
+            album=False,
+        )
+        self.assertGreater(len(result), 1000)
+
+        with self.assertRaises(ValueError):
+            search_cover_art_by_text(
+                "Jason Ross, Blanke, Chandler Leighton",
+                "EDC Las Vegas 2021",
+                album=False,
+            )

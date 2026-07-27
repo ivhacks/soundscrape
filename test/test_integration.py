@@ -4,21 +4,21 @@ from unittest import TestCase
 
 import pytest
 
-from file_metadata import get_album_artist, get_artist, get_cover_art, get_song_title
+from file_metadata import (
+    NoTagError,
+    get_album_artist,
+    get_artist,
+    get_cover_art,
+    get_song_title,
+)
 from img_diff import image_difference
 from soundscrape import main
 
 
 def _find_output_track(needle: str) -> str:
-    matches = [
-        f
-        for f in os.listdir("test/temp_output")
-        if needle.lower() in f.lower() and f.lower().endswith((".mp3", ".flac"))
-    ]
+    matches = [f for f in os.listdir("test/temp_output") if needle.lower() in f.lower() and f.lower().endswith((".mp3", ".flac"))]
     if len(matches) != 1:
-        raise AssertionError(
-            f"expected exactly 1 file matching {needle!r}, got {matches!r}"
-        )
+        raise AssertionError(f"expected exactly 1 file matching {needle!r}, got {matches!r}")
     return os.path.join("test/temp_output", matches[0])
 
 
@@ -211,5 +211,33 @@ class IntegrationTests(TestCase):
             "Goodbye To A World",
         )
         self.assertEqual(get_artist("test/temp_output/Goodbye To A World.flac"), "Porter Robinson")
+
+        shutil.rmtree("test/temp_output")
+
+    def test_no_embedded_cover_art(self):
+        # fixture has tags but no embedded cover (stripped from a real track)
+        with self.assertRaises(NoTagError):
+            get_cover_art("test/noaudio/no_cover_art/Knock2 - feel U luv Me.flac")
+
+        main(
+            "test/noaudio/no_cover_art",
+            "test/temp_output",
+            no_art_select=True,
+        )
+
+        # single-file input uses single art path (feel u luv me single cover)
+        with open("test/test_art/knock2_feel_u_luv_me.jpg", "rb") as f:
+            expected_art = f.read()
+
+        out_files = [f for f in os.listdir("test/temp_output") if f.lower().endswith((".mp3", ".flac"))]
+        self.assertEqual(len(out_files), 1)
+        out_path = os.path.join("test/temp_output", out_files[0])
+
+        actual_art = get_cover_art(out_path)
+        diff = image_difference(expected_art, actual_art)
+        self.assertLessEqual(diff, 2, "Should find cover art when file has none")
+
+        self.assertEqual(get_album_artist(out_path), "Knock2")
+        self.assertIn("feel u luv me", get_song_title(out_path).lower())
 
         shutil.rmtree("test/temp_output")

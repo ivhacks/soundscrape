@@ -13,6 +13,7 @@ from art_search import search_cover_art_by_text
 from art_selector import CoverArtSelector
 from artists_features import find_artists_and_features
 from file_metadata import (
+    NoTagError,
     clear_cover_art,
     copy_all_tags,
     get_album_title,
@@ -100,12 +101,17 @@ def process_dir(output_dir: str, no_art_select: bool = False, fast_search: bool 
                 )
             )
             # Hash each new cover artwork so we can check for duplicates without doing a byte-by-byte comparison between all the images
-            art = get_cover_art(filepath)
-            hash = hashlib.sha256(art).digest()
+            try:
+                art = get_cover_art(filepath)
+            except NoTagError:
+                # no embedded art — search_cover_art_by_text fills this in later
+                art = None
 
-            if hash not in albums[album_name].art_choice_hashes:
-                albums[album_name].art_choices.append(art)
-                albums[album_name].art_choice_hashes.append(hash)
+            if art is not None:
+                hash = hashlib.sha256(art).digest()
+                if hash not in albums[album_name].art_choice_hashes:
+                    albums[album_name].art_choices.append(art)
+                    albums[album_name].art_choice_hashes.append(hash)
 
     # Loop thru albums, identify album artist for each by who appears on every track
     for album in albums.values():
@@ -121,8 +127,13 @@ def process_dir(output_dir: str, no_art_select: bool = False, fast_search: bool 
         if not album.artists:
             album.artists = ["Various Artists"]
 
+        # one track → single art path (falls back to album art if no single exists)
+        # multiple tracks on this album → album art path
+        search_as_album = len(album.tracks) > 1
         searched_art = search_cover_art_by_text(
-            ", ".join(album.artists), clean_title(album.title), True
+            ", ".join(album.artists),
+            album.tracks[0].title,
+            search_as_album,
         )
         hash = hashlib.sha256(searched_art).digest()
         album.art_choices.append(searched_art)

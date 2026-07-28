@@ -23,6 +23,7 @@ from file_metadata import (
     set_album_artist,
     set_artist,
     set_cover_art,
+    set_lyrics,
     set_song_title,
 )
 from google_images_search import (
@@ -30,6 +31,7 @@ from google_images_search import (
     downselect_images,
     search_google_images,
 )
+from lyrics import get_lyrics_genius
 from parse_and_clean import clean_title
 from stealth_driver import create_stealth_driver
 
@@ -212,6 +214,9 @@ def process_dir(output_dir: str, no_art_select: bool = False, fast_search: bool 
             set_album_artist(new_filepath, "; ".join(album.artists))
 
             set_song_title(new_filepath, title_with_features)
+
+            lyrics = get_lyrics_genius(", ".join(track.artists), track.title)
+            set_lyrics(new_filepath, lyrics)
 
             clear_cover_art(new_filepath)
             set_cover_art(new_filepath, chosen_art)

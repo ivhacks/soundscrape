@@ -337,7 +337,12 @@ def genius_parser(input_soup):
 
 def get_lyrics_genius(artist, title, cache=False):
     html = get_html_genius(artist, title, cache)
-    return extract_lyrics_from_html_genius(html)
+    if html is None:
+        raise ValueError(f"No Genius match for {artist} - {title}")
+    lyrics = extract_lyrics_from_html_genius(html)
+    if not lyrics:
+        raise ValueError(f"Empty Genius lyrics for {artist} - {title}")
+    return lyrics
 
 
 def get_lyrics_azlyrics(artist, title):

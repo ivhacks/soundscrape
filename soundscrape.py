@@ -163,17 +163,30 @@ def process_dir(
 
             try:
                 # Search for visually similar images
-                print(f"Searching for similar images for {album.title}...")
+                print(f"Searching for similar images for {album.title}...", flush=True)
                 results = search_google_images(temp_path)
+                print(
+                    f"Found {len(results)} reverse-image results for {album.title}",
+                    flush=True,
+                )
 
                 # Download images from supported sites
                 downloaded_images = download_images(results, driver)
+                print(
+                    f"Downloaded {len(downloaded_images)} images for {album.title}",
+                    flush=True,
+                )
 
                 # Combine existing art choices with downloaded images
                 all_images = album.art_choices + downloaded_images
 
                 # Downselect to 5 best choices using the original query image
+                print(f"Downselecting cover art for {album.title}...", flush=True)
                 selected_images = downselect_images(all_images, album.art_choices[0])
+                print(
+                    f"Kept {len(selected_images)} cover choices for {album.title}",
+                    flush=True,
+                )
 
                 # Update album art choices
                 album.art_choices = selected_images
@@ -186,6 +199,7 @@ def process_dir(
 
     # Apply cover art for each album
     for album in albums.values():
+        print(f"Applying tags/art for album {album.title}...", flush=True)
         if no_art_select:
             # Pick the highest resolution artwork
             highest_resolution = 0
@@ -197,6 +211,7 @@ def process_dir(
                     highest_resolution = resolution
                     chosen_art = artwork_bytes
         else:
+            print(f"Opening cover art selector for {album.title}...", flush=True)
             selector = CoverArtSelector(album.art_choices)
             chosen_art = album.art_choices[selector.show_selection_window()]
 
@@ -207,6 +222,8 @@ def process_dir(
                 )
             else:
                 title_with_features = track.title
+
+            print(f"Writing tags for {title_with_features}...", flush=True)
 
             original_extension = os.path.splitext(track.filepath)[1]
             new_filename = f"{title_with_features}{original_extension}"
@@ -221,11 +238,17 @@ def process_dir(
             set_song_title(new_filepath, title_with_features)
 
             if embed_lyrics:
+                print(
+                    f"Fetching lyrics for {artist_string} - {track.title}...",
+                    flush=True,
+                )
                 lyrics = get_lyrics_genius(", ".join(track.artists), track.title)
                 set_lyrics(new_filepath, lyrics)
+                print(f"Embedded lyrics for {title_with_features}", flush=True)
 
             clear_cover_art(new_filepath)
             set_cover_art(new_filepath, chosen_art)
+            print(f"Done {title_with_features}", flush=True)
 
 
 def create_noaudio_files(input_path: str, output_path: str):

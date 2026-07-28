@@ -9,34 +9,33 @@ from art_selector import CoverArtSelector
 from stealth_driver import create_stealth_driver
 
 
+REQUEST_TIMEOUT = 20
+
+
 def get_image_threads(link: str, driver=None) -> bytes:
     if driver is None:
         driver = create_stealth_driver(headless=True)
 
     driver.get(link)
 
-    # Wait for the thumbnail image to appear
-    wait = WebDriverWait(driver, 30)
+    wait = WebDriverWait(driver, 20)
     wait.until(
         EC.presence_of_element_located((By.CSS_SELECTOR, 'img[src*="scontent"]'))
     )
 
     html_content = driver.page_source
 
-    # Look for the main post image (1440x1440)
     main_image_pattern = r'<img[^>]*height="1440"[^>]*width="1440"[^>]*srcset="([^"]*)"'
     main_match_result = re.search(main_image_pattern, html_content)
     if main_match_result is None:
         raise ValueError("Could not find main image in Threads page")
     main_match = main_match_result.group(1)
 
-    # Get filename, e.g. 474587474_3939486272971106_3474843056868060500_n.jpg
     filename_match = re.search(r"(\d+_\d+_\d+_n\.jpg)", main_match)
     if filename_match is None:
         raise ValueError("Could not find filename in Threads image URL")
     filename = filename_match.group(1)
 
-    # Find image URL containing filename and special magic string indicating it's hi-res
     image_url = re.findall(
         r"(https://scontent[^,\s]*"
         + re.escape(filename)
@@ -45,7 +44,7 @@ def get_image_threads(link: str, driver=None) -> bytes:
     )[0]
 
     image_url = image_url.replace("&amp;", "&")
-    image_response = requests.get(image_url)
+    image_response = requests.get(image_url, timeout=REQUEST_TIMEOUT)
     image_response.raise_for_status()
     return image_response.content
 

@@ -9,34 +9,43 @@ from art_selector import CoverArtSelector
 from stealth_driver import create_stealth_driver
 
 
+REQUEST_TIMEOUT = 20
+
+
 def get_image_x(link: str) -> bytes:
     # twitter is a special snowflake and breaks in headless mode
     # with the already-used driver. So we need to always make a new one.
     driver = create_stealth_driver(headless=True)
-    driver.get(link)
+    try:
+        driver.get(link)
 
-    # Wait for the image element to appear
-    wait = WebDriverWait(driver, 30)
-    wait.until(
-        EC.presence_of_element_located(
-            (By.CSS_SELECTOR, 'img[src*="pbs.twimg.com/media"]')
+        wait = WebDriverWait(driver, 20)
+        wait.until(
+            EC.presence_of_element_located(
+                (By.CSS_SELECTOR, 'img[src*="pbs.twimg.com/media"]')
+            )
         )
-    )
 
-    html_content = driver.page_source
+        html_content = driver.page_source
 
-    # X serves webp now; grab the media id and force large jpg
-    match = re.search(r"https://pbs\.twimg\.com/media/([A-Za-z0-9_-]+)", html_content)
+        # X serves webp now; grab the media id and force large jpg
+        match = re.search(
+            r"https://pbs\.twimg\.com/media/([A-Za-z0-9_-]+)", html_content
+        )
 
-    if not match:
-        raise ValueError("Could not find X image in page")
+        if not match:
+            raise ValueError("Could not find X image in page")
 
-    image_url = f"https://pbs.twimg.com/media/{match.group(1)}?format=jpg&name=large"
+        image_url = (
+            f"https://pbs.twimg.com/media/{match.group(1)}?format=jpg&name=large"
+        )
 
-    image_response = requests.get(image_url)
-    image_response.raise_for_status()
+        image_response = requests.get(image_url, timeout=REQUEST_TIMEOUT)
+        image_response.raise_for_status()
 
-    return image_response.content
+        return image_response.content
+    finally:
+        driver.quit()
 
 
 if __name__ == "__main__":

@@ -9,21 +9,22 @@ from art_selector import CoverArtSelector
 from stealth_driver import create_stealth_driver
 
 
+REQUEST_TIMEOUT = 20
+
+
 def get_image_facebook(link: str, driver=None) -> bytes:
     if driver is None:
         driver = create_stealth_driver(headless=True)
 
     driver.get(link)
 
-    # Wait for the image element to appear
-    wait = WebDriverWait(driver, 30)
+    wait = WebDriverWait(driver, 20)
     wait.until(
         EC.presence_of_element_located((By.CSS_SELECTOR, 'img[src*="scontent"]'))
     )
 
     html_content = driver.page_source
 
-    # Look for Facebook CDN images
     pattern = r'src="(https://scontent[^"]*\.fbcdn\.net[^"]*\.(png|jpg)[^"]*)"'
     match = re.search(pattern, html_content)
 
@@ -33,7 +34,7 @@ def get_image_facebook(link: str, driver=None) -> bytes:
     image_url = match.group(1)
     image_url = image_url.replace("&amp;", "&")
 
-    image_response = requests.get(image_url)
+    image_response = requests.get(image_url, timeout=REQUEST_TIMEOUT)
     image_response.raise_for_status()
 
     return image_response.content

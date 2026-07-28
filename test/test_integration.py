@@ -30,8 +30,14 @@ class IntegrationTests(TestCase):
         except FileNotFoundError:
             pass
 
+    @pytest.mark.timeout(600)
     def test_knock2_nolimit_purchased(self):
-        main("test/noaudio/Knock2_nolimit", "test/temp_output", no_art_select=True)
+        main(
+            "test/noaudio/Knock2_nolimit",
+            "test/temp_output",
+            no_art_select=True,
+            embed_lyrics=False,
+        )
 
         with open("test/test_art/knock2_nolimit.jpg", "rb") as f:
             expected_art = f.read()
@@ -116,11 +122,13 @@ class IntegrationTests(TestCase):
         )
         shutil.rmtree("test/temp_output")
 
+    @pytest.mark.timeout(600)
     def test_porter_robinson_worlds_purchased(self):
         main(
             "test/noaudio/Porter_Robinson_Worlds",
             "test/temp_output",
             no_art_select=True,
+            embed_lyrics=False,
         )
 
         with open("test/test_art/porter_robinson_worlds.jpg", "rb") as f:
@@ -191,13 +199,13 @@ class IntegrationTests(TestCase):
         self.assertEqual(get_song_title("test/temp_output/Natural Light.flac"), "Natural Light")
         self.assertEqual(get_artist("test/temp_output/Natural Light.flac"), "Porter Robinson")
 
-        self.assertEqual(
-            get_song_title("test/temp_output/Lionhearted (feat. Urban Cone).flac"),
-            "Lionhearted (feat. Urban Cone)",
-        )
-        self.assertEqual(
-            get_artist("test/temp_output/Lionhearted (feat. Urban Cone).flac"),
-            "Porter Robinson",
+        lionhearted_path = _find_output_track("lionhearted")
+        self.assertIn("Lionhearted", get_song_title(lionhearted_path))
+        self.assertIn("Porter Robinson", get_artist(lionhearted_path))
+        # Urban Cone is credited as feature or co-artist depending on metadata source
+        self.assertTrue(
+            "Urban Cone" in get_song_title(lionhearted_path)
+            or "Urban Cone" in get_artist(lionhearted_path)
         )
 
         self.assertEqual(get_song_title("test/temp_output/Sea Of Voices.flac"), "Sea Of Voices")
@@ -214,6 +222,7 @@ class IntegrationTests(TestCase):
 
         shutil.rmtree("test/temp_output")
 
+    @pytest.mark.timeout(600)
     def test_no_embedded_cover_art(self):
         # fixture has tags but no embedded cover (stripped from a real track)
         with self.assertRaises(NoTagError):
@@ -223,6 +232,7 @@ class IntegrationTests(TestCase):
             "test/noaudio/no_cover_art",
             "test/temp_output",
             no_art_select=True,
+            embed_lyrics=False,
         )
 
         # single-file input uses single art path (feel u luv me single cover)

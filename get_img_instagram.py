@@ -7,19 +7,20 @@ from art_selector import CoverArtSelector
 from stealth_driver import create_stealth_driver
 
 
+REQUEST_TIMEOUT = 20
+
+
 def get_image_instagram(link: str, driver=None) -> bytes:
     if driver is None:
         driver = create_stealth_driver(headless=True)
 
     driver.get(link)
 
-    # Wait for the image element to appear
-    wait = WebDriverWait(driver, 30)
+    wait = WebDriverWait(driver, 20)
     wait.until(
         EC.presence_of_element_located((By.CSS_SELECTOR, 'img[src*="scontent"]'))
     )
 
-    # Find the first large image (skip profile pictures which are 150x150)
     imgs = driver.find_elements(By.CSS_SELECTOR, 'img[src*="scontent"]')
     image_url = None
     for img in imgs:
@@ -33,7 +34,7 @@ def get_image_instagram(link: str, driver=None) -> bytes:
 
     image_url = image_url.replace("&amp;", "&")
 
-    image_response = requests.get(image_url)
+    image_response = requests.get(image_url, timeout=REQUEST_TIMEOUT)
     image_response.raise_for_status()
 
     return image_response.content

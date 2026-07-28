@@ -26,7 +26,7 @@ def search_cover_art_by_text(artist: str, title: str, album: bool = False) -> by
             # Maybe it was actually an album
             art_url = get_art_url(token, title, artist, single=False, is_album=False)
 
-    response = requests.get(art_url)
+    response = requests.get(art_url, timeout=20)
     response.raise_for_status()
 
     return response.content

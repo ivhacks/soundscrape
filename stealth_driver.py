@@ -31,6 +31,8 @@ def create_stealth_driver(headless: bool = True) -> webdriver.Chrome:
 
     service = Service(chromedriver_path)
     driver = webdriver.Chrome(service=service, options=chrome_options)
+    # Bound hung navigations so we never sit forever on a stuck page
+    driver.set_page_load_timeout(45)
 
     driver.execute_script(
         "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"

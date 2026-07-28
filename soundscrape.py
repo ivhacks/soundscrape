@@ -70,7 +70,12 @@ class Album:
         return output
 
 
-def process_dir(output_dir: str, no_art_select: bool = False, fast_search: bool = True):
+def process_dir(
+    output_dir: str,
+    no_art_select: bool = False,
+    fast_search: bool = True,
+    embed_lyrics: bool = True,
+):
     albums: Dict[str, Album] = {}
 
     # Loop thru all files, group into albums
@@ -215,8 +220,9 @@ def process_dir(output_dir: str, no_art_select: bool = False, fast_search: bool 
 
             set_song_title(new_filepath, title_with_features)
 
-            lyrics = get_lyrics_genius(", ".join(track.artists), track.title)
-            set_lyrics(new_filepath, lyrics)
+            if embed_lyrics:
+                lyrics = get_lyrics_genius(", ".join(track.artists), track.title)
+                set_lyrics(new_filepath, lyrics)
 
             clear_cover_art(new_filepath)
             set_cover_art(new_filepath, chosen_art)
@@ -254,6 +260,7 @@ def main(
     no_processing: bool = False,
     no_art_select: bool = False,
     fast_search: bool = True,
+    embed_lyrics: bool = True,
 ):
     if not os.path.exists(input_path):
         raise FileNotFoundError(f"Input path '{input_path}' does not exist")
@@ -283,10 +290,20 @@ def main(
         shutil.copy2(filename, output_filename)
 
     if not no_processing:
-        process_dir(output_path, no_art_select, fast_search)
+        process_dir(
+            output_path,
+            no_art_select=no_art_select,
+            fast_search=fast_search,
+            embed_lyrics=embed_lyrics,
+        )
 
 
-def process_file(file_path: str, no_art_select: bool = False, fast_search: bool = True):
+def process_file(
+    file_path: str,
+    no_art_select: bool = False,
+    fast_search: bool = True,
+    embed_lyrics: bool = True,
+):
     file_path = os.path.abspath(file_path)
     if not os.path.isfile(file_path):
         raise FileNotFoundError(f"File '{file_path}' does not exist")
@@ -298,7 +315,12 @@ def process_file(file_path: str, no_art_select: bool = False, fast_search: bool 
     work = tempfile.mkdtemp(prefix="soundscrape_")
     try:
         shutil.copy2(file_path, os.path.join(work, os.path.basename(file_path)))
-        process_dir(work, no_art_select=no_art_select, fast_search=fast_search)
+        process_dir(
+            work,
+            no_art_select=no_art_select,
+            fast_search=fast_search,
+            embed_lyrics=embed_lyrics,
+        )
 
         results = []
         for name in os.listdir(work):

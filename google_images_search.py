@@ -72,6 +72,7 @@ def litterbox_upload(image_path: str) -> str:
     response = requests.post(
         "https://tmpfiles.org/api/v1/upload",
         files={"file": ("image.jpg", BytesIO(scaled_bytes), "image/jpeg")},
+        timeout=30,
     )
 
     if response.status_code != 200:
@@ -82,7 +83,7 @@ def litterbox_upload(image_path: str) -> str:
     # page url is https://tmpfiles.org/<id>/image.jpg
     # real direct link is tokenized: https://tmpfiles.org/dl/<token>/<id>/image.jpg
     page_url = response.json()["data"]["url"]
-    page = requests.get(page_url)
+    page = requests.get(page_url, timeout=30)
     if page.status_code != 200:
         raise Exception(
             f"Failed to fetch upload page: {page.status_code} - {page.text}"

@@ -64,7 +64,7 @@ def get_token() -> str:
     }
     data = {"grant_type": "client_credentials"}
     optinally_print_curl_command(url, headers, data)
-    result = requests.post(url, headers=headers, data=data)
+    result = requests.post(url, headers=headers, data=data, timeout=20)
     json_result = json.loads(result.content)
     return json_result["access_token"]
 
@@ -76,7 +76,7 @@ def search_for_artist(token, artist_name):
     query_url = f"{url}?{query}"
 
     optinally_print_curl_command(query_url, headers)
-    result = requests.get(query_url, headers=headers)
+    result = requests.get(query_url, headers=headers, timeout=20)
     json_result = json.loads(result.content)
     return json_result
 
@@ -97,7 +97,7 @@ def get_art_url(token, title: str, artist: str, single: bool, is_album: bool) ->
                     f"{url}?q={title} artist:{current_artist}&type=album&limit=10"
                 )
                 optinally_print_curl_command(query_url, headers)
-                result = requests.get(query_url, headers=headers)
+                result = requests.get(query_url, headers=headers, timeout=20)
                 json_result = json.loads(result.content)
 
                 albums = json_result.get("albums").get("items")
@@ -115,7 +115,7 @@ def get_art_url(token, title: str, artist: str, single: bool, is_album: bool) ->
                     f"{url}?q={title} artist:{current_artist}&type=track&limit=50"
                 )
                 optinally_print_curl_command(query_url, headers)
-                result = requests.get(query_url, headers=headers)
+                result = requests.get(query_url, headers=headers, timeout=20)
                 json_result = json.loads(result.content)
 
                 tracks = json_result.get("tracks").get("items")
@@ -198,7 +198,7 @@ def tool_search_spotify(token, artist=None, album=None, title=None, limit=2):
     query_url = f"{url}?{query}"
 
     optinally_print_curl_command(query_url, headers)
-    result = requests.get(query_url, headers=headers)
+    result = requests.get(query_url, headers=headers, timeout=20)
     data = json.loads(result.content)
 
     _remove_available_markets(data)

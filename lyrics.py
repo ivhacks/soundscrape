@@ -14,7 +14,22 @@ from parse_and_clean import clean_artist, clean_title
 from stealth_driver import create_stealth_driver
 
 
-LYRICS_CONTAINER_CLASS = "Lyrics__Container-sc-1ynbvzw-6"
+# Genius hashes the styled-components suffix; match the stable prefix only.
+LYRICS_CONTAINER_CLASS_PREFIX = "Lyrics__Container"
+LYRICS_CONTAINER_CSS = f"[class*='{LYRICS_CONTAINER_CLASS_PREFIX}']"
+
+
+def is_lyrics_container_class(class_attr):
+    if not class_attr:
+        return False
+    if isinstance(class_attr, str):
+        classes = class_attr.split()
+    else:
+        classes = class_attr
+    for class_name in classes:
+        if class_name.startswith(LYRICS_CONTAINER_CLASS_PREFIX):
+            return True
+    return False
 
 
 # Take in a URL and return a beautifulSoup object of the page
@@ -70,81 +85,78 @@ def get_html_genius(artist, title, cache=False):
     processed_title = search_term_preprocessing(title)
 
     driver = create_stealth_driver()
+    try:
+        driver.get(f"https://genius.com/search?q={processed_artist}+{processed_title}")
 
-    driver.get(f"https://genius.com/search?q={processed_artist}+{processed_title}")
-
-    wait_for_section = WebDriverWait(driver, 180)
-    wait_for_section.until(
-        expected_conditions.presence_of_element_located(
-            (By.TAG_NAME, "search-result-section")
+        wait_for_section = WebDriverWait(driver, 180)
+        wait_for_section.until(
+            expected_conditions.presence_of_element_located(
+                (By.TAG_NAME, "search-result-section")
+            )
         )
-    )
-    result_sections = driver.find_elements(By.TAG_NAME, "search-result-section")
+        result_sections = driver.find_elements(By.TAG_NAME, "search-result-section")
 
-    wait_for_label = WebDriverWait(driver, 180)
-    wait_for_label.until(
-        expected_conditions.presence_of_element_located(
-            (By.CLASS_NAME, "search_results_label")
+        wait_for_label = WebDriverWait(driver, 180)
+        wait_for_label.until(
+            expected_conditions.presence_of_element_located(
+                (By.CLASS_NAME, "search_results_label")
+            )
         )
-    )
-    song_results_section_html = None
-    for item in result_sections:
-        try:
-            result_label = item.find_element(By.CLASS_NAME, "search_results_label")
-            if result_label.get_attribute("innerHTML") == "Songs":
-                song_results_section_html = item.get_attribute("innerHTML")
-                break
-        except WebDriverException:
-            # This page is weird and not all the results sections have this label
-            continue
+        song_results_section_html = None
+        for item in result_sections:
+            try:
+                result_label = item.find_element(By.CLASS_NAME, "search_results_label")
+                if result_label.get_attribute("innerHTML") == "Songs":
+                    song_results_section_html = item.get_attribute("innerHTML")
+                    break
+            except WebDriverException:
+                # This page is weird and not all the results sections have this label
+                continue
 
-    if song_results_section_html is None:
-        raise ValueError("Could not find Songs section on Genius search page")
+        if song_results_section_html is None:
+            raise ValueError("Could not find Songs section on Genius search page")
 
-    search_soup = BeautifulSoup(song_results_section_html, "html.parser")
+        search_soup = BeautifulSoup(song_results_section_html, "html.parser")
 
-    anchors = search_soup.find_all(class_="mini_card")
+        anchors = search_soup.find_all(class_="mini_card")
 
-    found_result = False
-    best_confidence = 0
-    best_url = None
+        found_result = False
+        best_confidence = 0
+        best_url = None
 
-    for anchor in anchors:
-        a_title = anchor.find_all(class_="mini_card-title")[0].text.strip().lower()
-        a_artist = anchor.find_all(class_="mini_card-subtitle")[0].text.strip().lower()
+        for anchor in anchors:
+            a_title = anchor.find_all(class_="mini_card-title")[0].text.strip().lower()
+            a_artist = (
+                anchor.find_all(class_="mini_card-subtitle")[0].text.strip().lower()
+            )
 
-        confidence = match_confidence(title, artist, a_title, a_artist)
-        if confidence > best_confidence:
-            best_url = anchor["href"]
-            best_confidence = confidence
+            confidence = match_confidence(title, artist, a_title, a_artist)
+            if confidence > best_confidence:
+                best_url = anchor["href"]
+                best_confidence = confidence
 
-        # We found at least one result
-        found_result = True
+            found_result = True
 
-    if not found_result:
-        return None
+        if not found_result:
+            return None
 
-    if best_confidence == 0 or best_url is None:
-        # None of the results were even close
-        return None
+        if best_confidence == 0 or best_url is None:
+            return None
 
-    # Navigate to lyrics page
-    driver.get(best_url)
+        driver.get(best_url)
 
-    # Wait for redirect to actual lyrics page
-    wait_for_lyrics_container = WebDriverWait(driver, 180)
-    wait_for_lyrics_container.until(
-        expected_conditions.presence_of_element_located(
-            (By.CLASS_NAME, LYRICS_CONTAINER_CLASS)
+        wait_for_lyrics_container = WebDriverWait(driver, 180)
+        wait_for_lyrics_container.until(
+            expected_conditions.presence_of_element_located(
+                (By.CSS_SELECTOR, LYRICS_CONTAINER_CSS)
+            )
         )
-    )
-    lyrics_page_soup = BeautifulSoup(str(driver.page_source), "html.parser")
-
-    driver.close()
+        lyrics_page_soup = BeautifulSoup(str(driver.page_source), "html.parser")
+    finally:
+        driver.quit()
 
     lyrics_page_html = str(lyrics_page_soup.prettify())
 
-    # Cache HTML for this song
     if cache:
         with open(cache_full_path, "w", encoding="utf-8") as f:
             f.write(lyrics_page_html)
@@ -172,8 +184,7 @@ def genius_parse_preprocessing(input_string: str):
 
 def extract_lyrics_from_html_genius(html):
     lyrics_soup = BeautifulSoup(str(html), "html.parser")
-    # Find div tags
-    lyrics_divs = lyrics_soup.find_all(class_=LYRICS_CONTAINER_CLASS)
+    lyrics_divs = lyrics_soup.find_all(class_=is_lyrics_container_class)
 
     lyrics_divs_preprocessed_str = ""
 
@@ -187,9 +198,10 @@ def extract_lyrics_from_html_genius(html):
     # Loop through each top-level lyrics div (usually one or a few)
     for soup in soup_list:
         all_lyrics += genius_parser(soup)
-        # all_lyrics += "\n\n" # Divs occur on lyrical sections so put in a blank line for nice spacing
 
     all_lyrics = all_lyrics.strip()
+    # Cap blank lines at one (br counting is per-container; joining divs can stack more)
+    all_lyrics = re.sub(r"\n{3,}", "\n\n", all_lyrics)
     return all_lyrics
 
 

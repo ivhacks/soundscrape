@@ -10,6 +10,10 @@ def create_stealth_driver(headless: bool = True) -> webdriver.Chrome:
         chrome_options.add_argument("--headless")
         chrome_options.add_argument("--mute-audio")
 
+    # Genius (and similar) keep network activity open forever under "normal" load;
+    # eager returns once the document is interactive so waits can proceed.
+    chrome_options.page_load_strategy = "eager"
+
     chrome_options.add_argument(
         "--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36"
     )

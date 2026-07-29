@@ -48,3 +48,12 @@ class RealSongTests(TestCase):
 
     def test_essenger_lexi_norton_downfall(self):
         real_song_test(self, "essenger_lexi_norton_downfall")
+
+    def test_porter_robinson_goodbye_to_a_world(self):
+        real_song_test(self, "porter_robinson_goodbye_to_a_world")
+
+    def test_eminem_lose_yourself(self):
+        real_song_test(self, "eminem_lose_yourself")
+
+    def test_doja_cat_say_so(self):
+        real_song_test(self, "doja_cat_say_so")

@@ -255,7 +255,7 @@ def genius_parser(input_soup):
             lyrics = insert_space_if_inline(lyrics)
             lyrics += processed
 
-        elif item.name == "i":
+        elif item.name == "i" or item.name == "em":
             processed = genius_parser(item)
             if in_parens:
                 # insert_space_if_inline(lyrics)
@@ -358,10 +358,8 @@ def get_lyrics_genius(artist, title, cache=False):
     html = get_html_genius(artist, title, cache)
     if html is None:
         raise ValueError(f"No Genius match for {artist} - {title}")
-    lyrics = extract_lyrics_from_html_genius(html)
-    if not lyrics:
-        raise ValueError(f"Empty Genius lyrics for {artist} - {title}")
-    return lyrics
+    # empty string = instrumental / no lyrics on the page
+    return extract_lyrics_from_html_genius(html)
 
 
 def get_lyrics_azlyrics(artist, title):

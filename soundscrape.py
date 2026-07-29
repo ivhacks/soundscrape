@@ -32,7 +32,7 @@ from google_images_search import (
     search_google_images,
 )
 from lyrics import get_lyrics_genius
-from parse_and_clean import clean_title, parse_artists, parse_features
+from parse_and_clean import clean_artist, clean_title, parse_artists, parse_features
 from stealth_driver import create_stealth_driver
 
 
@@ -76,6 +76,7 @@ def process_dir(
     fast_search: bool = True,
     embed_lyrics: bool = True,
     resolve_artists_with_ai: bool = True,
+    skip_web: bool = False,
 ):
     albums: Dict[str, Album] = {}
 
@@ -142,6 +143,9 @@ def process_dir(
         if not album.artists:
             album.artists = ["Various Artists"]
 
+        if skip_web:
+            continue
+
         # one track → single art path (falls back to album art if no single exists)
         # multiple tracks on this album → album art path
         search_as_album = len(album.tracks) > 1
@@ -157,58 +161,65 @@ def process_dir(
     for album in albums.values():
         print(album)
 
-    # Search out album arts for each album
-    driver = create_stealth_driver(headless=HEADLESS)
-    try:
-        for album in albums.values():
-            if not album.art_choices:
-                continue
+    if not skip_web:
+        # Search out album arts for each album
+        driver = create_stealth_driver(headless=HEADLESS)
+        try:
+            for album in albums.values():
+                if not album.art_choices:
+                    continue
 
-            # Create temporary file for the query image
-            with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as temp_file:
-                temp_file.write(album.art_choices[0])
-                temp_path = temp_file.name
+                # Create temporary file for the query image
+                with tempfile.NamedTemporaryFile(
+                    suffix=".jpg", delete=False
+                ) as temp_file:
+                    temp_file.write(album.art_choices[0])
+                    temp_path = temp_file.name
 
-            try:
-                # Search for visually similar images
-                print(f"Searching for similar images for {album.title}...", flush=True)
-                results = search_google_images(temp_path)
-                print(
-                    f"Found {len(results)} reverse-image results for {album.title}",
-                    flush=True,
-                )
+                try:
+                    # Search for visually similar images
+                    print(
+                        f"Searching for similar images for {album.title}...", flush=True
+                    )
+                    results = search_google_images(temp_path)
+                    print(
+                        f"Found {len(results)} reverse-image results for {album.title}",
+                        flush=True,
+                    )
 
-                # Download images from supported sites
-                downloaded_images = download_images(results, driver)
-                print(
-                    f"Downloaded {len(downloaded_images)} images for {album.title}",
-                    flush=True,
-                )
+                    # Download images from supported sites
+                    downloaded_images = download_images(results, driver)
+                    print(
+                        f"Downloaded {len(downloaded_images)} images for {album.title}",
+                        flush=True,
+                    )
 
-                # Combine existing art choices with downloaded images
-                all_images = album.art_choices + downloaded_images
+                    # Combine existing art choices with downloaded images
+                    all_images = album.art_choices + downloaded_images
 
-                # Downselect to 5 best choices using the original query image
-                print(f"Downselecting cover art for {album.title}...", flush=True)
-                selected_images = downselect_images(all_images, album.art_choices[0])
-                print(
-                    f"Kept {len(selected_images)} cover choices for {album.title}",
-                    flush=True,
-                )
+                    # Downselect to 5 best choices using the original query image
+                    print(f"Downselecting cover art for {album.title}...", flush=True)
+                    selected_images = downselect_images(
+                        all_images, album.art_choices[0]
+                    )
+                    print(
+                        f"Kept {len(selected_images)} cover choices for {album.title}",
+                        flush=True,
+                    )
 
-                # Update album art choices
-                album.art_choices = selected_images
+                    # Update album art choices
+                    album.art_choices = selected_images
 
-            finally:
-                # Clean up temporary file
-                os.unlink(temp_path)
-    finally:
-        driver.quit()
+                finally:
+                    # Clean up temporary file
+                    os.unlink(temp_path)
+        finally:
+            driver.quit()
 
     # Apply cover art for each album
     for album in albums.values():
         print(f"Applying tags/art for album {album.title}...", flush=True)
-        if no_art_select:
+        if no_art_select or skip_web:
             # Pick the highest resolution artwork
             highest_resolution = 0
             chosen_art = album.art_choices[0]
@@ -251,8 +262,9 @@ def process_dir(
                     flush=True,
                 )
                 lyrics = get_lyrics_genius(", ".join(track.artists), track.title)
-                set_lyrics(new_filepath, lyrics)
-                print(f"Embedded lyrics for {title_with_features}", flush=True)
+                if lyrics:
+                    set_lyrics(new_filepath, lyrics)
+                    print(f"Embedded lyrics for {title_with_features}", flush=True)
 
             clear_cover_art(new_filepath)
             set_cover_art(new_filepath, chosen_art)
@@ -293,6 +305,7 @@ def main(
     fast_search: bool = True,
     embed_lyrics: bool = True,
     resolve_artists_with_ai: bool = True,
+    skip_web: bool = False,
 ):
     if not os.path.exists(input_path):
         raise FileNotFoundError(f"Input path '{input_path}' does not exist")
@@ -328,6 +341,7 @@ def main(
             fast_search=fast_search,
             embed_lyrics=embed_lyrics,
             resolve_artists_with_ai=resolve_artists_with_ai,
+            skip_web=skip_web,
         )
 
 
@@ -377,7 +391,15 @@ def process_file(
 
 
 if __name__ == "__main__":
-    if len(sys.argv) >= 2 and sys.argv[1] == "--noaudio":
+    if len(sys.argv) >= 2 and sys.argv[1] == "--lyrics":
+        if len(sys.argv) < 4:
+            print("Usage: soundscrape --lyrics <artist> <title>")
+            print('       soundscrape --lyrics "Porter Robinson" "Goodbye To A World"')
+            sys.exit(1)
+        artist = clean_artist(sys.argv[2])
+        title = clean_title(sys.argv[3])
+        print(get_lyrics_genius(artist, title, cache=False))
+    elif len(sys.argv) >= 2 and sys.argv[1] == "--noaudio":
         if len(sys.argv) < 4:
             print("Usage: soundscrape --noaudio <input_dir> <output_dir>")
             sys.exit(1)
@@ -390,4 +412,5 @@ if __name__ == "__main__":
         print("Usage: soundscrape <file.mp3|file.flac>")
         print("       soundscrape <input_dir> <output_dir>")
         print("       soundscrape --noaudio <input_dir> <output_dir>")
+        print("       soundscrape --lyrics <artist> <title>")
         sys.exit(1)

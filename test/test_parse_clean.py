@@ -63,6 +63,16 @@ class CleanTitleTests(TestCase):
         expected_output = "Push"
         self.assertEqual(clean_title(input_title), expected_output)
 
+    def test_clean_title_track_number_dot(self):
+        input_title = "09. Lionhearted"
+        expected_output = "Lionhearted"
+        self.assertEqual(clean_title(input_title), expected_output)
+
+    def test_clean_title_track_number_dash(self):
+        input_title = "10 - Sea Of Voices"
+        expected_output = "Sea Of Voices"
+        self.assertEqual(clean_title(input_title), expected_output)
+
 
 @pytest.mark.xdist_group(name="parse_clean")
 class CleanArtistTests(TestCase):

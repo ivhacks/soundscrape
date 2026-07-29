@@ -70,3 +70,28 @@ class RealSongOnlineGroupC(TestCase):
         real_song_online_test(
             self, "essenger_lexi_norton_downfall", "Essenger, Lexi Norton", "Downfall"
         )
+
+
+@pytest.mark.xdist_group(name="genius_online_d")
+class RealSongOnlineGroupD(TestCase):
+    @pytest.mark.timeout(300)
+    def test_porter_robinson_goodbye_to_a_world(self):
+        real_song_online_test(
+            self,
+            "porter_robinson_goodbye_to_a_world",
+            "Porter Robinson",
+            "Goodbye To A World",
+        )
+
+    @pytest.mark.timeout(300)
+    def test_eminem_lose_yourself(self):
+        real_song_online_test(self, "eminem_lose_yourself", "Eminem", "Lose Yourself")
+
+    @pytest.mark.timeout(300)
+    def test_doja_cat_say_so(self):
+        real_song_online_test(self, "doja_cat_say_so", "Doja Cat", "Say So")
+
+    @pytest.mark.timeout(300)
+    def test_zedd_epos_instrumental(self):
+        lyrics = get_lyrics_genius("Zedd", "Epos", cache=False)
+        self.assertEqual(lyrics, "")

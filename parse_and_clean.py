@@ -10,8 +10,10 @@ def clean_title(title):
     no_ft = no_brackets.split("ft.")[0]
     no_feat = no_ft.split("feat.")[0]
     no_Feat = no_feat.split("Feat.")[0]
+    # strip leading track numbers like "09. Lionhearted" or "9 - Sea Of Voices"
+    no_track_num = re.sub(r"^\d+\s*[\.\-]\s*", "", no_Feat.strip())
 
-    return no_Feat.strip()
+    return no_track_num.strip()
 
 
 def clean_artist(artist):

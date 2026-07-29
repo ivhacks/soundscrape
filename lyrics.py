@@ -5,7 +5,7 @@ import sys
 from bs4 import BeautifulSoup, Comment
 from fuzzywuzzy import fuzz  # Fuzzy string matching library
 import requests
-from selenium.common.exceptions import WebDriverException
+from selenium.common.exceptions import TimeoutException, WebDriverException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.wait import WebDriverWait
@@ -84,78 +84,97 @@ def get_html_genius(artist, title, cache=False):
     processed_artist = search_term_preprocessing(artist)
     processed_title = search_term_preprocessing(title)
 
-    driver = create_stealth_driver()
-    try:
-        driver.get(f"https://genius.com/search?q={processed_artist}+{processed_title}")
+    last_err: Exception | None = None
+    lyrics_page_html = None
 
-        wait_for_section = WebDriverWait(driver, 180)
-        wait_for_section.until(
-            expected_conditions.presence_of_element_located(
-                (By.TAG_NAME, "search-result-section")
-            )
-        )
-        result_sections = driver.find_elements(By.TAG_NAME, "search-result-section")
-
-        wait_for_label = WebDriverWait(driver, 180)
-        wait_for_label.until(
-            expected_conditions.presence_of_element_located(
-                (By.CLASS_NAME, "search_results_label")
-            )
-        )
-        song_results_section_html = None
-        for item in result_sections:
-            try:
-                result_label = item.find_element(By.CLASS_NAME, "search_results_label")
-                if result_label.get_attribute("innerHTML") == "Songs":
-                    song_results_section_html = item.get_attribute("innerHTML")
-                    break
-            except WebDriverException:
-                # This page is weird and not all the results sections have this label
-                continue
-
-        if song_results_section_html is None:
-            raise ValueError("Could not find Songs section on Genius search page")
-
-        search_soup = BeautifulSoup(song_results_section_html, "html.parser")
-
-        anchors = search_soup.find_all(class_="mini_card")
-
-        found_result = False
-        best_confidence = 0
-        best_url = None
-
-        for anchor in anchors:
-            a_title = anchor.find_all(class_="mini_card-title")[0].text.strip().lower()
-            a_artist = (
-                anchor.find_all(class_="mini_card-subtitle")[0].text.strip().lower()
+    # one retry: chrome thrash under parallel tests can drop a navigation
+    for _ in range(2):
+        driver = create_stealth_driver()
+        try:
+            driver.get(
+                f"https://genius.com/search?q={processed_artist}+{processed_title}"
             )
 
-            confidence = match_confidence(title, artist, a_title, a_artist)
-            if confidence > best_confidence:
-                best_url = anchor["href"]
-                best_confidence = confidence
-
-            found_result = True
-
-        if not found_result:
-            return None
-
-        if best_confidence == 0 or best_url is None:
-            return None
-
-        driver.get(best_url)
-
-        wait_for_lyrics_container = WebDriverWait(driver, 180)
-        wait_for_lyrics_container.until(
-            expected_conditions.presence_of_element_located(
-                (By.CSS_SELECTOR, LYRICS_CONTAINER_CSS)
+            wait_for_section = WebDriverWait(driver, 60)
+            wait_for_section.until(
+                expected_conditions.presence_of_element_located(
+                    (By.TAG_NAME, "search-result-section")
+                )
             )
-        )
-        lyrics_page_soup = BeautifulSoup(str(driver.page_source), "html.parser")
-    finally:
-        driver.quit()
+            result_sections = driver.find_elements(By.TAG_NAME, "search-result-section")
 
-    lyrics_page_html = str(lyrics_page_soup.prettify())
+            wait_for_label = WebDriverWait(driver, 60)
+            wait_for_label.until(
+                expected_conditions.presence_of_element_located(
+                    (By.CLASS_NAME, "search_results_label")
+                )
+            )
+            song_results_section_html = None
+            for item in result_sections:
+                try:
+                    result_label = item.find_element(
+                        By.CLASS_NAME, "search_results_label"
+                    )
+                    if result_label.get_attribute("innerHTML") == "Songs":
+                        song_results_section_html = item.get_attribute("innerHTML")
+                        break
+                except WebDriverException:
+                    # This page is weird and not all the results sections have this label
+                    continue
+
+            if song_results_section_html is None:
+                raise ValueError("Could not find Songs section on Genius search page")
+
+            search_soup = BeautifulSoup(song_results_section_html, "html.parser")
+
+            anchors = search_soup.find_all(class_="mini_card")
+
+            found_result = False
+            best_confidence = 0
+            best_url = None
+
+            for anchor in anchors:
+                a_title = (
+                    anchor.find_all(class_="mini_card-title")[0].text.strip().lower()
+                )
+                a_artist = (
+                    anchor.find_all(class_="mini_card-subtitle")[0].text.strip().lower()
+                )
+
+                confidence = match_confidence(title, artist, a_title, a_artist)
+                if confidence > best_confidence:
+                    best_url = anchor["href"]
+                    best_confidence = confidence
+
+                found_result = True
+
+            if not found_result:
+                return None
+
+            if best_confidence == 0 or best_url is None:
+                return None
+
+            driver.get(best_url)
+
+            wait_for_lyrics_container = WebDriverWait(driver, 60)
+            wait_for_lyrics_container.until(
+                expected_conditions.presence_of_element_located(
+                    (By.CSS_SELECTOR, LYRICS_CONTAINER_CSS)
+                )
+            )
+            lyrics_page_soup = BeautifulSoup(str(driver.page_source), "html.parser")
+            lyrics_page_html = str(lyrics_page_soup.prettify())
+            last_err = None
+            break
+        except (TimeoutException, ValueError) as e:
+            last_err = e
+        finally:
+            driver.quit()
+
+    if last_err is not None:
+        raise last_err
+    if lyrics_page_html is None:
+        raise ValueError("Genius lyrics page not loaded")
 
     if cache:
         with open(cache_full_path, "w", encoding="utf-8") as f:

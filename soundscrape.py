@@ -11,7 +11,7 @@ from PIL import Image
 
 from art_search import search_cover_art_by_text
 from art_selector import CoverArtSelector
-from artists_features import find_artists_and_features
+from artists_features import ArtistsAndFeatures, find_artists_and_features
 from file_metadata import (
     NoTagError,
     clear_cover_art,
@@ -32,7 +32,7 @@ from google_images_search import (
     search_google_images,
 )
 from lyrics import get_lyrics_genius
-from parse_and_clean import clean_title
+from parse_and_clean import clean_title, parse_artists, parse_features
 from stealth_driver import create_stealth_driver
 
 
@@ -75,6 +75,7 @@ def process_dir(
     no_art_select: bool = False,
     fast_search: bool = True,
     embed_lyrics: bool = True,
+    resolve_artists_with_ai: bool = True,
 ):
     albums: Dict[str, Album] = {}
 
@@ -98,7 +99,14 @@ def process_dir(
                 )
 
             cleaned_title = clean_title(title)
-            artists_and_features = find_artists_and_features(artist, cleaned_title)
+            # AI web_search is slow (~15-20s/track). Tags that already list
+            # artists can be split deterministically for tests / known-good tags.
+            if resolve_artists_with_ai:
+                artists_and_features = find_artists_and_features(artist, cleaned_title)
+            else:
+                artists_and_features = ArtistsAndFeatures(
+                    parse_artists(artist), parse_features(title)
+                )
             albums[album_name].tracks.append(
                 Track(
                     artists=artists_and_features.artists,
@@ -284,6 +292,7 @@ def main(
     no_art_select: bool = False,
     fast_search: bool = True,
     embed_lyrics: bool = True,
+    resolve_artists_with_ai: bool = True,
 ):
     if not os.path.exists(input_path):
         raise FileNotFoundError(f"Input path '{input_path}' does not exist")
@@ -318,6 +327,7 @@ def main(
             no_art_select=no_art_select,
             fast_search=fast_search,
             embed_lyrics=embed_lyrics,
+            resolve_artists_with_ai=resolve_artists_with_ai,
         )
 
 
@@ -326,6 +336,7 @@ def process_file(
     no_art_select: bool = False,
     fast_search: bool = True,
     embed_lyrics: bool = True,
+    resolve_artists_with_ai: bool = True,
 ):
     file_path = os.path.abspath(file_path)
     if not os.path.isfile(file_path):
@@ -343,6 +354,7 @@ def process_file(
             no_art_select=no_art_select,
             fast_search=fast_search,
             embed_lyrics=embed_lyrics,
+            resolve_artists_with_ai=resolve_artists_with_ai,
         )
 
         results = []

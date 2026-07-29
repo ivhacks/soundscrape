@@ -1,6 +1,6 @@
 import requests
+from selenium.common.exceptions import StaleElementReferenceException
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
 from art_selector import CoverArtSelector
@@ -10,25 +10,70 @@ from stealth_driver import create_stealth_driver
 REQUEST_TIMEOUT = 20
 
 
+def _instagram_image_url(driver) -> str | None:
+    # Prefer first large square scontent img in DOM (post art), not related-feed thumbs.
+    large_square: list[str] = []
+    large_any: list[tuple[int, str]] = []
+    try:
+        imgs = driver.find_elements(By.CSS_SELECTOR, 'img[src*="scontent"]')
+    except StaleElementReferenceException:
+        return None
+
+    for img in imgs:
+        try:
+            width = int(img.get_property("naturalWidth") or 0)
+            height = int(img.get_property("naturalHeight") or 0)
+            src = img.get_attribute("src")
+        except StaleElementReferenceException:
+            continue
+        if width <= 200 or not src:
+            continue
+        src = str(src)
+        large_any.append((width, src))
+        # full-res post frames are typically ~1080–1440; skip smaller related thumbs
+        if height > 0 and width >= 1000 and 0.9 <= width / height <= 1.1:
+            large_square.append(src)
+
+    if large_square:
+        return large_square[0]
+
+    if large_any:
+        large_any.sort(key=lambda item: item[0], reverse=True)
+        return large_any[0][1]
+
+    for meta in driver.find_elements(By.CSS_SELECTOR, 'meta[property="og:image"]'):
+        content = meta.get_attribute("content")
+        if content:
+            return str(content)
+    return None
+
+
+def _has_large_square(driver) -> bool:
+    try:
+        for img in driver.find_elements(By.CSS_SELECTOR, 'img[src*="scontent"]'):
+            try:
+                width = int(img.get_property("naturalWidth") or 0)
+                height = int(img.get_property("naturalHeight") or 0)
+            except StaleElementReferenceException:
+                continue
+            if width >= 800 and height > 0 and 0.9 <= width / height <= 1.1:
+                return True
+    except StaleElementReferenceException:
+        return False
+    return False
+
+
 def get_image_instagram(link: str, driver=None) -> bytes:
     if driver is None:
         driver = create_stealth_driver(headless=True)
 
     driver.get(link)
 
-    wait = WebDriverWait(driver, 20)
-    wait.until(
-        EC.presence_of_element_located((By.CSS_SELECTOR, 'img[src*="scontent"]'))
-    )
+    wait = WebDriverWait(driver, 25)
+    # wait for full post art (not just profile thumbs / unloaded imgs)
+    wait.until(lambda d: _has_large_square(d) or _instagram_image_url(d) is not None)
 
-    imgs = driver.find_elements(By.CSS_SELECTOR, 'img[src*="scontent"]')
-    image_url = None
-    for img in imgs:
-        natural_width = int(img.get_property("naturalWidth"))
-        if natural_width > 200:
-            image_url = str(img.get_attribute("src"))
-            break
-
+    image_url = _instagram_image_url(driver)
     if not image_url:
         raise ValueError("Could not find Instagram image in page")
 

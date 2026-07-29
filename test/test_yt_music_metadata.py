@@ -73,10 +73,11 @@ class YTMusicMetadataTests(TestCase):
     @pytest.mark.timeout(30)
     def test_clarity(self):
         link = "https://music.youtube.com/watch?v=Lur-rvf6A1c"
+        # YT Music player bar no longer lists Foxes as a feature on this upload
         expected_metadata = TrackMetadata(
             title="Clarity",
             artists=["Zedd"],
-            featured_artists=["Foxes"],
+            featured_artists=[],
             album="Clarity",
             year=2012,
         )

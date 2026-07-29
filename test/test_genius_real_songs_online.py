@@ -16,11 +16,14 @@ def real_song_online_test(tester: TestCase, name, artist, title):
     tester.assertEqual(actual_output, expected_output)
 
 
-@pytest.mark.xdist_group(name="genius_real_songs_online")
-class RealSongOnlineTests(TestCase):
+# Cap concurrent chromes: 3 groups of 3 (full ungroup thrash under -n auto)
+@pytest.mark.xdist_group(name="genius_online_a")
+class RealSongOnlineGroupA(TestCase):
     @pytest.mark.timeout(300)
     def test_chase_atlantic_beauty_in_death(self):
-        real_song_online_test(self, "beauty_in_death", "Chase Atlantic", "Beauty In Death")
+        real_song_online_test(
+            self, "beauty_in_death", "Chase Atlantic", "Beauty In Death"
+        )
 
     @pytest.mark.timeout(300)
     def test_chase_atlantic_cassie(self):
@@ -30,6 +33,9 @@ class RealSongOnlineTests(TestCase):
     def test_chase_atlantic_call_me_back(self):
         real_song_online_test(self, "call_me_back", "Chase Atlantic", "Call Me Back")
 
+
+@pytest.mark.xdist_group(name="genius_online_b")
+class RealSongOnlineGroupB(TestCase):
     @pytest.mark.timeout(300)
     def test_lil_nas_x_old_town_road(self):
         real_song_online_test(
@@ -44,6 +50,9 @@ class RealSongOnlineTests(TestCase):
     def test_chase_atlantic_escort(self):
         real_song_online_test(self, "chase_atlantic_escort", "Chase Atlantic", "Escort")
 
+
+@pytest.mark.xdist_group(name="genius_online_c")
+class RealSongOnlineGroupC(TestCase):
     @pytest.mark.timeout(300)
     def test_chase_atlantic_i_never_existed(self):
         real_song_online_test(

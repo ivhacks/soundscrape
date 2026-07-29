@@ -71,6 +71,9 @@ def get_yt_music_metadata(
     raw_artists = []
     for artist_link in artist_links:
         artist_name = str(artist_link.get_attribute("innerHTML")).strip()
+        # auto-generated YT Music topic channels show as "Artist - Topic"
+        if artist_name.endswith(" - Topic"):
+            artist_name = artist_name[: -len(" - Topic")]
         raw_artists.append(artist_name)
 
     # Get year (search all spans for 4-digit year)

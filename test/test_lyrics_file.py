@@ -9,7 +9,7 @@ from lyrics import get_lyrics_genius
 from parse_and_clean import clean_title
 
 
-@pytest.mark.xdist_group(name="lyrics_file")
+@pytest.mark.xdist_group(name="genius_online_c")
 class LyricsFromFileTests(TestCase):
     @pytest.mark.timeout(300)
     def test_knock2_rookie(self):

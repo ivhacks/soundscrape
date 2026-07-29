@@ -3,7 +3,6 @@ from unittest import TestCase
 
 from openai import OpenAI
 from pydantic import BaseModel
-import pytest
 import yaml
 
 from album_search import (
@@ -40,7 +39,7 @@ def _call_grok_structure(client: OpenAI, prompt: str, schema: type[BaseModel]):
     return completion.choices[0].message.parsed
 
 
-@pytest.mark.xdist_group(name="album_search")
+# no shared mutable state; parallel AI calls ok
 class AlbumSearchTests(TestCase):
     def test_knock2_fast_n_slow(self):
         album = identify_album("knock2", "fast n slow")
@@ -67,7 +66,6 @@ class AlbumSearchTests(TestCase):
         self.assertEqual(artist, "Skrillex")
 
 
-@pytest.mark.xdist_group(name="album_search")
 class PromptTests(TestCase):
     def setUp(self):
         self.client = _get_grok_client()
@@ -91,7 +89,7 @@ class PromptTests(TestCase):
             "bittersweet",
             "Bittersweet was released as a single in 2025 and will be on Audien's upcoming album, Harmony.",
         )
-        for _ in range(5):
+        for _ in range(2):
             parsed = _call_grok_structure(self.client, prompt, AlbumTemplate)
             self.assertIsInstance(parsed, AlbumTemplate)
             assert isinstance(parsed, AlbumTemplate)

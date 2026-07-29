@@ -16,10 +16,16 @@ from file_metadata import (
     get_artist,
     get_cover_art,
     get_song_title,
+    set_album_artist,
+    set_album_title,
+    set_artist,
+    set_cover_art,
+    set_song_title,
 )
 from soundscrape import create_noaudio_files, main
 
 
+# share worker with metadata tests — both touch test/yeet.* fixtures
 @pytest.mark.xdist_group(name="serial_metadata_tests")
 class SoundScrapeFileIOTests(TestCase):
     def setUp(self):
@@ -124,28 +130,28 @@ class SoundScrapeFileIOTests(TestCase):
         output_dir = os.path.join(self.test_dir, "noaudio_tagged_output")
         os.makedirs(input_dir)
 
-        shutil.copy2("test/nolimit.flac", os.path.join(input_dir, "test_song.flac"))
+        # yeet.flac is a small tagged fixture (nolimit.flac is huge/flaky under parallel IO)
+        source = os.path.join(input_dir, "test_song.flac")
+        shutil.copy2("test/yeet.flac", source)
+        set_artist(source, "Tag Artist")
+        set_song_title(source, "Tag Title")
+        set_album_title(source, "Tag Album")
+        set_album_artist(source, "Tag Album Artist")
+        with open("test/cat.jpg", "rb") as f:
+            set_cover_art(source, f.read())
 
         create_noaudio_files(input_dir, output_dir)
 
         output_file = os.path.join(output_dir, "test_song.flac")
         self.assertTrue(os.path.exists(output_file))
 
-        self.assertEqual(get_artist(output_file), get_artist("test/nolimit.flac"))
-        self.assertEqual(
-            get_song_title(output_file), get_song_title("test/nolimit.flac")
-        )
-        self.assertEqual(
-            get_album_title(output_file), get_album_title("test/nolimit.flac")
-        )
-        self.assertEqual(
-            get_album_artist(output_file), get_album_artist("test/nolimit.flac")
-        )
-        self.assertEqual(get_cover_art(output_file), get_cover_art("test/nolimit.flac"))
+        self.assertEqual(get_artist(output_file), "Tag Artist")
+        self.assertEqual(get_song_title(output_file), "Tag Title")
+        self.assertEqual(get_album_title(output_file), "Tag Album")
+        self.assertEqual(get_album_artist(output_file), "Tag Album Artist")
+        self.assertEqual(get_cover_art(output_file), get_cover_art(source))
 
-        self.assertLess(
-            os.path.getsize(output_file), os.path.getsize("test/nolimit.flac")
-        )
+        self.assertLess(os.path.getsize(output_file), os.path.getsize(source))
 
     def test_noaudio_multiple_files(self):
         """Test creating noaudio files for multiple songs"""
@@ -154,8 +160,8 @@ class SoundScrapeFileIOTests(TestCase):
         os.makedirs(input_dir)
 
         input_files = [
-            ("test/nolimit.flac", "song1.flac"),
-            ("test/nolimit.mp3", "song2.mp3"),
+            ("test/yeet.flac", "song1.flac"),
+            ("test/yeet.mp3", "song2.mp3"),
             ("test/yeet.flac", "song3.flac"),
         ]
 
@@ -172,6 +178,7 @@ class SoundScrapeFileIOTests(TestCase):
         self.assertTrue(os.path.exists(output2))
         self.assertTrue(os.path.exists(output3))
 
-        self.assertLess(os.path.getsize(output1), os.path.getsize("test/nolimit.flac"))
-        self.assertLess(os.path.getsize(output2), os.path.getsize("test/nolimit.mp3"))
+        # noaudio rewrites audio body; output must be smaller than real flac source
+        self.assertLess(os.path.getsize(output1), os.path.getsize("test/yeet.flac"))
+        self.assertLess(os.path.getsize(output2), os.path.getsize("test/yeet.mp3"))
         self.assertLess(os.path.getsize(output3), os.path.getsize("test/yeet.flac"))

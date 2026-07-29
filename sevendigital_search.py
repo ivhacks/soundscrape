@@ -1,13 +1,124 @@
+import os
 import re
 import time
 from typing import Dict, List
 from urllib.parse import quote_plus
 
 from bs4 import BeautifulSoup
-from selenium.common.exceptions import WebDriverException
+from openai import OpenAI
+from selenium.common.exceptions import (
+    ElementNotInteractableException,
+    TimeoutException,
+    WebDriverException,
+)
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+import yaml
 
 from stealth_driver import create_stealth_driver
+
+
+def _grok_client() -> OpenAI:
+    with open(os.environ.get("SOUNDSCRAPE_SECRETS_PATH", "secrets.yaml"), "r") as f:
+        key = yaml.safe_load(f)["xai_api_key"]
+    return OpenAI(api_key=key, base_url="https://api.x.ai/v1")
+
+
+def _read_captcha_text(image_b64: str, mime: str = "jpeg") -> str:
+    client = _grok_client()
+    response = client.responses.create(
+        model="grok-4.5",
+        input=[
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "input_image",
+                        "image_url": f"data:image/{mime};base64,{image_b64}",
+                    },
+                    {
+                        "type": "input_text",
+                        "text": "read captcha. reply ONLY the chars. no spaces no quotes.",
+                    },
+                ],
+            }
+        ],
+    )
+    text = (response.output_text or "").strip()
+    # model sometimes adds junk; keep alnum only
+    text = re.sub(r"[^A-Za-z0-9]", "", text)
+    if not text:
+        raise ValueError("empty captcha solution from vision")
+    return text
+
+
+def solve_client_challenge(driver) -> None:
+    """If Fastly image captcha is showing, solve via vision and submit."""
+    # wrong answers refresh the captcha; try a few times
+    for _ in range(5):
+        if "captchaImage" not in driver.page_source:
+            return
+
+        img = driver.find_element(By.ID, "captchaImage")
+        src = img.get_attribute("src") or ""
+        match = re.match(r"data:image/(\w+);base64,(.+)", src, re.DOTALL)
+        if not match:
+            raise ValueError(f"captcha image not data-url: {src[:80]!r}")
+
+        mime = match.group(1)
+        image_b64 = match.group(2)
+        answer = _read_captcha_text(image_b64, mime)
+
+        try:
+            answer_box = WebDriverWait(driver, 10).until(
+                EC.element_to_be_clickable((By.ID, "capInput"))
+            )
+            answer_box.clear()
+            answer_box.send_keys(answer)
+            submit = WebDriverWait(driver, 10).until(
+                EC.element_to_be_clickable((By.ID, "capSubmit"))
+            )
+            try:
+                submit.click()
+            except (ElementNotInteractableException, WebDriverException):
+                driver.execute_script("arguments[0].click();", submit)
+        except (TimeoutException, WebDriverException):
+            continue
+
+        try:
+            WebDriverWait(driver, 20).until(
+                lambda d: "captchaImage" not in d.page_source
+                and "Client Challenge" not in d.title
+            )
+            return
+        except TimeoutException:
+            continue
+
+    raise TimeoutException("7digital captcha not cleared after retries")
+
+
+def wait_for_7digital_page(driver, timeout: int = 120) -> None:
+    """Wait out challenge or solve image captcha, then settle."""
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        if "captchaImage" in driver.page_source:
+            solve_client_challenge(driver)
+            continue
+        if "Client Challenge" in driver.page_source or "Client Challenge" in (
+            driver.title or ""
+        ):
+            time.sleep(0.5)
+            continue
+        return
+    # last try: solve if still captcha
+    if "captchaImage" in driver.page_source:
+        solve_client_challenge(driver)
+    if (
+        "Client Challenge" in (driver.title or "")
+        or "captchaImage" in driver.page_source
+    ):
+        raise TimeoutException("7digital challenge not cleared")
 
 
 def string_match(a: str, b: str) -> bool:
@@ -40,7 +151,7 @@ def search_album_for_track(driver, album_url: str, track_title: str) -> bool:
     """Search within an album page for a specific track title"""
     try:
         driver.get(album_url)
-        time.sleep(2)
+        wait_for_7digital_page(driver)
 
         soup = BeautifulSoup(driver.page_source, "html.parser")
 
@@ -66,23 +177,7 @@ def search_7digital(artist: str, title: str, driver=None) -> List[Dict]:
     query = f"{artist} {title}"
     search_url = f"https://us.7digital.com/search?q={quote_plus(query)}"
     driver.get(search_url)
-
-    # Wait for page to load and bot protection to complete with longer timeout
-    try:
-        WebDriverWait(driver, 30).until(
-            lambda d: "Client Challenge" not in d.page_source
-        )
-    except WebDriverException:
-        # If timeout, try clicking somewhere on the page to trigger challenge completion
-        try:
-            driver.execute_script("document.body.click()")
-            time.sleep(5)
-            # Continue anyway - sometimes the page works even after timeout
-        except WebDriverException:
-            pass
-
-    # Give it a bit more time to fully load the search results
-    time.sleep(3)
+    wait_for_7digital_page(driver)
 
     # Parse the page content
     soup = BeautifulSoup(driver.page_source, "html.parser")
@@ -184,9 +279,7 @@ def search_artist_albums_for_track(driver, artist: str, title: str) -> List[Dict
         # Search for just the artist name
         search_url = f"https://us.7digital.com/search?q={quote_plus(artist)}"
         driver.get(search_url)
-
-        # Wait for page load
-        time.sleep(3)
+        wait_for_7digital_page(driver)
 
         soup = BeautifulSoup(driver.page_source, "html.parser")
 
@@ -282,7 +375,7 @@ def check_release_for_track(driver, release: Dict, artist: str, title: str) -> b
     """Check if a release (album or single) is by the artist and contains the track"""
     try:
         driver.get(release["url"])
-        time.sleep(2)
+        wait_for_7digital_page(driver)
 
         soup = BeautifulSoup(driver.page_source, "html.parser")
 

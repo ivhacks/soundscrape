@@ -16,79 +16,74 @@ SESSION.headers.update(
 
 def search_beatport(query: str) -> List[Dict]:
     """Search Beatport for tracks/albums"""
-    try:
-        search_url = f"https://www.beatport.com/search?q={quote_plus(query)}"
-        response = SESSION.get(search_url, timeout=10)
+    search_url = f"https://www.beatport.com/search?q={quote_plus(query)}"
 
-        if response.status_code != 200:
-            return []
+    for _ in range(3):
+        try:
+            response = SESSION.get(search_url, timeout=20)
+            if response.status_code != 200:
+                continue
 
-        soup = BeautifulSoup(response.text, "html.parser")
-        results = []
+            soup = BeautifulSoup(response.text, "html.parser")
+            results = []
 
-        # Look for the __NEXT_DATA__ script tag that contains JSON data
-        script_tag = soup.find("script", {"id": "__NEXT_DATA__"})
-        if script_tag and script_tag.string:
-            try:
-                # Parse the JSON data
-                json_data = json.loads(script_tag.string)
+            script_tag = soup.find("script", {"id": "__NEXT_DATA__"})
+            if not script_tag or not script_tag.string:
+                continue
 
-                # Navigate to the search results
-                props = json_data.get("props", {})
-                page_props = props.get("pageProps", {})
-                dehydrated_state = page_props.get("dehydratedState", {})
-                queries = dehydrated_state.get("queries", [])
+            json_data = json.loads(script_tag.string)
 
-                # Find the search query data
-                for query_data in queries:
-                    state = query_data.get("state", {})
-                    data = state.get("data", {})
-                    tracks = data.get("tracks", {})
-                    track_data = tracks.get("data", [])
+            props = json_data.get("props", {})
+            page_props = props.get("pageProps", {})
+            dehydrated_state = page_props.get("dehydratedState", {})
+            queries = dehydrated_state.get("queries", [])
 
-                    if track_data:
-                        for track in track_data[:10]:  # Limit to 10 results
-                            try:
-                                track_name = track.get("track_name", "")
-                                track_id = track.get("track_id", "")
+            for query_data in queries:
+                state = query_data.get("state", {})
+                data = state.get("data", {})
+                tracks = data.get("tracks", {})
+                track_data = tracks.get("data", [])
 
-                                # Get artist name
-                                artists = track.get("artists", [])
-                                artist_name = (
-                                    artists[0].get("artist_name", "Unknown")
-                                    if artists
-                                    else "Unknown"
-                                )
+                if not track_data:
+                    continue
 
-                                # Construct Beatport URL
-                                url = f"https://www.beatport.com/track/{track_name.lower().replace(' ', '-')}/{track_id}"
+                for track in track_data[:10]:
+                    try:
+                        track_name = track.get("track_name", "")
+                        track_id = track.get("track_id", "")
 
-                                # Get price info
-                                price_info = track.get("price", {})
-                                price_display = price_info.get("display", "")
+                        artists = track.get("artists", [])
+                        artist_name = (
+                            artists[0].get("artist_name", "Unknown")
+                            if artists
+                            else "Unknown"
+                        )
 
-                                results.append(
-                                    {
-                                        "title": track_name,
-                                        "artist": artist_name,
-                                        "url": url,
-                                        "site": "beatport",
-                                        "price": price_display,
-                                        "track_id": track_id,
-                                    }
-                                )
-                            except Exception:
-                                continue
-                        break
+                        url = f"https://www.beatport.com/track/{track_name.lower().replace(' ', '-')}/{track_id}"
 
-            except Exception as e:
-                print(f"Error parsing Beatport JSON: {e}")
+                        price_info = track.get("price", {})
+                        price_display = price_info.get("display", "")
 
-        return results
+                        results.append(
+                            {
+                                "title": track_name,
+                                "artist": artist_name,
+                                "url": url,
+                                "site": "beatport",
+                                "price": price_display,
+                                "track_id": track_id,
+                            }
+                        )
+                    except Exception:
+                        continue
+                break
 
-    except Exception as e:
-        print(f"Error searching Beatport: {e}")
-        return []
+            return results
+        except Exception as e:
+            print(f"Error searching Beatport: {e}")
+            continue
+
+    return []
 
 
 if __name__ == "__main__":

@@ -8,6 +8,7 @@ import tempfile
 from typing import Dict, List
 
 from PIL import Image
+from selenium.common.exceptions import TimeoutException
 
 from art_search import search_cover_art_by_text
 from art_selector import CoverArtSelector
@@ -34,6 +35,7 @@ from google_images_search import (
 from lyrics import get_lyrics_genius
 from parse_and_clean import clean_artist, clean_title, parse_artists, parse_features
 from stealth_driver import create_stealth_driver
+from temp_host import TempHostError
 
 
 HEADLESS = True
@@ -210,6 +212,13 @@ def process_dir(
                     # Update album art choices
                     album.art_choices = selected_images
 
+                except TempHostError as e:
+                    print(
+                        f"WARNING: reverse image search skipped for {album.title}; "
+                        f"using the cover already on the file. ({e})",
+                        flush=True,
+                    )
+
                 finally:
                     # Clean up temporary file
                     os.unlink(temp_path)
@@ -261,10 +270,16 @@ def process_dir(
                     f"Fetching lyrics for {artist_string} - {track.title}...",
                     flush=True,
                 )
-                lyrics = get_lyrics_genius(", ".join(track.artists), track.title)
-                if lyrics:
-                    set_lyrics(new_filepath, lyrics)
-                    print(f"Embedded lyrics for {title_with_features}", flush=True)
+                try:
+                    lyrics = get_lyrics_genius(", ".join(track.artists), track.title)
+                    if lyrics:
+                        set_lyrics(new_filepath, lyrics)
+                        print(f"Embedded lyrics for {title_with_features}", flush=True)
+                except (ValueError, TimeoutException) as e:
+                    print(
+                        f"WARNING: lyrics skipped for {title_with_features}. ({e})",
+                        flush=True,
+                    )
 
             clear_cover_art(new_filepath)
             set_cover_art(new_filepath, chosen_art)

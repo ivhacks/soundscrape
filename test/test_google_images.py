@@ -7,12 +7,11 @@ import requests
 
 from google_images_search import (
     download_images,
-    litterbox_upload,
-    scale_down_image,
     search_google_images,
     serpapi_reverse_image,
 )
 from img_diff import image_difference
+from temp_host import scale_down_image, upload_temp_image
 
 
 @pytest.mark.xdist_group(name="google_images")
@@ -29,10 +28,10 @@ class GoogleImagesTests(TestCase):
             self.assertGreaterEqual(len(result), 9)
             self.assertTrue(result.startswith("http"))
 
-    def test_litterbox_upload(self):
+    def test_upload_temp_image(self):
         image_path = "test/test_art/knock2_nolimit.jpg"
 
-        url = litterbox_upload(image_path)
+        url = upload_temp_image(image_path)
 
         self.assertIsInstance(url, str)
         self.assertTrue(url.startswith("https://"))
@@ -59,7 +58,7 @@ class GoogleImagesTests(TestCase):
     def test_serpapi_reverse_image(self):
         image_path = "test/test_art/knock2_nolimit.jpg"
 
-        url = litterbox_upload(image_path)
+        url = upload_temp_image(image_path)
         urls = serpapi_reverse_image(url, num_results=10)
 
         self.assertIsInstance(urls, list)
@@ -88,7 +87,7 @@ class GoogleImagesTests(TestCase):
     def test_serpapi_two_results(self):
         image_path = "test/test_art/knock2_nolimit.jpg"
 
-        url = litterbox_upload(image_path)
+        url = upload_temp_image(image_path)
         urls = serpapi_reverse_image(url, num_results=2)
 
         self.assertEqual(len(urls), 2)
@@ -99,7 +98,7 @@ class GoogleImagesTests(TestCase):
     def test_serpapi_ten_results(self):
         image_path = "test/test_art/knock2_nolimit.jpg"
 
-        url = litterbox_upload(image_path)
+        url = upload_temp_image(image_path)
         urls = serpapi_reverse_image(url, num_results=10)
 
         self.assertEqual(len(urls), 10)

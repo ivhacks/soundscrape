@@ -1,11 +1,9 @@
 from io import BytesIO
 import os
-import re
 import sys
 from typing import List
 
 from PIL import Image
-import requests
 from requests.exceptions import RequestException
 from selenium.common.exceptions import WebDriverException
 from serpapi import GoogleSearch
@@ -21,6 +19,7 @@ from get_img_threads import get_image_threads
 from get_img_x import get_image_x
 from img_diff import image_difference
 from stealth_driver import create_stealth_driver
+from temp_host import upload_temp_image
 
 
 with open(os.environ.get("SOUNDSCRAPE_SECRETS_PATH", "secrets.yaml"), "r") as f:
@@ -28,75 +27,6 @@ with open(os.environ.get("SOUNDSCRAPE_SECRETS_PATH", "secrets.yaml"), "r") as f:
     SERPAPI_API_KEY = config["serpapi_api_key"]
 
 HEADLESS = True
-
-
-def scale_down_image(image_bytes: bytes) -> bytes:
-    img = Image.open(BytesIO(image_bytes))
-    if img.mode in ("RGBA", "LA", "P"):
-        img = img.convert("RGB")
-    img = img.resize((300, 300), Image.Resampling.LANCZOS)
-    output = BytesIO()
-    img.save(output, format="JPEG", quality=85)
-    return output.getvalue()
-
-
-def litterbox_upload(image_path: str) -> str:
-    # litterbox + catbox are dead (500 / "uploads paused"). kept for reference.
-    # with open(image_path, "rb") as f:
-    #     image_bytes = f.read()
-    # scaled_bytes = scale_down_image(image_bytes)
-    # files = {"fileToUpload": ("image.jpg", BytesIO(scaled_bytes), "image/jpeg")}
-    # data = {"reqtype": "fileupload", "time": "1h"}
-    # response = requests.post(
-    #     "https://litterbox.catbox.moe/resources/internals/api.php",
-    #     files=files,
-    #     data=data,
-    # )
-    # if response.status_code != 200:
-    #     raise Exception(
-    #         f"Failed to upload image: {response.status_code} - {response.text}"
-    #     )
-    # return response.text.strip()
-    #
-    # response = requests.post(
-    #     "https://catbox.moe/user/api.php",
-    #     files=files,
-    #     data={"reqtype": "fileupload"},
-    # )
-
-    with open(image_path, "rb") as f:
-        image_bytes = f.read()
-
-    scaled_bytes = scale_down_image(image_bytes)
-
-    response = requests.post(
-        "https://tmpfiles.org/api/v1/upload",
-        files={"file": ("image.jpg", BytesIO(scaled_bytes), "image/jpeg")},
-        timeout=30,
-    )
-
-    if response.status_code != 200:
-        raise Exception(
-            f"Failed to upload image: {response.status_code} - {response.text}"
-        )
-
-    # page url is https://tmpfiles.org/<id>/image.jpg
-    # real direct link is tokenized: https://tmpfiles.org/dl/<token>/<id>/image.jpg
-    page_url = response.json()["data"]["url"]
-    page = requests.get(page_url, timeout=30)
-    if page.status_code != 200:
-        raise Exception(
-            f"Failed to fetch upload page: {page.status_code} - {page.text}"
-        )
-
-    match = re.search(
-        r'https://tmpfiles\.org/dl/[^"\']+/image\.jpg',
-        page.text,
-    )
-    if not match:
-        raise Exception(f"No download link on upload page: {page_url}")
-
-    return match.group(0)
 
 
 def serpapi_reverse_image(url: str, num_results: int = 10) -> List[str]:
@@ -123,7 +53,7 @@ def serpapi_reverse_image(url: str, num_results: int = 10) -> List[str]:
 
 
 def search_google_images(image_path: str) -> List[str]:
-    uploaded_url = litterbox_upload(image_path)
+    uploaded_url = upload_temp_image(image_path)
     urls = serpapi_reverse_image(uploaded_url)
     return urls
 

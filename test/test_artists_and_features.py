@@ -170,6 +170,13 @@ class PromptTests(TestCase):
         self.assertEqual(result.artists, ["Skrillex", "Fred again..", "Flowdan"])
         self.assertEqual(result.features, [])
 
+    def test_juelz_hex_cougar_adam_fadi_options(self):
+        result = find_artists_and_features("Juelz, Hex Cougar, Adam Fadi", "options")
+        self.assertEqual(result.artists[0], "Juelz")
+        self.assertEqual(set(result.artists), {"Juelz", "Hex Cougar", "Adam Fadi"})
+        self.assertEqual(len(result.artists), 3)
+        self.assertEqual(result.features, [])
+
     def test_single_artist_with_feature(self):
         prompt = structure_prompt(
             "Daft Punk",

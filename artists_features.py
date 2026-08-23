@@ -17,6 +17,9 @@ def search_prompt(artist: str, song_title: str) -> str:
             - Features = vocalists/guests marked with "feat." or "ft."
             - ONLY include names that are officially credited
             - DO NOT include: producers who aren't credited as artists, uncredited vocalists, real names of aliased artists
+            - If the given artist string already lists multiple names, include EVERY one of those names
+            - Put the most well-known artist first (the name people would actually search for)
+            - Names marked feat./ft./featuring in the song title are Features, never Artists
             - If no features exist, write "(no features)"
             - Format: "Artists: X, Y. Features: Z" or "Artists: X, Y" (if no features)
 
@@ -29,6 +32,7 @@ def search_prompt(artist: str, song_title: str) -> str:
             ✓ ISOKNOCK - PAIN → "Artists: ISOKNOCK, Knock2, ISOxo"
             ✓ Skrillex - Rumble → "Artists: Skrillex, Fred again.., Flowdan"
             ✓ Ninajirachi - Battery Death → "Artists: Ninajirachi"
+            ✓ Juelz, Hex Cougar, Adam Fadi - options → "Artists: Juelz, Hex Cougar, Adam Fadi"
 
             WRONG - DO NOT DO THIS:
             ✗ Adding commentary: 'okay, i understand...' or 'i'll check...'

@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 import hashlib
 from io import BytesIO
@@ -82,146 +83,151 @@ def process_dir(
 ):
     albums: Dict[str, Album] = {}
 
-    # Loop thru all files, group into albums
+    files = []
     for filename in os.listdir(output_dir):
         if filename.lower().endswith((".mp3", ".flac")):
             filepath = os.path.join(output_dir, filename)
             artist = get_artist(filepath)
             title = get_song_title(filepath)
             album_name = get_album_title(filepath)
-
             print(f"{artist} - {title} ({album_name})")
-            if album_name not in albums.keys():
-                albums[album_name] = Album(
-                    title=album_name,
-                    artists=[],
-                    tracks=[],
-                    art_choices=[],
-                    art_choice_hashes=[],
-                    chosen_art=b"",
-                )
+            files.append((filepath, artist, title, album_name))
 
-            cleaned_title = clean_title(title)
-            # AI web_search is slow (~15-20s/track). Tags that already list
-            # artists can be split deterministically for tests / known-good tags.
-            if resolve_artists_with_ai:
-                artists_and_features = find_artists_and_features(artist, cleaned_title)
-            else:
-                artists_and_features = ArtistsAndFeatures(
-                    parse_artists(artist), parse_features(title)
-                )
-            albums[album_name].tracks.append(
-                Track(
-                    artists=artists_and_features.artists,
-                    title=cleaned_title,
-                    features=artists_and_features.features,
-                    filepath=filepath,
-                )
+    def resolve_file(item):
+        filepath, artist, title, album_name = item
+        cleaned_title = clean_title(title)
+        if resolve_artists_with_ai:
+            artists_and_features = find_artists_and_features(artist, cleaned_title)
+        else:
+            artists_and_features = ArtistsAndFeatures(
+                parse_artists(artist), parse_features(title)
             )
-            # Hash each new cover artwork so we can check for duplicates without doing a byte-by-byte comparison between all the images
-            try:
-                art = get_cover_art(filepath)
-            except NoTagError:
-                # no embedded art — search_cover_art_by_text fills this in later
-                art = None
+        try:
+            art = get_cover_art(filepath)
+        except NoTagError:
+            art = None
+        return (filepath, album_name, cleaned_title, artists_and_features, art)
 
-            if art is not None:
-                hash = hashlib.sha256(art).digest()
-                if hash not in albums[album_name].art_choice_hashes:
-                    albums[album_name].art_choices.append(art)
-                    albums[album_name].art_choice_hashes.append(hash)
+    with ThreadPoolExecutor() as pool:
+        resolved_files = list(pool.map(resolve_file, files))
 
-    # Loop thru albums, identify album artist for each by who appears on every track
-    for album in albums.values():
-        # Set album artists to artists who appear in every track
+    for (
+        filepath,
+        album_name,
+        cleaned_title,
+        artists_and_features,
+        art,
+    ) in resolved_files:
+        if album_name not in albums:
+            albums[album_name] = Album(
+                title=album_name,
+                artists=[],
+                tracks=[],
+                art_choices=[],
+                art_choice_hashes=[],
+                chosen_art=b"",
+            )
+
+        albums[album_name].tracks.append(
+            Track(
+                artists=artists_and_features.artists,
+                title=cleaned_title,
+                features=artists_and_features.features,
+                filepath=filepath,
+            )
+        )
+
+        if art is not None:
+            hash = hashlib.sha256(art).digest()
+            if hash not in albums[album_name].art_choice_hashes:
+                albums[album_name].art_choices.append(art)
+                albums[album_name].art_choice_hashes.append(hash)
+
+    albums_list = list(albums.values())
+
+    for album in albums_list:
         common_artists = set(album.tracks[0].artists)
-
-        # Keep only artists that appear in all tracks
         for track in album.tracks[1:]:
             common_artists = common_artists.intersection(set(track.artists))
 
         album.artists = list(common_artists)
-
         if not album.artists:
             album.artists = ["Various Artists"]
 
-        if skip_web:
-            continue
+    if not skip_web:
 
-        # one track → single art path (falls back to album art if no single exists)
-        # multiple tracks on this album → album art path
-        search_as_album = len(album.tracks) > 1
-        searched_art = search_cover_art_by_text(
-            ", ".join(album.artists),
-            album.tracks[0].title,
-            search_as_album,
-        )
-        hash = hashlib.sha256(searched_art).digest()
-        album.art_choices.append(searched_art)
-        album.art_choice_hashes.append(hash)
+        def fetch_text_art(album):
+            search_as_album = len(album.tracks) > 1
+            return search_cover_art_by_text(
+                ", ".join(album.artists),
+                album.tracks[0].title,
+                search_as_album,
+            )
 
-    for album in albums.values():
+        with ThreadPoolExecutor() as pool:
+            text_arts = list(pool.map(fetch_text_art, albums_list))
+        for album, searched_art in zip(albums_list, text_arts):
+            hash = hashlib.sha256(searched_art).digest()
+            album.art_choices.append(searched_art)
+            album.art_choice_hashes.append(hash)
+
+    for album in albums_list:
         print(album)
 
     if not skip_web:
-        # Search out album arts for each album
+        albums_with_art = []
+        for album in albums_list:
+            if album.art_choices:
+                albums_with_art.append(album)
+
+        def reverse_search(album):
+            with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as temp_file:
+                temp_file.write(album.art_choices[0])
+                temp_path = temp_file.name
+            try:
+                print(
+                    f"Searching for similar images for {album.title}...",
+                    flush=True,
+                )
+                return search_google_images(temp_path)
+            except TempHostError as e:
+                print(
+                    f"WARNING: reverse image search skipped for {album.title}; "
+                    f"using the cover already on the file. ({e})",
+                    flush=True,
+                )
+                return None
+            finally:
+                os.unlink(temp_path)
+
+        with ThreadPoolExecutor() as pool:
+            reverse_results = list(pool.map(reverse_search, albums_with_art))
+
         driver = create_stealth_driver(headless=HEADLESS)
         try:
-            for album in albums.values():
-                if not album.art_choices:
+            for album, results in zip(albums_with_art, reverse_results):
+                if results is None:
                     continue
 
-                # Create temporary file for the query image
-                with tempfile.NamedTemporaryFile(
-                    suffix=".jpg", delete=False
-                ) as temp_file:
-                    temp_file.write(album.art_choices[0])
-                    temp_path = temp_file.name
+                print(
+                    f"Found {len(results)} reverse-image results for {album.title}",
+                    flush=True,
+                )
 
-                try:
-                    # Search for visually similar images
-                    print(
-                        f"Searching for similar images for {album.title}...", flush=True
-                    )
-                    results = search_google_images(temp_path)
-                    print(
-                        f"Found {len(results)} reverse-image results for {album.title}",
-                        flush=True,
-                    )
+                downloaded_images = download_images(results, driver)
+                print(
+                    f"Downloaded {len(downloaded_images)} images for {album.title}",
+                    flush=True,
+                )
 
-                    # Download images from supported sites
-                    downloaded_images = download_images(results, driver)
-                    print(
-                        f"Downloaded {len(downloaded_images)} images for {album.title}",
-                        flush=True,
-                    )
-
-                    # Combine existing art choices with downloaded images
-                    all_images = album.art_choices + downloaded_images
-
-                    # Downselect to 5 best choices using the original query image
-                    print(f"Downselecting cover art for {album.title}...", flush=True)
-                    selected_images = downselect_images(
-                        all_images, album.art_choices[0]
-                    )
-                    print(
-                        f"Kept {len(selected_images)} cover choices for {album.title}",
-                        flush=True,
-                    )
-
-                    # Update album art choices
-                    album.art_choices = selected_images
-
-                except TempHostError as e:
-                    print(
-                        f"WARNING: reverse image search skipped for {album.title}; "
-                        f"using the cover already on the file. ({e})",
-                        flush=True,
-                    )
-
-                finally:
-                    # Clean up temporary file
-                    os.unlink(temp_path)
+                all_images = album.art_choices + downloaded_images
+                print(f"Downselecting cover art for {album.title}...", flush=True)
+                selected_images = downselect_images(all_images, album.art_choices[0])
+                print(
+                    f"Kept {len(selected_images)} cover choices for {album.title}",
+                    flush=True,
+                )
+                album.art_choices = selected_images
         finally:
             driver.quit()
 

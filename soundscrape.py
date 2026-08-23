@@ -80,6 +80,7 @@ def process_dir(
     embed_lyrics: bool = True,
     resolve_artists_with_ai: bool = True,
     skip_web: bool = False,
+    credit_mode: str = "default",
 ):
     albums: Dict[str, Album] = {}
 
@@ -96,12 +97,18 @@ def process_dir(
     def resolve_file(item):
         filepath, artist, title, album_name = item
         cleaned_title = clean_title(title)
-        if resolve_artists_with_ai:
+        parsed_artists = parse_artists(artist)
+        parsed_features = parse_features(title)
+        if credit_mode == "all_artists" or credit_mode == "all_features":
+            names = []
+            for n in parsed_artists + parsed_features:
+                if n not in names:
+                    names.append(n)
+            artists_and_features = ArtistsAndFeatures(names, [])
+        elif resolve_artists_with_ai:
             artists_and_features = find_artists_and_features(artist, cleaned_title)
         else:
-            artists_and_features = ArtistsAndFeatures(
-                parse_artists(artist), parse_features(title)
-            )
+            artists_and_features = ArtistsAndFeatures(parsed_artists, parsed_features)
         try:
             art = get_cover_art(filepath)
         except NoTagError:
@@ -146,13 +153,47 @@ def process_dir(
     albums_list = list(albums.values())
 
     for album in albums_list:
-        common_artists = set(album.tracks[0].artists)
-        for track in album.tracks[1:]:
-            common_artists = common_artists.intersection(set(track.artists))
 
-        album.artists = list(common_artists)
+        def credited_names(track):
+            return track.artists + track.features
+
+        common_artists = set(credited_names(album.tracks[0]))
+        for track in album.tracks[1:]:
+            common_artists = common_artists.intersection(set(credited_names(track)))
+
+        album.artists = []
+        for name in credited_names(album.tracks[0]):
+            if name in common_artists and name not in album.artists:
+                album.artists.append(name)
         if not album.artists:
             album.artists = ["Various Artists"]
+
+        if credit_mode == "all_artists" or credit_mode == "all_features":
+            album_leads = []
+            if album.artists != ["Various Artists"]:
+                album_leads = album.artists
+            for track in album.tracks:
+                names = []
+                for n in credited_names(track):
+                    if n not in names:
+                        names.append(n)
+                lead = []
+                for n in album_leads:
+                    if n in names:
+                        lead.append(n)
+                rest = []
+                for n in names:
+                    if n not in lead:
+                        rest.append(n)
+                if credit_mode == "all_artists":
+                    track.artists = lead + rest
+                    track.features = []
+                elif lead:
+                    track.artists = [lead[0]]
+                    track.features = lead[1:] + rest
+                elif names:
+                    track.artists = [names[0]]
+                    track.features = names[1:]
 
     if not skip_web:
 
@@ -234,20 +275,21 @@ def process_dir(
     # Apply cover art for each album
     for album in albums.values():
         print(f"Applying tags/art for album {album.title}...", flush=True)
-        if no_art_select or skip_web:
-            # Pick the highest resolution artwork
-            highest_resolution = 0
-            chosen_art = album.art_choices[0]
-            for artwork_bytes in album.art_choices:
-                image = Image.open(BytesIO(artwork_bytes))
-                resolution = image.width * image.height
-                if resolution > highest_resolution:
-                    highest_resolution = resolution
-                    chosen_art = artwork_bytes
-        else:
-            print(f"Opening cover art selector for {album.title}...", flush=True)
-            selector = CoverArtSelector(album.art_choices)
-            chosen_art = album.art_choices[selector.show_selection_window()]
+        chosen_art = None
+        if album.art_choices:
+            if no_art_select or skip_web:
+                highest_resolution = 0
+                chosen_art = album.art_choices[0]
+                for artwork_bytes in album.art_choices:
+                    image = Image.open(BytesIO(artwork_bytes))
+                    resolution = image.width * image.height
+                    if resolution > highest_resolution:
+                        highest_resolution = resolution
+                        chosen_art = artwork_bytes
+            else:
+                print(f"Opening cover art selector for {album.title}...", flush=True)
+                selector = CoverArtSelector(album.art_choices)
+                chosen_art = album.art_choices[selector.show_selection_window()]
 
         for track in album.tracks:
             if track.features:
@@ -265,7 +307,7 @@ def process_dir(
 
             os.rename(track.filepath, new_filepath)
 
-            artist_string = "; ".join(track.artists)
+            artist_string = "; ".join(track.artists + track.features)
             set_artist(new_filepath, artist_string)
             set_album_artist(new_filepath, "; ".join(album.artists))
 
@@ -287,8 +329,9 @@ def process_dir(
                         flush=True,
                     )
 
-            clear_cover_art(new_filepath)
-            set_cover_art(new_filepath, chosen_art)
+            if chosen_art is not None:
+                clear_cover_art(new_filepath)
+                set_cover_art(new_filepath, chosen_art)
             print(f"Done {title_with_features}", flush=True)
 
 
@@ -327,6 +370,7 @@ def main(
     embed_lyrics: bool = True,
     resolve_artists_with_ai: bool = True,
     skip_web: bool = False,
+    credit_mode: str = "default",
 ):
     if not os.path.exists(input_path):
         raise FileNotFoundError(f"Input path '{input_path}' does not exist")
@@ -363,6 +407,7 @@ def main(
             embed_lyrics=embed_lyrics,
             resolve_artists_with_ai=resolve_artists_with_ai,
             skip_web=skip_web,
+            credit_mode=credit_mode,
         )
 
 
@@ -372,6 +417,7 @@ def process_file(
     fast_search: bool = True,
     embed_lyrics: bool = True,
     resolve_artists_with_ai: bool = True,
+    credit_mode: str = "default",
 ):
     file_path = os.path.abspath(file_path)
     if not os.path.isfile(file_path):
@@ -390,6 +436,7 @@ def process_file(
             fast_search=fast_search,
             embed_lyrics=embed_lyrics,
             resolve_artists_with_ai=resolve_artists_with_ai,
+            credit_mode=credit_mode,
         )
 
         results = []
@@ -425,13 +472,31 @@ if __name__ == "__main__":
             print("Usage: soundscrape --noaudio <input_dir> <output_dir>")
             sys.exit(1)
         create_noaudio_files(sys.argv[2], sys.argv[3])
-    elif len(sys.argv) == 2:
-        process_file(sys.argv[1])
-    elif len(sys.argv) >= 3:
-        main(sys.argv[1], sys.argv[2])
     else:
-        print("Usage: soundscrape <file.mp3|file.flac>")
-        print("       soundscrape <input_dir> <output_dir>")
-        print("       soundscrape --noaudio <input_dir> <output_dir>")
-        print("       soundscrape --lyrics <artist> <title>")
-        sys.exit(1)
+        credit_mode = "default"
+        paths = []
+        for arg in sys.argv[1:]:
+            if arg == "--all-artists":
+                if credit_mode != "default":
+                    print("Use only one of --all-artists or --all-features")
+                    sys.exit(1)
+                credit_mode = "all_artists"
+            elif arg == "--all-features":
+                if credit_mode != "default":
+                    print("Use only one of --all-artists or --all-features")
+                    sys.exit(1)
+                credit_mode = "all_features"
+            else:
+                paths.append(arg)
+
+        if len(paths) == 1:
+            process_file(paths[0], credit_mode=credit_mode)
+        elif len(paths) == 2:
+            main(paths[0], paths[1], credit_mode=credit_mode)
+        else:
+            print("Usage: soundscrape <file.mp3|file.flac>")
+            print("       soundscrape <input_dir> <output_dir>")
+            print("       soundscrape --noaudio <input_dir> <output_dir>")
+            print("       soundscrape --lyrics <artist> <title>")
+            print("       optional: --all-artists  or  --all-features")
+            sys.exit(1)

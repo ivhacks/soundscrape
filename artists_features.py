@@ -18,8 +18,9 @@ def search_prompt(artist: str, song_title: str) -> str:
             - ONLY include names that are officially credited
             - DO NOT include: producers who aren't credited as artists, uncredited vocalists, real names of aliased artists
             - If the given artist string already lists multiple names, include EVERY one of those names
-            - Put the most well-known artist first (the name people would actually search for)
+            - Keep names spelled as they appear in the given artist string
             - Names marked feat./ft./featuring in the song title are Features, never Artists
+            - Order artists by fame (most well-known first). Order features the same way.
             - If no features exist, write "(no features)"
             - Format: "Artists: X, Y. Features: Z" or "Artists: X, Y" (if no features)
 
@@ -68,7 +69,7 @@ def structure_prompt(artist: str, song_title: str, first_response: str) -> str:
             Parse this into the expected format:
             - Extract all artist names into an "artists" list
             - Extract all feature names into a "features" list (empty list if no features)
-            - Clean up artist/feature names (remove extra spaces, fix capitalization if needed)
+            - Keep names spelled exactly as in the response (do not "correct" spelling)
             
             Return only the structured data, no explanation."""
 

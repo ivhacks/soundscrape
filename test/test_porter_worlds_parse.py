@@ -5,7 +5,7 @@ from unittest import TestCase
 
 import pytest
 
-from file_metadata import get_album_title, get_artist, get_song_title
+from file_metadata import get_album_artist, get_album_title, get_artist, get_song_title
 from parse_and_clean import clean_title, parse_artists, parse_features
 from soundscrape import process_dir
 
@@ -109,6 +109,7 @@ class PorterWorldsFilenameTests(TestCase):
         self.assertTrue(os.path.exists(path), f"missing {expected_name}")
         self.assertEqual(get_song_title(path), expected_title)
         self.assertEqual(get_artist(path), "Porter Robinson")
+        self.assertEqual(get_album_artist(path), "Porter Robinson")
         self.assertEqual(get_album_title(path), "Worlds")
 
     def test_divinity(self):

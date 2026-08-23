@@ -43,16 +43,20 @@ class IntegrationTests(TestCase):
         with open("test/test_art/knock2_nolimit.jpg", "rb") as f:
             expected_art = f.read()
 
+        album_artists = []
         for filename in os.listdir(self.out_dir):
             if filename.lower().endswith((".mp3", ".flac")):
                 filepath = os.path.join(self.out_dir, filename)
 
                 album_artist = get_album_artist(filepath)
+                album_artists.append(album_artist)
                 self.assertEqual(album_artist, "Knock2", "Album artist not Knock2! :(")
 
                 actual_art = get_cover_art(filepath)
                 diff = image_difference(expected_art, actual_art)
                 self.assertLessEqual(diff, 2, "Wrong cover art!")
+        self.assertEqual(set(album_artists), {"Knock2"})
+        self.assertEqual(len(album_artists), 17)
 
         # Check individual song titles and artists
         self.assertEqual(
@@ -61,7 +65,7 @@ class IntegrationTests(TestCase):
         )
         self.assertEqual(
             get_artist(os.path.join(self.out_dir, "come aliv3 (feat. Abi Flynn).flac")),
-            "RL Grime; Knock2",
+            "RL Grime; Knock2; Abi Flynn",
         )
 
         self.assertEqual(
@@ -162,7 +166,7 @@ class IntegrationTests(TestCase):
         # AI may title-case HOLLY as Holly
         self.assertEqual(
             get_artist(os.path.join(self.out_dir, "shyne 4 me (feat. PIAO).flac")).lower(),
-            "knock2; warren hue; holly",
+            "knock2; warren hue; holly; piao",
         )
 
     @pytest.mark.timeout(600)
@@ -178,11 +182,13 @@ class IntegrationTests(TestCase):
         with open("test/test_art/porter_robinson_worlds.jpg", "rb") as f:
             expected_art = f.read()
 
+        album_artists = []
         for filename in os.listdir(self.out_dir):
             if filename.lower().endswith((".mp3", ".flac")):
                 filepath = os.path.join(self.out_dir, filename)
 
                 album_artist = get_album_artist(filepath)
+                album_artists.append(album_artist)
                 self.assertEqual(
                     album_artist,
                     "Porter Robinson",
@@ -192,6 +198,8 @@ class IntegrationTests(TestCase):
                 actual_art = get_cover_art(filepath)
                 diff = image_difference(expected_art, actual_art)
                 self.assertLessEqual(diff, 2, "Wrong cover art!")
+        self.assertEqual(set(album_artists), {"Porter Robinson"})
+        self.assertEqual(len(album_artists), 12)
 
         # Tag-only artist resolve: fixtures only have "Porter Robinson" (no feat in tags).
         # AI path is covered by artists_and_features tests.

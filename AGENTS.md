@@ -10,6 +10,8 @@ Currently, our realistic goal is all this, but a selector window comes up to let
 
 This project relies a lot on websites and scraping features that are brittle. For this reason, we have (and need) test coverage on EVERY LITTLE THING, so we can know when something has broken and fix it quickly. The smallest possible operations should be covered by tests, as well as larger integration oriented tests at every level of the call stack. Use tests frequently to identify breakages. When writing tests, write tests specific enough that we'll be able to fix stuff quick in the future.
 
+Never use helpers, mixins, parametrization, or grouping to *trigger* tests unless the user explicitly asks for that, or you are adding a test to an existing pattern that already works that way. Each test is its own method on a straight test class, even if that looks redundant. A particular scenario (one track + its conditions) is one test method. Helpers *called from inside* a test method are fine (lookup a file, assert tags, etc.). If a method named after a track is reused by multiple tests, something is wrong.
+
 ## First-time project setup
 First, set up a venv and install the stuff in the pip requirements file:
 ```bash

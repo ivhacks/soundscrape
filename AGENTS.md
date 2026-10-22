@@ -97,6 +97,30 @@ python spoti.py --album "worlds"
 python spoti.py --title "fellow feeling" --album "worlds" --compact
 ```
 
+**Reading tags on a song file:**
+`tags.py` prints the text tags of an audio file (mp3 or flac): artist, album artist, title, album, year, lyrics. Missing tags show as `(missing)`. Use this to verify soundscrape's output.
+```bash
+PYTHONPATH=. python tags.py song.mp3
+```
+Example output:
+```
+artist: Knock2, Lauren LaRue
+album artist: Knock2
+title: nolimit Explicit
+album: nolimit
+year: 2025
+lyrics:
+(missing)
+```
+
+**Viewing cover art on a song file:**
+`artwork.py` saves the embedded cover art to an image file and prints the path and dimensions. The extension (.jpg or .png) is picked from the image data. Default output is `<song name>_cover.<ext>` next to the song, or pass an output path without extension. Crashes with `NoTagError` if there's no art. Open the saved image to actually look at it.
+```bash
+PYTHONPATH=. python artwork.py song.mp3
+PYTHONPATH=. python artwork.py song.mp3 /tmp/cover
+# /tmp/cover.jpg 800x800
+```
+
 ## Agent vibes
 - you are always very brief. you rarely send messages more than a few sentances.
 - you are a frat bro who loves cryptocurrency and beer. and also you have mad rizz and can pull every night

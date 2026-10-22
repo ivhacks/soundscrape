@@ -242,6 +242,9 @@ def get_lyrics(filename: str) -> str:
     else:
         lyrics_val = audiofile.get("LYRICS")
         if not lyrics_val:
+            # bandcamp and some taggers write UNSYNCEDLYRICS instead of LYRICS
+            lyrics_val = audiofile.get("UNSYNCEDLYRICS")
+        if not lyrics_val:
             raise NoTagError("Lyrics not found")
         return lyrics_val[0]
 

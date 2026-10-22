@@ -12,7 +12,7 @@ from PIL import Image
 from selenium.common.exceptions import TimeoutException
 
 from art_search import search_cover_art_by_text
-from art_selector import CoverArtSelector
+from agentic_art_selector import pick_art_agentic
 from artists_features import ArtistsAndFeatures, find_artists_and_features
 from file_metadata import (
     NoTagError,
@@ -81,6 +81,7 @@ def process_dir(
     resolve_artists_with_ai: bool = True,
     skip_web: bool = False,
     credit_mode: str = "default",
+    agentic: bool = False,
 ):
     albums: Dict[str, Album] = {}
 
@@ -286,7 +287,12 @@ def process_dir(
                     if resolution > highest_resolution:
                         highest_resolution = resolution
                         chosen_art = artwork_bytes
+            elif agentic:
+                chosen_art = album.art_choices[pick_art_agentic(album.art_choices)]
             else:
+                # imported here so agentic mode works on machines without tkinter
+                from art_selector import CoverArtSelector
+
                 print(f"Opening cover art selector for {album.title}...", flush=True)
                 selector = CoverArtSelector(album.art_choices)
                 chosen_art = album.art_choices[selector.show_selection_window()]
@@ -371,6 +377,7 @@ def main(
     resolve_artists_with_ai: bool = True,
     skip_web: bool = False,
     credit_mode: str = "default",
+    agentic: bool = False,
 ):
     if not os.path.exists(input_path):
         raise FileNotFoundError(f"Input path '{input_path}' does not exist")
@@ -408,6 +415,7 @@ def main(
             resolve_artists_with_ai=resolve_artists_with_ai,
             skip_web=skip_web,
             credit_mode=credit_mode,
+            agentic=agentic,
         )
 
 
@@ -418,6 +426,7 @@ def process_file(
     embed_lyrics: bool = True,
     resolve_artists_with_ai: bool = True,
     credit_mode: str = "default",
+    agentic: bool = False,
 ):
     file_path = os.path.abspath(file_path)
     if not os.path.isfile(file_path):
@@ -437,6 +446,7 @@ def process_file(
             embed_lyrics=embed_lyrics,
             resolve_artists_with_ai=resolve_artists_with_ai,
             credit_mode=credit_mode,
+            agentic=agentic,
         )
 
         results = []
@@ -474,6 +484,7 @@ if __name__ == "__main__":
         create_noaudio_files(sys.argv[2], sys.argv[3])
     else:
         credit_mode = "default"
+        agentic = False
         paths = []
         for arg in sys.argv[1:]:
             if arg == "--all-artists":
@@ -486,17 +497,20 @@ if __name__ == "__main__":
                     print("Use only one of --all-artists or --all-features")
                     sys.exit(1)
                 credit_mode = "all_features"
+            elif arg == "--agentic":
+                agentic = True
             else:
                 paths.append(arg)
 
         if len(paths) == 1:
-            process_file(paths[0], credit_mode=credit_mode)
+            process_file(paths[0], credit_mode=credit_mode, agentic=agentic)
         elif len(paths) == 2:
-            main(paths[0], paths[1], credit_mode=credit_mode)
+            main(paths[0], paths[1], credit_mode=credit_mode, agentic=agentic)
         else:
             print("Usage: soundscrape <file.mp3|file.flac>")
             print("       soundscrape <input_dir> <output_dir>")
             print("       soundscrape --noaudio <input_dir> <output_dir>")
             print("       soundscrape --lyrics <artist> <title>")
             print("       optional: --all-artists  or  --all-features")
+            print("       optional: --agentic (pick cover art on stdin, no GUI)")
             sys.exit(1)

@@ -199,15 +199,23 @@ def process_dir(
 
         def fetch_text_art(album):
             search_as_album = len(album.tracks) > 1
-            return search_cover_art_by_text(
-                ", ".join(album.artists),
-                album.tracks[0].title,
-                search_as_album,
-            )
+            try:
+                return search_cover_art_by_text(
+                    ", ".join(album.artists),
+                    album.tracks[0].title,
+                    search_as_album,
+                )
+            except ValueError as e:
+                # spotify doesn't have everything (bandcamp-only singles etc), the
+                # embedded art and reverse image search still give us choices
+                print(f"WARNING: text art search skipped for {album.title}. ({e})")
+                return None
 
         with ThreadPoolExecutor() as pool:
             text_arts = list(pool.map(fetch_text_art, albums_list))
         for album, searched_art in zip(albums_list, text_arts):
+            if searched_art is None:
+                continue
             hash = hashlib.sha256(searched_art).digest()
             album.art_choices.append(searched_art)
             album.art_choice_hashes.append(hash)

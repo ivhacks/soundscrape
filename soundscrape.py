@@ -23,6 +23,7 @@ from file_metadata import (
     get_cover_art,
     get_song_title,
     set_album_artist,
+    set_album_title,
     set_artist,
     set_cover_art,
     set_lyrics,
@@ -90,7 +91,12 @@ def process_dir(
             filepath = os.path.join(output_dir, filename)
             artist = get_artist(filepath)
             title = get_song_title(filepath)
-            album_name = get_album_title(filepath)
+            try:
+                album_name = get_album_title(filepath)
+            except NoTagError:
+                # singles often ship with no album tag, and a single's album is its title
+                album_name = clean_title(title)
+                set_album_title(filepath, album_name)
             print(f"{artist} - {title} ({album_name})")
             files.append((filepath, artist, title, album_name))
 

@@ -16,6 +16,7 @@ from get_img_facebook import get_image_facebook
 from get_img_genius import get_image_genius
 from get_img_instagram import get_image_instagram
 from get_img_soundcloud import get_image_soundcloud
+from get_img_spotify import get_image_spotify
 from get_img_threads import get_image_threads
 from get_img_x import get_image_x
 from img_diff import image_difference
@@ -96,6 +97,9 @@ def download_images(results: List[str], driver=None) -> List[bytes]:
                     images.append(image_data)
                 elif host == "soundcloud.com":
                     image_data = get_image_soundcloud(link)
+                    images.append(image_data)
+                elif host == "open.spotify.com":
+                    image_data = get_image_spotify(link)
                     images.append(image_data)
                 elif host == "threads.net" or host == "threads.com":
                     image_data = get_image_threads(link, driver)

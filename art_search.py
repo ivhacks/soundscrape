@@ -26,6 +26,9 @@ def search_cover_art_by_text(artist: str, title: str, album: bool = False) -> by
             # Maybe it was actually an album
             art_url = get_art_url(token, title, artist, single=False, is_album=False)
 
+    # the api only lists up to 640x640, ab67616d000082c1 is the full-size upload
+    art_url = art_url.replace("ab67616d0000b273", "ab67616d000082c1")
+
     response = requests.get(art_url, timeout=20)
     response.raise_for_status()
 

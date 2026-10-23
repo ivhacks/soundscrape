@@ -16,7 +16,8 @@ def get_image_soundcloud(link: str) -> bytes:
     if not match:
         raise ValueError("Could not find SoundCloud artwork in page")
 
-    image_url = match.group(1)
+    # "original" is the full-size upload, the page only links the 500x500 thumbnail
+    image_url = match.group(1).replace("t500x500", "original")
 
     image_response = requests.get(image_url, timeout=REQUEST_TIMEOUT)
     image_response.raise_for_status()

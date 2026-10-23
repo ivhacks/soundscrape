@@ -2,6 +2,7 @@ from io import BytesIO
 import os
 import sys
 from typing import List
+from urllib.parse import urlparse
 
 from PIL import Image
 from requests.exceptions import RequestException
@@ -68,26 +69,28 @@ def download_images(results: List[str], driver=None) -> List[bytes]:
     try:
         for link in results:
             print(f"Attempting to download {link}", end="", flush=True)
+            # lens links usually have www. or m. in front, e.g. www.facebook.com
+            host = urlparse(link).netloc.removeprefix("www.").removeprefix("m.")
             try:
-                if "bandcamp.com" in link:
+                if host.endswith("bandcamp.com"):
                     image_data = get_image_bandcamp(link)
                     images.append(image_data)
-                elif "://facebook.com" in link:
+                elif host == "facebook.com":
                     image_data = get_image_facebook(link, driver)
                     images.append(image_data)
-                elif "://genius.com" in link:
+                elif host == "genius.com":
                     image_data = get_image_genius(link)
                     images.append(image_data)
-                elif "://instagram.com" in link:
+                elif host == "instagram.com":
                     image_data = get_image_instagram(link, driver)
                     images.append(image_data)
-                elif "://soundcloud.com" in link:
+                elif host == "soundcloud.com":
                     image_data = get_image_soundcloud(link)
                     images.append(image_data)
-                elif "://threads.net" in link or "threads.com" in link:
+                elif host == "threads.net" or host == "threads.com":
                     image_data = get_image_threads(link, driver)
                     images.append(image_data)
-                elif "://x.com" in link or "twitter.com" in link:
+                elif host == "x.com" or host == "twitter.com":
                     image_data = get_image_x(link)
                     images.append(image_data)
                 else:

@@ -28,9 +28,12 @@ with open(os.environ.get("SOUNDSCRAPE_SECRETS_PATH", "secrets.yaml"), "r") as f:
     SERPAPI_API_KEY = config["serpapi_api_key"]
 
 HEADLESS = True
+# lens results are mostly sites we can't fetch, so we look at all of them
+# but only try the first few links from each site
+MAX_LINKS_PER_SITE = 3
 
 
-def serpapi_reverse_image(url: str, num_results: int = 10) -> List[str]:
+def serpapi_reverse_image(url: str, num_results: int) -> List[str]:
     # google reverse image is dead/empty; lens exact matches is the replacement
     params = {
         "api_key": SERPAPI_API_KEY,
@@ -55,7 +58,8 @@ def serpapi_reverse_image(url: str, num_results: int = 10) -> List[str]:
 
 def search_google_images(image_path: str) -> List[str]:
     uploaded_url = upload_temp_image(image_path)
-    urls = serpapi_reverse_image(uploaded_url)
+    # lens tops out around 400 exact matches, so this is all of them
+    urls = serpapi_reverse_image(uploaded_url, num_results=1000)
     return urls
 
 
@@ -66,11 +70,17 @@ def download_images(results: List[str], driver=None) -> List[bytes]:
     if driver is None:
         driver = create_stealth_driver(headless=HEADLESS)
         created_driver = True
+    links_tried_per_site = {}
     try:
         for link in results:
-            print(f"Attempting to download {link}", end="", flush=True)
             # lens links usually have www. or m. in front, e.g. www.facebook.com
             host = urlparse(link).netloc.removeprefix("www.").removeprefix("m.")
+            links_tried = links_tried_per_site.get(host, 0)
+            if links_tried >= MAX_LINKS_PER_SITE:
+                continue
+            links_tried_per_site[host] = links_tried + 1
+
+            print(f"Attempting to download {link}", end="", flush=True)
             try:
                 if host.endswith("bandcamp.com"):
                     image_data = get_image_bandcamp(link)

@@ -16,7 +16,8 @@ def get_image_bandcamp(link: str) -> bytes:
     if not match:
         raise ValueError("Could not find Bandcamp artwork in page")
 
-    image_url = match.group(1)
+    # _0 is the full-size upload, the popup image (_10) is capped at 1200x1200
+    image_url = match.group(1).replace("_10.", "_0.")
 
     image_response = requests.get(image_url, timeout=REQUEST_TIMEOUT)
     image_response.raise_for_status()

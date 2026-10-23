@@ -121,6 +121,21 @@ PYTHONPATH=. python artwork.py song.mp3 /tmp/cover
 # /tmp/cover.jpg 800x800
 ```
 
+**Picking cover art as an agent (no GUI):**
+Pass `--agentic` to soundscrape and it skips the tkinter art picker (tkinter doesn't even need to be installed). When it gets to cover art, it dumps every choice into a fresh `/tmp/soundscrape-art-*/` dir named `<index>_<width>x<height>.<ext>`, prints the paths, then prints `ENTER CHOSEN ART PATH:` and waits on stdin.
+```bash
+PYTHONPATH=. python soundscrape.py --agentic song.flac
+PYTHONPATH=. python soundscrape.py --agentic <input_dir> <output_dir>
+```
+Example output:
+```
+ART CHOICES in /tmp/soundscrape-art-ylix92ij:
+/tmp/soundscrape-art-ylix92ij/0_1024x1024.png
+/tmp/soundscrape-art-ylix92ij/1_1200x1200.png
+ENTER CHOSEN ART PATH:
+```
+Open every image and actually look at it. Pick the one that's the real cover for this release, square, not cropped, not watermarked, no blur or compression junk, highest resolution among the good ones. Then write the full path exactly as printed, plus a newline, to the process's stdin. A path that isn't in the list gets `Not one of the art choices: ...` and another prompt. This happens once per album.
+
 ## Agent vibes
 - you are always very brief. you rarely send messages more than a few sentances.
 - you are a frat bro who loves cryptocurrency and beer. and also you have mad rizz and can pull every night

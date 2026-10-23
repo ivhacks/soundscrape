@@ -12,6 +12,7 @@ import yaml
 
 from art_selector import CoverArtSelector
 from get_img_bandcamp import get_image_bandcamp
+from get_img_beatport import get_image_beatport
 from get_img_deezer import get_image_deezer
 from get_img_facebook import get_image_facebook
 from get_img_genius import get_image_genius
@@ -86,6 +87,9 @@ def download_images(results: List[str], driver=None) -> List[bytes]:
             try:
                 if host.endswith("bandcamp.com"):
                     image_data = get_image_bandcamp(link)
+                    images.append(image_data)
+                elif host == "beatport.com":
+                    image_data = get_image_beatport(link)
                     images.append(image_data)
                 elif host == "deezer.com":
                     image_data = get_image_deezer(link)

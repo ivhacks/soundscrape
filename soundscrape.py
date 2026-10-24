@@ -87,23 +87,35 @@ def process_dir(
     albums: Dict[str, Album] = {}
 
     files = []
+    untagged = set()
     for filename in os.listdir(output_dir):
         if filename.lower().endswith((".mp3", ".flac")):
             filepath = os.path.join(output_dir, filename)
-            artist = get_artist(filepath)
-            title = get_song_title(filepath)
+            try:
+                artist = get_artist(filepath)
+                title = get_song_title(filepath)
+            except NoTagError:
+                # untagged downloads (hypeddit wavs converted to flac etc) are named
+                # "artist - title (x remix) [extended mix]". the name is the only source
+                # of truth, so keep the title whole instead of cleaning the remix off
+                artist, title = os.path.splitext(filename)[0].split(" - ", 1)
+                untagged.add(filepath)
+                set_artist(filepath, artist)
+                set_song_title(filepath, title)
             try:
                 album_name = get_album_title(filepath)
             except NoTagError:
                 # singles often ship with no album tag, and a single's album is its title
-                album_name = clean_title(title)
+                album_name = (
+                    title.strip() if filepath in untagged else clean_title(title)
+                )
                 set_album_title(filepath, album_name)
             print(f"{artist} - {title} ({album_name})")
             files.append((filepath, artist, title, album_name))
 
     def resolve_file(item):
         filepath, artist, title, album_name = item
-        cleaned_title = clean_title(title)
+        cleaned_title = title.strip() if filepath in untagged else clean_title(title)
         parsed_artists = parse_artists(artist)
         parsed_features = parse_features(title)
         if credit_mode == "all_artists" or credit_mode == "all_features":

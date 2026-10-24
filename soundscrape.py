@@ -30,6 +30,7 @@ from file_metadata import (
     set_lyrics,
     set_song_title,
 )
+from get_img_soundcloud import get_image_soundcloud
 from google_images_search import (
     download_images,
     downselect_images,
@@ -93,6 +94,7 @@ def process_dir(
     skip_web: bool = False,
     credit_mode: str = "default",
     agentic: bool = False,
+    soundcloud_url: str | None = None,
 ):
     albums: Dict[str, Album] = {}
 
@@ -177,6 +179,12 @@ def process_dir(
                 albums[album_name].art_choice_hashes.append(hash)
 
     albums_list = list(albums.values())
+
+    if soundcloud_url is not None:
+        # only passed for a single file, so there's exactly one album
+        soundcloud_art = get_image_soundcloud(soundcloud_url)
+        albums_list[0].art_choices.append(soundcloud_art)
+        albums_list[0].art_choice_hashes.append(hashlib.sha256(soundcloud_art).digest())
 
     for album in albums_list:
 
@@ -483,6 +491,7 @@ def process_file(
     agentic: bool = False,
     artist: str | None = None,
     title: str | None = None,
+    soundcloud_url: str | None = None,
 ):
     file_path = os.path.abspath(file_path)
     if not os.path.isfile(file_path):
@@ -509,6 +518,7 @@ def process_file(
             resolve_artists_with_ai=resolve_artists_with_ai,
             credit_mode=credit_mode,
             agentic=agentic,
+            soundcloud_url=soundcloud_url,
         )
 
         results = []
@@ -549,6 +559,7 @@ if __name__ == "__main__":
         agentic = False
         artist = None
         title = None
+        soundcloud_url = None
         paths = []
         args = sys.argv[1:]
         while args:
@@ -557,6 +568,8 @@ if __name__ == "__main__":
                 artist = args.pop(0)
             elif arg == "--title":
                 title = args.pop(0)
+            elif arg == "--soundcloud":
+                soundcloud_url = args.pop(0)
             elif arg == "--all-artists":
                 if credit_mode != "default":
                     print("Use only one of --all-artists or --all-features")
@@ -579,8 +592,14 @@ if __name__ == "__main__":
                 agentic=agentic,
                 artist=artist,
                 title=title,
+                soundcloud_url=soundcloud_url,
             )
-        elif len(paths) == 2 and artist is None and title is None:
+        elif (
+            len(paths) == 2
+            and artist is None
+            and title is None
+            and soundcloud_url is None
+        ):
             main(paths[0], paths[1], credit_mode=credit_mode, agentic=agentic)
         else:
             print("Usage: soundscrape <file.mp3|file.flac>")
@@ -591,5 +610,8 @@ if __name__ == "__main__":
             print("       optional: --agentic (pick cover art on stdin, no GUI)")
             print(
                 "       optional: --artist <a> --title <t> (single file only, override tags)"
+            )
+            print(
+                "       optional: --soundcloud <url> (single file only, adds its cover art)"
             )
             sys.exit(1)

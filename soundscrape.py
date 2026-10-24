@@ -11,8 +11,8 @@ from typing import Dict, List
 from PIL import Image
 from selenium.common.exceptions import TimeoutException
 
-from art_search import search_cover_art_by_text
 from agentic_art_selector import pick_art_agentic
+from art_search import search_cover_art_by_text
 from artists_features import ArtistsAndFeatures, find_artists_and_features
 from file_metadata import (
     NoTagError,
@@ -29,6 +29,7 @@ from file_metadata import (
     set_lyrics,
     set_song_title,
 )
+from get_img_soundcloud import get_image_soundcloud
 from google_images_search import (
     download_images,
     downselect_images,
@@ -83,6 +84,7 @@ def process_dir(
     skip_web: bool = False,
     credit_mode: str = "default",
     agentic: bool = False,
+    soundcloud_url: str | None = None,
 ):
     albums: Dict[str, Album] = {}
 
@@ -158,6 +160,12 @@ def process_dir(
                 albums[album_name].art_choice_hashes.append(hash)
 
     albums_list = list(albums.values())
+
+    if soundcloud_url is not None:
+        # only passed for a single file, so there's exactly one album
+        soundcloud_art = get_image_soundcloud(soundcloud_url)
+        albums_list[0].art_choices.append(soundcloud_art)
+        albums_list[0].art_choice_hashes.append(hashlib.sha256(soundcloud_art).digest())
 
     for album in albums_list:
 
@@ -441,6 +449,7 @@ def process_file(
     resolve_artists_with_ai: bool = True,
     credit_mode: str = "default",
     agentic: bool = False,
+    soundcloud_url: str | None = None,
 ):
     file_path = os.path.abspath(file_path)
     if not os.path.isfile(file_path):
@@ -461,6 +470,7 @@ def process_file(
             resolve_artists_with_ai=resolve_artists_with_ai,
             credit_mode=credit_mode,
             agentic=agentic,
+            soundcloud_url=soundcloud_url,
         )
 
         results = []
@@ -499,9 +509,14 @@ if __name__ == "__main__":
     else:
         credit_mode = "default"
         agentic = False
+        soundcloud_url = None
         paths = []
-        for arg in sys.argv[1:]:
-            if arg == "--all-artists":
+        args = sys.argv[1:]
+        while args:
+            arg = args.pop(0)
+            if arg == "--soundcloud":
+                soundcloud_url = args.pop(0)
+            elif arg == "--all-artists":
                 if credit_mode != "default":
                     print("Use only one of --all-artists or --all-features")
                     sys.exit(1)
@@ -517,8 +532,13 @@ if __name__ == "__main__":
                 paths.append(arg)
 
         if len(paths) == 1:
-            process_file(paths[0], credit_mode=credit_mode, agentic=agentic)
-        elif len(paths) == 2:
+            process_file(
+                paths[0],
+                credit_mode=credit_mode,
+                agentic=agentic,
+                soundcloud_url=soundcloud_url,
+            )
+        elif len(paths) == 2 and soundcloud_url is None:
             main(paths[0], paths[1], credit_mode=credit_mode, agentic=agentic)
         else:
             print("Usage: soundscrape <file.mp3|file.flac>")
@@ -527,4 +547,7 @@ if __name__ == "__main__":
             print("       soundscrape --lyrics <artist> <title>")
             print("       optional: --all-artists  or  --all-features")
             print("       optional: --agentic (pick cover art on stdin, no GUI)")
+            print(
+                "       optional: --soundcloud <url> (single file only, adds its cover art)"
+            )
             sys.exit(1)

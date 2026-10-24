@@ -9,6 +9,7 @@ import tempfile
 from typing import Dict, List
 
 from PIL import Image
+import requests
 from selenium.common.exceptions import TimeoutException
 
 from agentic_art_selector import pick_art_agentic
@@ -163,7 +164,14 @@ def process_dir(
 
     if soundcloud_url is not None:
         # only passed for a single file, so there's exactly one album
-        soundcloud_art = get_image_soundcloud(soundcloud_url)
+        # soundcloud's TLS drops now and then, the link is the art they asked for so retry
+        for attempt in range(3):
+            try:
+                soundcloud_art = get_image_soundcloud(soundcloud_url)
+                break
+            except requests.RequestException:
+                if attempt == 2:
+                    raise
         albums_list[0].art_choices.append(soundcloud_art)
         albums_list[0].art_choice_hashes.append(hashlib.sha256(soundcloud_art).digest())
 

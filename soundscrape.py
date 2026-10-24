@@ -37,6 +37,7 @@ from google_images_search import (
 )
 from lyrics import get_lyrics_genius
 from parse_and_clean import clean_artist, clean_title, parse_artists, parse_features
+from soundcloud_search import search_cover_art_soundcloud
 from stealth_driver import create_stealth_driver
 from temp_host import TempHostError
 
@@ -48,6 +49,8 @@ HEADLESS = True
 class Track:
     artists: List[str]
     title: str
+    # title before clean_title, keeps "(... Remix)" so text search finds the right version
+    full_title: str
     features: List[str]
     filepath: str
 
@@ -121,7 +124,7 @@ def process_dir(
             art = get_cover_art(filepath)
         except NoTagError:
             art = None
-        return (filepath, album_name, cleaned_title, artists_and_features, art)
+        return (filepath, album_name, title, cleaned_title, artists_and_features, art)
 
     with ThreadPoolExecutor() as pool:
         resolved_files = list(pool.map(resolve_file, files))
@@ -129,6 +132,7 @@ def process_dir(
     for (
         filepath,
         album_name,
+        title,
         cleaned_title,
         artists_and_features,
         art,
@@ -147,6 +151,7 @@ def process_dir(
             Track(
                 artists=artists_and_features.artists,
                 title=cleaned_title,
+                full_title=title,
                 features=artists_and_features.features,
                 filepath=filepath,
             )
@@ -221,14 +226,29 @@ def process_dir(
                 print(f"WARNING: text art search skipped for {album.title}. ({e})")
                 return None
 
+        def fetch_soundcloud_art(album):
+            try:
+                return search_cover_art_soundcloud(
+                    ", ".join(album.artists), album.tracks[0].full_title
+                )
+            except ValueError as e:
+                print(f"WARNING: soundcloud art search skipped for {album.title}. ({e})")
+                return None
+
         with ThreadPoolExecutor() as pool:
             text_arts = list(pool.map(fetch_text_art, albums_list))
-        for album, searched_art in zip(albums_list, text_arts):
-            if searched_art is None:
-                continue
-            hash = hashlib.sha256(searched_art).digest()
-            album.art_choices.append(searched_art)
-            album.art_choice_hashes.append(hash)
+            soundcloud_arts = list(pool.map(fetch_soundcloud_art, albums_list))
+        for album, searched_art, soundcloud_art in zip(
+            albums_list, text_arts, soundcloud_arts
+        ):
+            # soundcloud before spotify: when there's no embedded art the first
+            # choice seeds the reverse image search, and soundcloud searches the
+            # full title so it finds remixes spotify doesn't have
+            for art in [soundcloud_art, searched_art]:
+                if art is None:
+                    continue
+                album.art_choices.append(art)
+                album.art_choice_hashes.append(hashlib.sha256(art).digest())
 
     for album in albums_list:
         print(album)

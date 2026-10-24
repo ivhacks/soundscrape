@@ -9,6 +9,7 @@ import tempfile
 from typing import Dict, List
 
 from PIL import Image
+import requests
 from selenium.common.exceptions import TimeoutException
 
 from art_search import search_cover_art_by_text
@@ -228,8 +229,11 @@ def process_dir(
                 return search_cover_art_soundcloud(
                     ", ".join(album.artists), album.tracks[0].full_title
                 )
-            except ValueError as e:
-                print(f"WARNING: soundcloud art search skipped for {album.title}. ({e})")
+            except (ValueError, requests.RequestException) as e:
+                # soundcloud is an extra source and its TLS drops sometimes, don't die on it
+                print(
+                    f"WARNING: soundcloud art search skipped for {album.title}. ({e})"
+                )
                 return None
 
         with ThreadPoolExecutor() as pool:

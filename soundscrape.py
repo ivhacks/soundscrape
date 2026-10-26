@@ -49,8 +49,6 @@ HEADLESS = True
 class Track:
     artists: List[str]
     title: str
-    # title before clean_title, keeps "(... Remix)" so text search finds the right version
-    full_title: str
     features: List[str]
     filepath: str
 
@@ -124,7 +122,7 @@ def process_dir(
             art = get_cover_art(filepath)
         except NoTagError:
             art = None
-        return (filepath, album_name, title, cleaned_title, artists_and_features, art)
+        return (filepath, album_name, cleaned_title, artists_and_features, art)
 
     with ThreadPoolExecutor() as pool:
         resolved_files = list(pool.map(resolve_file, files))
@@ -132,7 +130,6 @@ def process_dir(
     for (
         filepath,
         album_name,
-        title,
         cleaned_title,
         artists_and_features,
         art,
@@ -151,7 +148,6 @@ def process_dir(
             Track(
                 artists=artists_and_features.artists,
                 title=cleaned_title,
-                full_title=title,
                 features=artists_and_features.features,
                 filepath=filepath,
             )
@@ -229,7 +225,7 @@ def process_dir(
         def fetch_soundcloud_art(album):
             try:
                 return search_cover_art_soundcloud(
-                    ", ".join(album.artists), album.tracks[0].full_title
+                    ", ".join(album.artists), album.tracks[0].title
                 )
             except (ValueError, requests.RequestException) as e:
                 # soundcloud is an extra source and its TLS drops sometimes, don't die on it
@@ -245,8 +241,8 @@ def process_dir(
             albums_list, text_arts, soundcloud_arts
         ):
             # soundcloud before spotify: when there's no embedded art the first
-            # choice seeds the reverse image search, and soundcloud searches the
-            # full title so it finds remixes spotify doesn't have
+            # choice seeds the reverse image search, and soundcloud has remixes and
+            # free downloads spotify doesn't
             for art in [soundcloud_art, searched_art]:
                 if art is None:
                     continue

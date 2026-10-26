@@ -12,10 +12,13 @@ import yaml
 
 from art_selector import CoverArtSelector
 from get_img_bandcamp import get_image_bandcamp
+from get_img_beatport import get_image_beatport
+from get_img_deezer import get_image_deezer
 from get_img_facebook import get_image_facebook
 from get_img_genius import get_image_genius
 from get_img_instagram import get_image_instagram
 from get_img_soundcloud import get_image_soundcloud
+from get_img_spotify import get_image_spotify
 from get_img_threads import get_image_threads
 from get_img_x import get_image_x
 from img_diff import image_difference
@@ -85,6 +88,12 @@ def download_images(results: List[str], driver=None) -> List[bytes]:
                 if host.endswith("bandcamp.com"):
                     image_data = get_image_bandcamp(link)
                     images.append(image_data)
+                elif host == "beatport.com":
+                    image_data = get_image_beatport(link)
+                    images.append(image_data)
+                elif host == "deezer.com":
+                    image_data = get_image_deezer(link)
+                    images.append(image_data)
                 elif host == "facebook.com":
                     image_data = get_image_facebook(link, driver)
                     images.append(image_data)
@@ -96,6 +105,9 @@ def download_images(results: List[str], driver=None) -> List[bytes]:
                     images.append(image_data)
                 elif host == "soundcloud.com":
                     image_data = get_image_soundcloud(link)
+                    images.append(image_data)
+                elif host == "open.spotify.com":
+                    image_data = get_image_spotify(link)
                     images.append(image_data)
                 elif host == "threads.net" or host == "threads.com":
                     image_data = get_image_threads(link, driver)

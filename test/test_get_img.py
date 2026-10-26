@@ -5,10 +5,13 @@ from PIL import Image
 import pytest
 
 from get_img_bandcamp import get_image_bandcamp
+from get_img_beatport import get_image_beatport
+from get_img_deezer import get_image_deezer
 from get_img_facebook import get_image_facebook
 from get_img_genius import get_image_genius
 from get_img_instagram import get_image_instagram
 from get_img_soundcloud import get_image_soundcloud
+from get_img_spotify import get_image_spotify
 from get_img_threads import get_image_threads
 from get_img_x import get_image_x
 from img_diff import image_difference
@@ -53,6 +56,33 @@ class GetImageTests(TestCase):
         # the popup (_10) is capped at 1200x1200, this upload is 3000x3000
         result = get_image_bandcamp("https://bonobomusic.bandcamp.com/album/fragments")
         self.assertEqual(Image.open(BytesIO(result)).size, (3000, 3000))
+
+    def test_spotify_full_size(self):
+        # oembed only gives the 300x300 thumb, this cover's original is 1500x1500
+        result = get_image_spotify(
+            "https://open.spotify.com/track/6WkJ2OK163XXS2oARUC9JM"
+        )
+        self.assertEqual(Image.open(BytesIO(result)).size, (1500, 1500))
+
+    def test_deezer_track_and_album(self):
+        # the api caps at 1000x1000, the cdn serves this cover at 1800x1800
+        for link in [
+            "https://www.deezer.com/track/3135556",
+            "https://www.deezer.com/album/302127",
+        ]:
+            result = get_image_deezer(link)
+            self.assertEqual(Image.open(BytesIO(result)).size, (1800, 1800))
+
+    def test_beatport_feel_u_luv_me(self):
+        result = get_image_beatport(
+            "https://www.beatport.com/track/feel-u-luv-me/19431109"
+        )
+
+        with open("test/test_art/knock2_feel_u_luv_me.jpg", "rb") as f:
+            expected = f.read()
+        self.assertLessEqual(image_difference(result, expected), 2)
+        # 0x0 is the original upload, not the 500x500 the page shows
+        self.assertEqual(Image.open(BytesIO(result)).size, (1400, 1400))
 
     def test_x_nolimit(self):
         result = get_image_x("https://x.com/Knock2Music/status/1867292451918295158")

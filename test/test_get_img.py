@@ -5,6 +5,7 @@ from PIL import Image
 import pytest
 
 from get_img_bandcamp import get_image_bandcamp
+from get_img_beatport import get_image_beatport
 from get_img_deezer import get_image_deezer
 from get_img_facebook import get_image_facebook
 from get_img_genius import get_image_genius
@@ -71,6 +72,17 @@ class GetImageTests(TestCase):
         ]:
             result = get_image_deezer(link)
             self.assertEqual(Image.open(BytesIO(result)).size, (1800, 1800))
+
+    def test_beatport_feel_u_luv_me(self):
+        result = get_image_beatport(
+            "https://www.beatport.com/track/feel-u-luv-me/19431109"
+        )
+
+        with open("test/test_art/knock2_feel_u_luv_me.jpg", "rb") as f:
+            expected = f.read()
+        self.assertLessEqual(image_difference(result, expected), 2)
+        # 0x0 is the original upload, not the 500x500 the page shows
+        self.assertEqual(Image.open(BytesIO(result)).size, (1400, 1400))
 
     def test_x_nolimit(self):
         result = get_image_x("https://x.com/Knock2Music/status/1867292451918295158")

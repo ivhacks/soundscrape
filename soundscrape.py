@@ -9,6 +9,7 @@ import tempfile
 from typing import Dict, List
 
 from PIL import Image
+import requests
 from selenium.common.exceptions import TimeoutException
 
 from art_search import search_cover_art_by_text
@@ -212,9 +213,11 @@ def process_dir(
                     album.tracks[0].title,
                     search_as_album,
                 )
-            except ValueError as e:
-                # spotify doesn't have everything (bandcamp-only singles etc), the
-                # embedded art and reverse image search still give us choices
+            except (ValueError, requests.Timeout) as e:
+                # spotify doesn't have everything (bandcamp-only singles etc) and
+                # accounts.spotify.com sometimes never answers the tcp connect
+                # (ConnectTimeout), the embedded art and reverse image search still
+                # give us choices. http errors (bot guards, 429s) still crash loudly
                 print(f"WARNING: text art search skipped for {album.title}. ({e})")
                 return None
 

@@ -441,6 +441,8 @@ def process_file(
     resolve_artists_with_ai: bool = True,
     credit_mode: str = "default",
     agentic: bool = False,
+    artist: str | None = None,
+    title: str | None = None,
 ):
     file_path = os.path.abspath(file_path)
     if not os.path.isfile(file_path):
@@ -452,7 +454,13 @@ def process_file(
     parent = os.path.dirname(file_path)
     work = tempfile.mkdtemp(prefix="soundscrape_")
     try:
-        shutil.copy2(file_path, os.path.join(work, os.path.basename(file_path)))
+        work_file = os.path.join(work, os.path.basename(file_path))
+        shutil.copy2(file_path, work_file)
+        # --artist/--title win over whatever tags the file has (or doesn't have)
+        if artist is not None:
+            set_artist(work_file, artist)
+        if title is not None:
+            set_song_title(work_file, title)
         process_dir(
             work,
             no_art_select=no_art_select,
@@ -499,9 +507,17 @@ if __name__ == "__main__":
     else:
         credit_mode = "default"
         agentic = False
+        artist = None
+        title = None
         paths = []
-        for arg in sys.argv[1:]:
-            if arg == "--all-artists":
+        args = sys.argv[1:]
+        while args:
+            arg = args.pop(0)
+            if arg == "--artist":
+                artist = args.pop(0)
+            elif arg == "--title":
+                title = args.pop(0)
+            elif arg == "--all-artists":
                 if credit_mode != "default":
                     print("Use only one of --all-artists or --all-features")
                     sys.exit(1)
@@ -517,8 +533,14 @@ if __name__ == "__main__":
                 paths.append(arg)
 
         if len(paths) == 1:
-            process_file(paths[0], credit_mode=credit_mode, agentic=agentic)
-        elif len(paths) == 2:
+            process_file(
+                paths[0],
+                credit_mode=credit_mode,
+                agentic=agentic,
+                artist=artist,
+                title=title,
+            )
+        elif len(paths) == 2 and artist is None and title is None:
             main(paths[0], paths[1], credit_mode=credit_mode, agentic=agentic)
         else:
             print("Usage: soundscrape <file.mp3|file.flac>")
@@ -527,4 +549,7 @@ if __name__ == "__main__":
             print("       soundscrape --lyrics <artist> <title>")
             print("       optional: --all-artists  or  --all-features")
             print("       optional: --agentic (pick cover art on stdin, no GUI)")
+            print(
+                "       optional: --artist <a> --title <t> (single file only, override tags)"
+            )
             sys.exit(1)

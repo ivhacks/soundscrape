@@ -35,6 +35,11 @@ class GetImageTests(TestCase):
             expected = f.read()
         self.assertLessEqual(image_difference(result, expected), 2)
 
+    def test_soundcloud_original_not_thumbnail(self):
+        # the page only links the 500x500 thumb, this upload is 1080x1080
+        result = get_image_soundcloud("https://soundcloud.com/sumantclub/alive")
+        self.assertEqual(Image.open(BytesIO(result)).size, (1080, 1080))
+
     def test_bandcamp_beyond(self):
         result = get_image_bandcamp(
             "https://jousboxx.bandcamp.com/track/beyond-featuring-joelle-j"

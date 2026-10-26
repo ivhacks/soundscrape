@@ -2,16 +2,16 @@ import re
 
 import requests
 
+from stealth_driver import USER_AGENT
+
 
 REQUEST_TIMEOUT = 20
-# beatport 403s the default python-requests user agent
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36"
-}
 
 
 def get_image_beatport(link: str) -> bytes:
-    response = requests.get(link, headers=HEADERS, timeout=REQUEST_TIMEOUT)
+    response = requests.get(
+        link, headers={"User-Agent": USER_AGENT}, timeout=REQUEST_TIMEOUT
+    )
     response.raise_for_status()
 
     match = re.search(

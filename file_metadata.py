@@ -260,8 +260,10 @@ def clear_lyrics(filename: str):
         for key in uslt_frames:
             del audiofile[key]
     else:
-        if "LYRICS" in audiofile:
-            del audiofile["LYRICS"]
+        # get_lyrics also reads UNSYNCEDLYRICS, so clear both
+        for key in ["LYRICS", "UNSYNCEDLYRICS"]:
+            if key in audiofile:
+                del audiofile[key]
     audiofile.save()
 
 

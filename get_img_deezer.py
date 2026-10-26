@@ -1,4 +1,5 @@
 import re
+import time
 
 import requests
 
@@ -11,11 +12,19 @@ def get_image_deezer(link: str) -> bytes:
     if not match:
         raise ValueError(f"Not a Deezer track or album link: {link}")
 
-    response = requests.get(
-        f"https://api.deezer.com/{match.group(1)}/{match.group(2)}",
-        timeout=REQUEST_TIMEOUT,
-    )
-    response.raise_for_status()
+    # api.deezer.com randomly 403s ("Access Denied") about 1 in 6 requests, so retry
+    for attempt in range(5):
+        try:
+            response = requests.get(
+                f"https://api.deezer.com/{match.group(1)}/{match.group(2)}",
+                timeout=REQUEST_TIMEOUT,
+            )
+            response.raise_for_status()
+            break
+        except requests.RequestException:
+            if attempt == 4:
+                raise
+            time.sleep(1)
     data = response.json()
     if "error" in data:
         raise ValueError(f"Deezer api error: {data['error']}")

@@ -1,5 +1,7 @@
+from io import BytesIO
 from unittest import TestCase
 
+from PIL import Image
 import pytest
 
 from get_img_bandcamp import get_image_bandcamp
@@ -41,6 +43,11 @@ class GetImageTests(TestCase):
         with open("test/beyond.jpg", "rb") as f:
             expected = f.read()
         self.assertLessEqual(image_difference(result, expected), 2)
+
+    def test_bandcamp_original_not_popup(self):
+        # the popup (_10) is capped at 1200x1200, this upload is 3000x3000
+        result = get_image_bandcamp("https://bonobomusic.bandcamp.com/album/fragments")
+        self.assertEqual(Image.open(BytesIO(result)).size, (3000, 3000))
 
     def test_x_nolimit(self):
         result = get_image_x("https://x.com/Knock2Music/status/1867292451918295158")

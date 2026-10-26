@@ -16,6 +16,14 @@ def clean_title(title):
     return no_track_num.strip()
 
 
+def parse_version(title):
+    # the "(... Remix) [Extended Mix]" parts that clean_title strips, same regexes
+    no_explicit = remove_explicit(title)
+    parens = re.findall(r"\(.*\)", no_explicit)
+    brackets = re.findall(r"\[.*\]", re.sub(r"\(.*\)", "", no_explicit))
+    return " ".join(parens + brackets)
+
+
 def clean_artist(artist):
     no_semicolons = artist.replace(";", "")
     no_commas = no_semicolons.replace(",", "")

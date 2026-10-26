@@ -9,6 +9,7 @@ from get_img_facebook import get_image_facebook
 from get_img_genius import get_image_genius
 from get_img_instagram import get_image_instagram
 from get_img_soundcloud import get_image_soundcloud
+from get_img_spotify import get_image_spotify
 from get_img_threads import get_image_threads
 from get_img_x import get_image_x
 from img_diff import image_difference
@@ -53,6 +54,13 @@ class GetImageTests(TestCase):
         # the popup (_10) is capped at 1200x1200, this upload is 3000x3000
         result = get_image_bandcamp("https://bonobomusic.bandcamp.com/album/fragments")
         self.assertEqual(Image.open(BytesIO(result)).size, (3000, 3000))
+
+    def test_spotify_full_size(self):
+        # oembed only gives the 300x300 thumb, this cover's original is 1500x1500
+        result = get_image_spotify(
+            "https://open.spotify.com/track/6WkJ2OK163XXS2oARUC9JM"
+        )
+        self.assertEqual(Image.open(BytesIO(result)).size, (1500, 1500))
 
     def test_x_nolimit(self):
         result = get_image_x("https://x.com/Knock2Music/status/1867292451918295158")

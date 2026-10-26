@@ -10,7 +10,9 @@ def get_image_spotify(link: str) -> bytes:
     )
     response.raise_for_status()
 
-    # the thumbnail is 300x300, ab67616d000082c1 is the same image at full size
+    # oembed is spotify's documented public embed api, its thumbnail is 300x300.
+    # i.scdn.co ids are ab67616d (album cover) + a size code: 00001e02 = 300,
+    # 000082c1 = original upload. undocumented, test_spotify_full_size guards it
     image_id = response.json()["thumbnail_url"].split("/")[-1]
     if not image_id.startswith("ab67616d00001e02"):
         raise ValueError(f"Not a Spotify album cover: {image_id}")

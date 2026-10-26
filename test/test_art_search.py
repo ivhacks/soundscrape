@@ -1,5 +1,7 @@
+from io import BytesIO
 from unittest import TestCase
 
+from PIL import Image
 import pytest
 
 from art_search import search_cover_art_by_text
@@ -16,6 +18,11 @@ class ArtSearchTests(TestCase):
 
         delta = image_difference(expected, result)
         self.assertLessEqual(delta, 2, f"Expected <= 2, got {delta}")
+
+    def test_full_size_not_640(self):
+        # undocumented i.scdn.co size code, this fails loudly if spotify ever drops it
+        result = search_cover_art_by_text("Zedd", "Clarity")
+        self.assertEqual(Image.open(BytesIO(result)).size, (2000, 2000))
 
     def test_knock2_feel_u_luv_me_album(self):
         with open("test/test_art/knock2_nolimit.jpg", "rb") as f:

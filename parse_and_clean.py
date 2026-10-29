@@ -57,6 +57,31 @@ def parse_features(input: str) -> List[str]:
     return features
 
 
+def parse_remixers(input: str) -> List[str]:
+    # "(Sumant & Asdek Remix)" -> ["Sumant", "Asdek"]
+    remix = re.search(r"[\[(]([^\[\]()]+?)\s+remix[\])]", input, re.IGNORECASE)
+    if not remix:
+        return []
+    return [r.strip() for r in re.split(r"\s*(?:&|,|\band\b)\s*", remix.group(1))]
+
+
+def parse_mix(input: str) -> str:
+    # "[Extended Mix]" or "(Radio Mix)" -> "Extended Mix" (title-cased), "" if none. \bmix skips "remix"
+    mix = re.search(r"[\[(]([^\[\]()]*?\bmix)[\])]", input, re.IGNORECASE)
+    return mix.group(1).strip().title() if mix else ""
+
+
+def format_title(title: str, remixers: List[str], mix: str, features: List[str]) -> str:
+    # rebuild "title (X Remix) [Extended Mix] (feat. Y)" from the parsed fields
+    if remixers:
+        title += f" ({' & '.join(remixers)} Remix)"
+    if mix:
+        title += f" [{mix}]"
+    if features:
+        title += f" (feat. {', '.join(features)})"
+    return title
+
+
 def parse_artists(input: str) -> List[str]:
     # Artists with "and" in their names that shouldn't be split
     and_exceptions = ["Matisse and Sadko"]

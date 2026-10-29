@@ -1,5 +1,5 @@
 from mutagen import File
-from mutagen.id3 import APIC, TALB, TDRC, TIT2, TPE1, TPE2, USLT
+from mutagen.id3 import APIC, TALB, TDRC, TIT2, TPE1, TPE2, TPE4, USLT
 from mutagen.mp3 import MP3
 
 
@@ -183,6 +183,15 @@ def set_song_title(filename: str, song_title: str):
         audiofile["TIT2"] = TIT2(encoding=3, text=song_title)
     else:
         audiofile["TITLE"] = song_title
+    audiofile.save()
+
+
+def set_remixer(filename: str, remixer: str):
+    audiofile = _read_or_create_tag(filename)
+    if isinstance(audiofile, MP3):
+        audiofile["TPE4"] = TPE4(encoding=3, text=remixer)
+    else:
+        audiofile["REMIXER"] = remixer
     audiofile.save()
 
 

@@ -5,8 +5,11 @@ import pytest
 from parse_and_clean import (
     clean_artist,
     clean_title,
+    format_title,
     parse_artists,
     parse_features,
+    parse_mix,
+    parse_remixers,
     remove_explicit,
 )
 
@@ -224,3 +227,66 @@ class ParseArtistsTests(TestCase):
         input = "Matisse and Sadko"
         expected_output = ["Matisse and Sadko"]
         self.assertEqual(parse_artists(input), expected_output)
+
+
+@pytest.mark.xdist_group(name="parse_clean")
+class ParseRemixTests(TestCase):
+    def test_remix_and_extended(self):
+        input_title = "alive (sumant & asdek remix) [EXTENDED MIX]"
+        self.assertEqual(parse_remixers(input_title), ["sumant", "asdek"])
+        self.assertEqual(parse_mix(input_title), "Extended Mix")
+
+    def test_capital_remix(self):
+        input_title = "Ghosts (Sumant Remix)"
+        self.assertEqual(parse_remixers(input_title), ["Sumant"])
+        self.assertEqual(parse_mix(input_title), "")
+
+    def test_lowercase_extended(self):
+        input_title = "five hours [extended mix]"
+        self.assertEqual(parse_remixers(input_title), [])
+        self.assertEqual(parse_mix(input_title), "Extended Mix")
+
+    def test_mixed_brackets(self):
+        input_title = "Alone [Marshmello Remix] (Extended Mix)"
+        self.assertEqual(parse_remixers(input_title), ["Marshmello"])
+        self.assertEqual(parse_mix(input_title), "Extended Mix")
+
+    def test_remix_with_feature(self):
+        input_title = "Clarity (Tiesto Remix) (feat. Foxes)"
+        self.assertEqual(parse_remixers(input_title), ["Tiesto"])
+        self.assertEqual(parse_features(input_title), ["Foxes"])
+
+    def test_no_remix(self):
+        input_title = "Downfall (feat. Lexi Norton)"
+        self.assertEqual(parse_remixers(input_title), [])
+        self.assertEqual(parse_mix(input_title), "")
+
+
+@pytest.mark.xdist_group(name="parse_clean")
+class FormatTitleTests(TestCase):
+    def test_remix_and_extended(self):
+        self.assertEqual(
+            format_title("five hours", ["sumant"], "Extended Mix", []),
+            "five hours (sumant Remix) [Extended Mix]",
+        )
+
+    def test_remix_only(self):
+        self.assertEqual(
+            format_title("Ghosts", ["Sumant", "Asdek"], "", []),
+            "Ghosts (Sumant & Asdek Remix)",
+        )
+
+    def test_extended_only(self):
+        self.assertEqual(
+            format_title("five hours", [], "Extended Mix", []),
+            "five hours [Extended Mix]",
+        )
+
+    def test_remix_extended_feature(self):
+        self.assertEqual(
+            format_title("somebody to love", ["sumant"], "Extended Mix", ["Usher"]),
+            "somebody to love (sumant Remix) [Extended Mix] (feat. Usher)",
+        )
+
+    def test_nothing(self):
+        self.assertEqual(format_title("Downfall", [], "", []), "Downfall")

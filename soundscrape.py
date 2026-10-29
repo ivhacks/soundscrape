@@ -28,6 +28,7 @@ from file_metadata import (
     set_artist,
     set_cover_art,
     set_lyrics,
+    set_remixer,
     set_song_title,
 )
 from get_img_soundcloud import get_image_soundcloud
@@ -40,8 +41,11 @@ from lyrics import get_lyrics_genius
 from parse_and_clean import (
     clean_artist,
     clean_title,
+    format_title,
     parse_artists,
     parse_features,
+    parse_mix,
+    parse_remixers,
     parse_version,
 )
 from soundcloud_search import search_cover_art_soundcloud
@@ -59,6 +63,8 @@ class Track:
     # what clean_title stripped, e.g. "(Sumant & Asdek Remix)", so search finds that version
     version: str
     features: List[str]
+    remixers: List[str]
+    mix: str  # e.g. "Extended Mix"
     filepath: str
 
     def __repr__(self):
@@ -137,6 +143,8 @@ def process_dir(
             album_name,
             cleaned_title,
             parse_version(title),
+            parse_remixers(title),
+            parse_mix(title),
             artists_and_features,
             art,
         )
@@ -149,6 +157,8 @@ def process_dir(
         album_name,
         cleaned_title,
         version,
+        remixers,
+        mix,
         artists_and_features,
         art,
     ) in resolved_files:
@@ -168,6 +178,8 @@ def process_dir(
                 title=cleaned_title,
                 version=version,
                 features=artists_and_features.features,
+                remixers=remixers,
+                mix=mix,
                 filepath=filepath,
             )
         )
@@ -367,12 +379,9 @@ def process_dir(
                 chosen_art = album.art_choices[selector.show_selection_window()]
 
         for track in album.tracks:
-            if track.features:
-                title_with_features = (
-                    f"{track.title} (feat. {', '.join(track.features)})"
-                )
-            else:
-                title_with_features = track.title
+            title_with_features = format_title(
+                track.title, track.remixers, track.mix, track.features
+            )
 
             print(f"Writing tags for {title_with_features}...", flush=True)
 
@@ -387,6 +396,8 @@ def process_dir(
             set_album_artist(new_filepath, "; ".join(album.artists))
 
             set_song_title(new_filepath, title_with_features)
+            if track.remixers:
+                set_remixer(new_filepath, "; ".join(track.remixers))
 
             if embed_lyrics:
                 print(

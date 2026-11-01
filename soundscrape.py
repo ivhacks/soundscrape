@@ -14,7 +14,11 @@ from selenium.common.exceptions import TimeoutException
 
 from art_search import search_cover_art_by_text
 from agentic_art_selector import pick_art_agentic
-from artists_features import ArtistsAndFeatures, find_artists_and_features
+from artists_features import (
+    ArtistsAndFeatures,
+    find_artists_and_features,
+    unify_artist_case,
+)
 from file_metadata import (
     NoTagError,
     clear_cover_art,
@@ -151,6 +155,17 @@ def process_dir(
 
     with ThreadPoolExecutor() as pool:
         resolved_files = list(pool.map(resolve_file, files))
+
+    # each file is resolved on its own, so the same artist can come back cased
+    # differently per track (HAMMER said ISOxo, the other ten said Isoxo)
+    name_lists = []
+    for resolved in resolved_files:
+        name_lists.append(resolved[6].artists)
+        name_lists.append(resolved[6].features)
+    unified = unify_artist_case(name_lists)
+    for i, resolved in enumerate(resolved_files):
+        resolved[6].artists = unified[2 * i]
+        resolved[6].features = unified[2 * i + 1]
 
     for (
         filepath,

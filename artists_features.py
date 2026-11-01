@@ -18,7 +18,7 @@ def search_prompt(artist: str, song_title: str) -> str:
             - ONLY include names that are officially credited
             - DO NOT include: producers who aren't credited as artists, uncredited vocalists, real names of aliased artists
             - If the given artist string already lists multiple names, include EVERY one of those names
-            - Keep names spelled as they appear in the given artist string
+            - Keep names spelled as they appear in the given artist string, but use the artist's official capitalization/stylization from their streaming/store profile (stores and filenames often flatten it: "Isoxo" is "ISOxo", "Deadmau5" is "deadmau5")
             - Names marked feat./ft./featuring in the song title are Features, never Artists
             - Order artists by fame (most well-known first). Order features the same way.
             - If no features exist, write "(no features)"
@@ -136,3 +136,25 @@ def find_artists_and_features(artist: str, song_title: str) -> ArtistsAndFeature
 
     assert last_err is not None
     raise last_err
+
+
+def _is_stylized(name: str) -> bool:
+    # "Isoxo"/"Rocket Rese" is just title case, "ISOxo"/"deadmau5" is deliberate
+    return name != name.title()
+
+
+def unify_artist_case(name_lists: list[list[str]]) -> list[list[str]]:
+    """Use one spelling per case-insensitive name across all the lists, so one
+    track can't say ISOxo while the rest say Isoxo. Stylized spellings win over
+    plain title case (the AI only stylizes on purpose), then the most common."""
+    variants: dict[str, dict[str, int]] = {}
+    for names in name_lists:
+        for name in names:
+            counts = variants.setdefault(name.lower(), {})
+            counts[name] = counts.get(name, 0) + 1
+
+    canonical = {}
+    for key, counts in variants.items():
+        canonical[key] = max(counts, key=lambda n: (_is_stylized(n), counts[n]))
+
+    return [[canonical[name.lower()] for name in names] for names in name_lists]

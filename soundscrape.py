@@ -14,6 +14,7 @@ from selenium.common.exceptions import TimeoutException
 
 from art_search import search_cover_art_by_text
 from agentic_art_selector import pick_art_agentic
+from beatport_placeholder import is_beatport_placeholder
 from artists_features import ArtistsAndFeatures, find_artists_and_features
 from file_metadata import (
     NoTagError,
@@ -183,6 +184,9 @@ def process_dir(
                 filepath=filepath,
             )
         )
+
+        if art is not None and is_beatport_placeholder(art):
+            art = None
 
         if art is not None:
             hash = hashlib.sha256(art).digest()

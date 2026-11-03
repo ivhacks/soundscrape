@@ -3,6 +3,7 @@ from dataclasses import dataclass
 import hashlib
 from io import BytesIO
 import os
+import re
 import shutil
 import sys
 import tempfile
@@ -89,6 +90,12 @@ class Album:
         for track in self.tracks:
             output += f" - {track}\n"
         return output
+
+
+def safe_filename(name: str) -> str:
+    # titles like "MESS W/ ME" or "STATUS:AWAY" aren't valid filenames ("/" crashes os.rename,
+    # ":" etc. break syncing to Windows), so swap those characters for "_" like beatport does
+    return re.sub(r'[\\/:*?"<>|]', "_", name).strip()
 
 
 def process_dir(
@@ -386,7 +393,7 @@ def process_dir(
             print(f"Writing tags for {title_with_features}...", flush=True)
 
             original_extension = os.path.splitext(track.filepath)[1]
-            new_filename = f"{title_with_features}{original_extension}"
+            new_filename = f"{safe_filename(title_with_features)}{original_extension}"
             new_filepath = os.path.join(os.path.dirname(track.filepath), new_filename)
 
             os.rename(track.filepath, new_filepath)

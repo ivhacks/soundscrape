@@ -5,7 +5,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from art_selector import CoverArtSelector
 from stealth_driver import create_stealth_driver
 
 
@@ -44,5 +43,8 @@ if __name__ == "__main__":
     result = get_image_facebook(
         "https://www.facebook.com/photo.php?fbid=702833892070592&id=100070319619722&set=a.247825724238080"
     )
+    # imported here so agentic mode works on machines without tkinter
+    from art_selector import CoverArtSelector
+
     selector = CoverArtSelector([result])
     selected_index = selector.show_selection_window()

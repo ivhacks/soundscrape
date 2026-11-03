@@ -3,7 +3,6 @@ from selenium.common.exceptions import StaleElementReferenceException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 
-from art_selector import CoverArtSelector
 from stealth_driver import create_stealth_driver
 
 
@@ -87,5 +86,8 @@ def get_image_instagram(link: str, driver=None) -> bytes:
 
 if __name__ == "__main__":
     result = get_image_instagram("https://www.instagram.com/p/DDfmurKTFC5/")
+    # imported here so agentic mode works on machines without tkinter
+    from art_selector import CoverArtSelector
+
     selector = CoverArtSelector([result])
     selected_index = selector.show_selection_window()

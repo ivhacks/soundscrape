@@ -2,7 +2,6 @@ import re
 
 import requests
 
-from art_selector import CoverArtSelector
 from stealth_driver import USER_AGENT
 
 
@@ -37,5 +36,8 @@ def get_image_genius(link: str) -> bytes:
 
 if __name__ == "__main__":
     result = get_image_genius("https://genius.com/albums/Knock2/Nolimit")
+    # imported here so agentic mode works on machines without tkinter
+    from art_selector import CoverArtSelector
+
     selector = CoverArtSelector([result])
     selected_index = selector.show_selection_window()

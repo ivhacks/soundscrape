@@ -10,7 +10,6 @@ from selenium.common.exceptions import WebDriverException
 from serpapi import GoogleSearch
 import yaml
 
-from art_selector import CoverArtSelector
 from get_img_bandcamp import get_image_bandcamp
 from get_img_beatport import get_image_beatport
 from get_img_deezer import get_image_deezer
@@ -205,6 +204,9 @@ if __name__ == "__main__":
         print(f"Selected {len(selected_images)} images for display")
 
         if selected_images:
+            # imported here so agentic mode works on machines without tkinter
+            from art_selector import CoverArtSelector
+
             selector = CoverArtSelector(selected_images)
             selected_index = selector.show_selection_window()
         else:

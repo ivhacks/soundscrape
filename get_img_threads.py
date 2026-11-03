@@ -5,7 +5,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from art_selector import CoverArtSelector
 from stealth_driver import create_stealth_driver
 
 
@@ -53,5 +52,8 @@ if __name__ == "__main__":
     result = get_image_threads(
         "https://www.threads.com/@coverartmatters/post/DFBRbWGRqjO"
     )
+    # imported here so agentic mode works on machines without tkinter
+    from art_selector import CoverArtSelector
+
     selector = CoverArtSelector([result])
     selected_index = selector.show_selection_window()

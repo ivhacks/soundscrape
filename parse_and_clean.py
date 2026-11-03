@@ -67,8 +67,19 @@ def parse_remixers(input: str) -> List[str]:
 
 def parse_mix(input: str) -> str:
     # "[Extended Mix]" or "(Radio Mix)" -> "Extended Mix" (title-cased), "" if none. \bmix skips "remix"
-    mix = re.search(r"[\[(]([^\[\]()]*?\bmix)[\])]", input, re.IGNORECASE)
-    return mix.group(1).strip().title() if mix else ""
+    # also "(Lø's Version)", "(Acoustic)", "(Radio Edit)", "(VIP)", "(Dub)", or they get dropped and
+    # two versions of one song end up with the same title (and filename)
+    mix = re.search(
+        r"[\[(]([^\[\]()]*?\b(?:mix|version|edit|acoustic|vip|dub))[\])]", input, re.IGNORECASE
+    )
+    return _title_case(mix.group(1).strip()) if mix else ""
+
+
+def _title_case(label: str) -> str:
+    # "extended mix"/"EXTENDED MIX" -> "Extended Mix", but keep deliberate casing like "Lø's Version"
+    if label.islower() or label.isupper():
+        return label.title()
+    return label
 
 
 def format_title(title: str, remixers: List[str], mix: str, features: List[str]) -> str:

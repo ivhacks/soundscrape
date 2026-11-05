@@ -22,7 +22,7 @@ from stealth_driver import create_stealth_driver
 def _grok_client() -> OpenAI:
     with open(os.environ.get("SOUNDSCRAPE_SECRETS_PATH", "secrets.yaml"), "r") as f:
         key = yaml.safe_load(f)["xai_api_key"]
-    return OpenAI(api_key=key, base_url="https://api.x.ai/v1")
+    return OpenAI(api_key=key, base_url="https://api.x.ai/v1", timeout=180)
 
 
 def _read_captcha_text(image_b64: str, mime: str = "jpeg") -> str:

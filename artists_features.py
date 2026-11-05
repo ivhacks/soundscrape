@@ -93,7 +93,7 @@ def _get_grok_client() -> OpenAI:
         config = yaml.safe_load(f)
         xai_api_key = config["xai_api_key"]
 
-    return OpenAI(api_key=xai_api_key, base_url="https://api.x.ai/v1")
+    return OpenAI(api_key=xai_api_key, base_url="https://api.x.ai/v1", timeout=180)
 
 
 def find_artists_and_features(artist: str, song_title: str) -> ArtistsAndFeatures:

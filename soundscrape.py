@@ -547,16 +547,14 @@ def process_file(
         if not results:
             raise Exception(f"No output file produced for {file_path}")
 
-        # never clobber a different, already-tagged track that ends up with the same title
+        # if another track already owns this title filename, insert spaces before the
+        # extension (e.g. "In My Head.flac" -> "In My Head .flac") instead of clobbering
         for name in results:
             dest = os.path.join(parent, name)
-            if os.path.exists(dest) and not os.path.samefile(dest, file_path):
-                raise FileExistsError(
-                    f"{dest} already exists; refusing to overwrite it with {file_path}"
-                )
-
-        for name in results:
-            dest = os.path.join(parent, name)
+            stem, ext = os.path.splitext(name)
+            while os.path.exists(dest) and not os.path.samefile(dest, file_path):
+                stem = stem + " "
+                dest = os.path.join(parent, stem + ext)
             shutil.move(os.path.join(work, name), dest)
 
         # original name may have changed after title cleanup

@@ -2,7 +2,7 @@ import os
 import shutil
 import sys
 import tempfile
-from unittest import TestCase
+from unittest import TestCase, mock
 
 import pytest
 
@@ -22,7 +22,7 @@ from file_metadata import (
     set_cover_art,
     set_song_title,
 )
-from soundscrape import create_noaudio_files, main
+from soundscrape import create_noaudio_files, main, process_file
 
 
 # share worker with metadata tests — both touch test/yeet.* fixtures
@@ -182,3 +182,68 @@ class SoundScrapeFileIOTests(TestCase):
         self.assertLess(os.path.getsize(output1), os.path.getsize("test/yeet.flac"))
         self.assertLess(os.path.getsize(output2), os.path.getsize("test/yeet.mp3"))
         self.assertLess(os.path.getsize(output3), os.path.getsize("test/yeet.flac"))
+
+
+    def test_process_file_collision_inserts_space_before_extension(self):
+        existing = os.path.join(self.test_dir, "In My Head.flac")
+        incoming = os.path.join(self.test_dir, "derulo.flac")
+        shutil.copy2("test/yeet.flac", existing)
+        shutil.copy2("test/yeet.flac", incoming)
+        existing_size = os.path.getsize(existing)
+
+        def fake_process_dir(work, **kwargs):
+            names = [n for n in os.listdir(work) if n.lower().endswith((".mp3", ".flac"))]
+            src = os.path.join(work, names[0])
+            os.rename(src, os.path.join(work, "In My Head.flac"))
+
+        with mock.patch("soundscrape.process_dir", fake_process_dir):
+            process_file(incoming)
+
+        spaced = os.path.join(self.test_dir, "In My Head .flac")
+        self.assertTrue(os.path.exists(existing))
+        self.assertEqual(os.path.getsize(existing), existing_size)
+        self.assertTrue(os.path.exists(spaced))
+        self.assertFalse(os.path.exists(incoming))
+
+    def test_process_file_double_collision_adds_another_space(self):
+        existing = os.path.join(self.test_dir, "In My Head.flac")
+        existing_spaced = os.path.join(self.test_dir, "In My Head .flac")
+        incoming = os.path.join(self.test_dir, "third.flac")
+        shutil.copy2("test/yeet.flac", existing)
+        shutil.copy2("test/yeet.flac", existing_spaced)
+        shutil.copy2("test/yeet.flac", incoming)
+
+        def fake_process_dir(work, **kwargs):
+            names = [n for n in os.listdir(work) if n.lower().endswith((".mp3", ".flac"))]
+            src = os.path.join(work, names[0])
+            os.rename(src, os.path.join(work, "In My Head.flac"))
+
+        with mock.patch("soundscrape.process_dir", fake_process_dir):
+            process_file(incoming)
+
+        double_spaced = os.path.join(self.test_dir, "In My Head  .flac")
+        self.assertTrue(os.path.exists(existing))
+        self.assertTrue(os.path.exists(existing_spaced))
+        self.assertTrue(os.path.exists(double_spaced))
+        self.assertFalse(os.path.exists(incoming))
+
+    def test_process_file_same_path_still_overwrites_itself(self):
+        target = os.path.join(self.test_dir, "In My Head.flac")
+        shutil.copy2("test/yeet.flac", target)
+        before = os.path.getsize(target)
+
+        def fake_process_dir(work, **kwargs):
+            names = [n for n in os.listdir(work) if n.lower().endswith((".mp3", ".flac"))]
+            src = os.path.join(work, names[0])
+            dst = os.path.join(work, "In My Head.flac")
+            if src != dst:
+                os.rename(src, dst)
+            with open(dst, "ab") as f:
+                f.write(b"retag")
+
+        with mock.patch("soundscrape.process_dir", fake_process_dir):
+            process_file(target)
+
+        self.assertTrue(os.path.exists(target))
+        self.assertEqual(os.path.getsize(target), before + len(b"retag"))
+        self.assertFalse(os.path.exists(os.path.join(self.test_dir, "In My Head .flac")))

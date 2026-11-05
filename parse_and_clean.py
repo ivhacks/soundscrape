@@ -78,7 +78,8 @@ def parse_mix(input: str) -> str:
 def _title_case(label: str) -> str:
     # "extended mix"/"EXTENDED MIX" -> "Extended Mix", but keep deliberate casing like "Lø's Version"
     if label.islower() or label.isupper():
-        return label.title()
+        # "VIP" is an acronym, don't turn it into "Vip"
+        return re.sub(r"\bVip\b", "VIP", label.title())
     return label
 
 

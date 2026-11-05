@@ -72,7 +72,10 @@ def parse_mix(input: str) -> str:
     mix = re.search(
         r"[\[(]([^\[\]()]*?\b(?:mix|version|edit|acoustic|vip|dub))[\])]", input, re.IGNORECASE
     )
-    return _title_case(mix.group(1).strip()) if mix else ""
+    if not mix or mix.group(1).strip().lower() == "original mix":
+        # "Original Mix" is beatport's label for the plain version, not a real mix
+        return ""
+    return _title_case(mix.group(1).strip())
 
 
 def _title_case(label: str) -> str:

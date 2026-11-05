@@ -2,10 +2,19 @@ import re
 from typing import List
 
 
+_VERSION_PARENS = re.compile(
+    r"\((?=[^()]*(?:\bfeat\b|\bft\b|\bwith\b|remix|\bmix\b|version|\bedit\b|\bvip\b|\bdub\b"
+    r"|acoustic|extended|instrumental|remaster|explicit|\bclean\b|\blive\b|bootleg|rework|flip))[^()]*\)",
+    re.IGNORECASE,
+)
+
+
 def clean_title(title):
     no_explicit = remove_explicit(title)
 
-    no_parens = re.sub(r"\(.*\)", "", no_explicit)
+    # only strip parentheticals that are version/feature info, so real title parts like
+    # "a.i.ngel (Become God)" or "Last Friday Night (T.G.I.F.)" survive
+    no_parens = re.sub(_VERSION_PARENS, "", no_explicit)
     no_brackets = re.sub(r"\[.*\]", "", no_parens)
     no_ft = no_brackets.split("ft.")[0]
     no_feat = no_ft.split("feat.")[0]

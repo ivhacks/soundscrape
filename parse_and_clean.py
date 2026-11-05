@@ -77,7 +77,10 @@ def parse_remixers(input: str) -> List[str]:
 def parse_mix(input: str) -> str:
     # "[Extended Mix]" or "(Radio Mix)" -> "Extended Mix" (title-cased), "" if none. \bmix skips "remix"
     mix = re.search(r"[\[(]([^\[\]()]*?\bmix)[\])]", input, re.IGNORECASE)
-    return mix.group(1).strip().title() if mix else ""
+    if not mix or mix.group(1).strip().lower() == "original mix":
+        # "Original Mix" is beatport's label for the plain version, not a real mix
+        return ""
+    return mix.group(1).strip().title()
 
 
 def format_title(title: str, remixers: List[str], mix: str, features: List[str]) -> str:

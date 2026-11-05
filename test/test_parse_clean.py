@@ -256,6 +256,11 @@ class ParseRemixTests(TestCase):
         self.assertEqual(parse_remixers(input_title), ["Tiesto"])
         self.assertEqual(parse_features(input_title), ["Foxes"])
 
+    def test_original_mix_dropped(self):
+        input_title = "Nightcall (Original Mix)"
+        self.assertEqual(parse_remixers(input_title), [])
+        self.assertEqual(parse_mix(input_title), "")
+
     def test_no_remix(self):
         input_title = "Downfall (feat. Lexi Norton)"
         self.assertEqual(parse_remixers(input_title), [])

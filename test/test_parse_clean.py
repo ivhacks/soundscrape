@@ -290,3 +290,11 @@ class FormatTitleTests(TestCase):
 
     def test_nothing(self):
         self.assertEqual(format_title("Downfall", [], "", []), "Downfall")
+
+
+def test_clean_title_keeps_non_version_parens():
+    from parse_and_clean import clean_title
+
+    assert clean_title("a.i.ngel (Become God) (Original Mix)") == "a.i.ngel (Become God)"
+    assert clean_title("Last Friday Night (T.G.I.F.) (Original Mix)") == "Last Friday Night (T.G.I.F.)"
+    assert clean_title("Sacrifice (feat. Sam Harper) (Emrys Extended Remix)") == "Sacrifice"

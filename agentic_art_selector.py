@@ -26,4 +26,15 @@ def pick_art_agentic(images_bytes: List[bytes]) -> int:
         answer = input().strip()
         if answer in paths:
             return paths.index(answer)
+        # let the agent supply a better image when none of the choices are right
+        if os.path.isfile(answer):
+            try:
+                with open(answer, "rb") as f:
+                    custom = f.read()
+                Image.open(BytesIO(custom)).verify()
+            except Exception as e:
+                print(f"Not a readable image: {answer} ({e})", flush=True)
+                continue
+            images_bytes.append(custom)
+            return len(images_bytes) - 1
         print(f"Not one of the art choices: {answer}", flush=True)

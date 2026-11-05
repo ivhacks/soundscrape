@@ -256,6 +256,18 @@ class ParseRemixTests(TestCase):
         self.assertEqual(parse_remixers(input_title), ["Tiesto"])
         self.assertEqual(parse_features(input_title), ["Foxes"])
 
+    def test_version_kept(self):
+        input_title = "Hollow (L\u00f8's Version)"
+        self.assertEqual(parse_mix(input_title), "L\u00f8's Version")
+
+    def test_acoustic_kept(self):
+        input_title = "Love Is Gone (Acoustic)"
+        self.assertEqual(parse_mix(input_title), "Acoustic")
+
+    def test_radio_edit_kept(self):
+        input_title = "Clarity (radio edit)"
+        self.assertEqual(parse_mix(input_title), "Radio Edit")
+
     def test_no_remix(self):
         input_title = "Downfall (feat. Lexi Norton)"
         self.assertEqual(parse_remixers(input_title), [])

@@ -268,6 +268,13 @@ class ParseRemixTests(TestCase):
         input_title = "Clarity (radio edit)"
         self.assertEqual(parse_mix(input_title), "Radio Edit")
 
+    def test_original_mix_dropped(self):
+        input_title = "Nightcall [Original Mix]"
+        self.assertEqual(parse_remixers(input_title), [])
+        self.assertEqual(parse_mix(input_title), "")
+        self.assertEqual(parse_mix("Nightcall (original mix)"), "")
+        self.assertEqual(parse_mix("Nightcall [Extended Mix]"), "Extended Mix")
+
     def test_no_remix(self):
         input_title = "Downfall (feat. Lexi Norton)"
         self.assertEqual(parse_remixers(input_title), [])
@@ -276,6 +283,12 @@ class ParseRemixTests(TestCase):
 
 @pytest.mark.xdist_group(name="parse_clean")
 class FormatTitleTests(TestCase):
+    def test_original_mix_not_in_title(self):
+        raw = "Clarity (Original Mix)"
+        title = format_title(clean_title(raw), parse_remixers(raw), parse_mix(raw), ["Foxes"])
+        self.assertEqual(title, "Clarity (feat. Foxes)")
+
+
     def test_remix_and_extended(self):
         self.assertEqual(
             format_title("five hours", ["sumant"], "Extended Mix", []),

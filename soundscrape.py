@@ -10,7 +10,7 @@ from typing import Dict, List
 
 from PIL import Image
 import requests
-from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import TimeoutException, WebDriverException
 
 from art_search import search_cover_art_by_text
 from agentic_art_selector import pick_art_agentic
@@ -37,7 +37,12 @@ from google_images_search import (
     downselect_images,
     search_google_images,
 )
-from lyrics import get_lyrics_genius
+from lyrics import (
+    LyricsLookupFailed,
+    LyricsNotFound,
+    get_lyrics_genius,
+    lyrics_failure_reason,
+)
 from parse_and_clean import (
     clean_artist,
     clean_title,
@@ -354,6 +359,7 @@ def process_dir(
         finally:
             driver.quit()
 
+    lyrics_lookup_failures = []
     # Apply cover art for each album
     for album in albums.values():
         print(f"Applying tags/art for album {album.title}...", flush=True)
@@ -409,16 +415,37 @@ def process_dir(
                     if lyrics:
                         set_lyrics(new_filepath, lyrics)
                         print(f"Embedded lyrics for {title_with_features}", flush=True)
-                except (ValueError, TimeoutException) as e:
+                except LyricsNotFound as e:
                     print(
-                        f"WARNING: lyrics skipped for {title_with_features}. ({e})",
+                        f"WARNING: no lyrics found for {title_with_features}. ({e})",
                         flush=True,
                     )
+                except (
+                    LyricsLookupFailed,
+                    TimeoutException,
+                    WebDriverException,
+                    OSError,
+                ) as e:
+                    reason = lyrics_failure_reason(e)
+                    print(
+                        "WARNING: lyrics lookup failed for "
+                        + title_with_features
+                        + ". Browser or network failure, lyrics were not verified missing. ("
+                        + reason
+                        + ")",
+                        flush=True,
+                    )
+                    lyrics_lookup_failures.append(title_with_features)
 
             if chosen_art is not None:
                 clear_cover_art(new_filepath)
                 set_cover_art(new_filepath, chosen_art)
             print(f"Done {title_with_features}", flush=True)
+
+    if lyrics_lookup_failures:
+        raise LyricsLookupFailed(
+            "lyrics lookup failed for " + ", ".join(lyrics_lookup_failures)
+        )
 
 
 def create_noaudio_files(input_path: str, output_path: str):
@@ -528,16 +555,20 @@ def process_file(
             set_artist(work_file, artist)
         if title is not None:
             set_song_title(work_file, title)
-        process_dir(
-            work,
-            no_art_select=no_art_select,
-            fast_search=fast_search,
-            embed_lyrics=embed_lyrics,
-            resolve_artists_with_ai=resolve_artists_with_ai,
-            credit_mode=credit_mode,
-            agentic=agentic,
-            soundcloud_url=soundcloud_url,
-        )
+        lookup_error = None
+        try:
+            process_dir(
+                work,
+                no_art_select=no_art_select,
+                fast_search=fast_search,
+                embed_lyrics=embed_lyrics,
+                resolve_artists_with_ai=resolve_artists_with_ai,
+                credit_mode=credit_mode,
+                agentic=agentic,
+                soundcloud_url=soundcloud_url,
+            )
+        except LyricsLookupFailed as e:
+            lookup_error = e
 
         results = []
         for name in os.listdir(work):
@@ -554,6 +585,8 @@ def process_file(
         # original name may have changed after title cleanup
         if os.path.basename(file_path) not in results and os.path.exists(file_path):
             os.remove(file_path)
+        if lookup_error is not None:
+            raise lookup_error
     finally:
         shutil.rmtree(work, ignore_errors=True)
 
@@ -603,33 +636,37 @@ if __name__ == "__main__":
             else:
                 paths.append(arg)
 
-        if len(paths) == 1:
-            process_file(
-                paths[0],
-                credit_mode=credit_mode,
-                agentic=agentic,
-                artist=artist,
-                title=title,
-                soundcloud_url=soundcloud_url,
-            )
-        elif (
-            len(paths) == 2
-            and artist is None
-            and title is None
-            and soundcloud_url is None
-        ):
-            main(paths[0], paths[1], credit_mode=credit_mode, agentic=agentic)
-        else:
-            print("Usage: soundscrape <file.mp3|file.flac>")
-            print("       soundscrape <input_dir> <output_dir>")
-            print("       soundscrape --noaudio <input_dir> <output_dir>")
-            print("       soundscrape --lyrics <artist> <title>")
-            print("       optional: --all-artists  or  --all-features")
-            print("       optional: --agentic (pick cover art on stdin, no GUI)")
-            print(
-                "       optional: --artist <a> --title <t> (single file only, override tags)"
-            )
-            print(
-                "       optional: --soundcloud <url> (single file only, adds its cover art)"
-            )
+        try:
+            if len(paths) == 1:
+                process_file(
+                    paths[0],
+                    credit_mode=credit_mode,
+                    agentic=agentic,
+                    artist=artist,
+                    title=title,
+                    soundcloud_url=soundcloud_url,
+                )
+            elif (
+                len(paths) == 2
+                and artist is None
+                and title is None
+                and soundcloud_url is None
+            ):
+                main(paths[0], paths[1], credit_mode=credit_mode, agentic=agentic)
+            else:
+                print("Usage: soundscrape <file.mp3|file.flac>")
+                print("       soundscrape <input_dir> <output_dir>")
+                print("       soundscrape --noaudio <input_dir> <output_dir>")
+                print("       soundscrape --lyrics <artist> <title>")
+                print("       optional: --all-artists  or  --all-features")
+                print("       optional: --agentic (pick cover art on stdin, no GUI)")
+                print(
+                    "       optional: --artist <a> --title <t> (single file only, override tags)"
+                )
+                print(
+                    "       optional: --soundcloud <url> (single file only, adds its cover art)"
+                )
+                sys.exit(1)
+        except LyricsLookupFailed as e:
+            print(str(e), flush=True)
             sys.exit(1)

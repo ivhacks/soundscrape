@@ -14,6 +14,61 @@ from parse_and_clean import clean_artist, clean_title
 from stealth_driver import create_stealth_driver
 
 
+class LyricsNotFound(ValueError):
+    pass
+
+
+class LyricsLookupFailed(Exception):
+    pass
+
+
+def genius_page_blocked(html, title):
+    if html is None:
+        return False
+    text = html.lower()
+    if "make sure you're a human" in text:
+        return True
+    if "cf-challenge" in text or "cdn-cgi/challenge-platform" in text:
+        return True
+    if title is None:
+        title = ""
+    return "just a moment" in title.lower() and "cloudflare" in text
+
+
+def lyrics_failure_reason(err):
+    if isinstance(err, LyricsLookupFailed):
+        text = str(err).strip()
+        if text == "":
+            return "Genius page did not load"
+        return text
+
+    detail = ""
+    msg = getattr(err, "msg", None)
+    if msg is not None:
+        detail = str(msg).strip()
+    if detail == "" or detail == "None":
+        if isinstance(err, (TimeoutException, WebDriverException)):
+            detail = ""
+        else:
+            detail = str(err).strip()
+    if detail != "":
+        detail = detail.splitlines()[0]
+        if len(detail) > 200:
+            detail = detail[:200]
+
+    if isinstance(err, TimeoutException):
+        if detail == "":
+            return "Genius page timed out"
+        return "Genius page timed out: " + detail
+    if isinstance(err, WebDriverException):
+        if detail == "":
+            return "Genius browser failed"
+        return "Genius browser failed: " + detail
+    if detail == "":
+        return "Genius page did not load"
+    return detail
+
+
 # Genius hashes the styled-components suffix; match the stable prefix only.
 LYRICS_CONTAINER_CLASS_PREFIX = "Lyrics__Container"
 LYRICS_CONTAINER_CSS = f"[class*='{LYRICS_CONTAINER_CLASS_PREFIX}']"
@@ -166,15 +221,32 @@ def get_html_genius(artist, title, cache=False):
             lyrics_page_html = str(lyrics_page_soup.prettify())
             last_err = None
             break
-        except (TimeoutException, ValueError) as e:
-            last_err = e
+        except (
+            TimeoutException,
+            WebDriverException,
+            ValueError,
+            LyricsLookupFailed,
+        ) as e:
+            blocked = False
+            try:
+                blocked = genius_page_blocked(driver.page_source, driver.title)
+            except WebDriverException:
+                blocked = False
+            if blocked:
+                last_err = LyricsLookupFailed(
+                    "Genius blocked the browser with a human check"
+                )
+            elif isinstance(e, LyricsLookupFailed):
+                last_err = e
+            else:
+                last_err = LyricsLookupFailed(lyrics_failure_reason(e))
         finally:
             driver.quit()
 
     if last_err is not None:
         raise last_err
     if lyrics_page_html is None:
-        raise ValueError("Genius lyrics page not loaded")
+        raise LyricsLookupFailed("Genius lyrics page did not load")
 
     if cache:
         with open(cache_full_path, "w", encoding="utf-8") as f:
@@ -357,8 +429,8 @@ def genius_parser(input_soup):
 def get_lyrics_genius(artist, title, cache=False):
     html = get_html_genius(artist, title, cache)
     if html is None:
-        raise ValueError(f"No Genius match for {artist} - {title}")
-    # empty string = instrumental / no lyrics on the page
+        raise LyricsNotFound(f"No Genius match for {artist} - {title}")
+    # The page loaded. Empty text means that page had no lyrics, not that the fetch failed.
     return extract_lyrics_from_html_genius(html)
 
 
